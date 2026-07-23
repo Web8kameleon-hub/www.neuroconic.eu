@@ -23,6 +23,7 @@ class NoFakePolice:
         self.clean_files = 0
 
     def is_real_code(self, lines: List[str], line_num: int) -> bool:
+        """Kthen True nese rreshti eshte kod real (jo koment/docstring)"""
         if line_num < 1 or line_num > len(lines):
             return False
         in_multiline = False
@@ -31,7 +32,9 @@ class NoFakePolice:
             if s.startswith('"""') or s.startswith("'''"):
                 in_multiline = not in_multiline
             if i == line_num:
-                return not (in_multiline or s.startswith("#"))
+                if in_multiline or s.startswith("#"):
+                    return False
+                return True
         return True
 
     def enforce(self):
@@ -39,13 +42,14 @@ class NoFakePolice:
         self.checked_files = 0
         self.clean_files = 0
 
-        forbidden_mocks = ["unittest.mock", "MagicMock", "mock.patch"]
-        forbidden_sim = [
-            r"def simulate\b",
-            r"def _simulate\b",
-            r"def _fake_\w+",
-            r"def _stub\b",
+        forbidden_mocks = [
+            "unittest.mock",
+            "MagicMock",
+            "mock.patch",
+            "@mock.patch",
+            "Mock()",
         ]
+        forbidden_sim = [r"def simulate", r"def _simulate", r"def _fake_", r"def _stub"]
         forbidden_placeholder = [r"NotImplementedError", r"NotImplemented"]
 
         for base_path in self.paths:
@@ -78,6 +82,7 @@ class NoFakePolice:
 
                     has_violation = False
 
+                    # Kontrollo importe te ndaluara - VETEM ne kod real
                     for i, line in enumerate(lines, 1):
                         s = line.strip()
                         if s.startswith(("from ", "import ")) and self.is_real_code(
@@ -90,6 +95,7 @@ class NoFakePolice:
                                     )
                                     has_violation = True
 
+                    # Kontrollo funksione simulimi - VETEM ne kod real
                     for pat in forbidden_sim:
                         for match in re.finditer(pat, content):
                             ln = content[: match.start()].count("\n") + 1
@@ -99,6 +105,7 @@ class NoFakePolice:
                                 )
                                 has_violation = True
 
+                    # Kontrollo placeholder - VETEM ne kod real
                     for pat in forbidden_placeholder:
                         for match in re.finditer(pat, content):
                             ln = content[: match.start()].count("\n") + 1

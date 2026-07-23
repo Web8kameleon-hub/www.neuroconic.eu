@@ -155,7 +155,8 @@ class NeurosonicEvolutionEngine:
         categories = self.genome.get_packages_by_category()
         missing_categories = []
 
-        required_categories = ["core", "ai", "memory", "agent", "security", "lightning"]
+        # Kontrollo kategoritë themelore
+        required_categories = ["core", "ai", "memory", "agent", "security"]
         for cat in required_categories:
             if not categories.get(cat):
                 missing_categories.append(cat)
@@ -181,6 +182,7 @@ class NeurosonicEvolutionEngine:
             for dep_id in pkg.dependencies:
                 if dep_id in packages:
                     dep_pkg = packages[dep_id]
+                    # Kontrollo nëse varësia është qarkulluese
                     if pkg_id in dep_pkg.dependencies:
                         conflicts.append(
                             {
@@ -213,10 +215,12 @@ class NeurosonicEvolutionEngine:
     def _suggest_optimizations(self) -> List[str]:
         """Sugjeron optimizime për arkitekturën"""
         suggestions = []
+
+        # Analizo paketat
         packages = self.genome.packages
         total = len(packages)
 
-        if total < 10:
+        if total < 5:
             suggestions.append(
                 "Core genome is small. Consider adding more foundational packages."
             )
@@ -225,25 +229,21 @@ class NeurosonicEvolutionEngine:
                 "Genome is large. Consider reviewing for unused packages."
             )
 
-        # Lightning SPP optimizations
-        suggestions.append(
-            "⚡ Lightning SPP 3.14: Enable TideWave mode for balanced scan/process/print"
-        )
-        suggestions.append(
-            "⚡ Lightning SPP 3.14: Use Hybrid mode for maximum AI enhancement"
-        )
-        suggestions.append(
-            "⚡ Lightning SPP 3.14: Stigma print quality for premium output"
-        )
+        # Kontrollo për kategori që mungojnë
+        categories = self.genome.get_packages_by_category()
+        if not categories.get("governance"):
+            suggestions.append("Add Governance Engine package for policy enforcement.")
+        if not categories.get("economy"):
+            suggestions.append(
+                "Add Internal Economy package for billing and licensing."
+            )
+        if not categories.get("tide"):
+            suggestions.append("Add Tide Engine package for load balancing.")
 
-        if total > 5:
-            suggestions.append(
-                "Consider reviewing Genome for unused or duplicate packages."
-            )
-            suggestions.append(
-                "Memory usage can be optimized with compression algorithms."
-            )
-            suggestions.append("API response time can be improved with caching layer.")
+        # Sugjerime teknike
+        suggestions.append("Memory usage can be optimized with compression algorithms.")
+        suggestions.append("API response time can be improved with caching layer.")
+        suggestions.append("Consider adding vector database for semantic search.")
 
         return suggestions
 
@@ -254,6 +254,7 @@ class NeurosonicEvolutionEngine:
         impact_scores = {"low": 0.3, "medium": 0.6, "high": 0.9}
         impact = impact_scores.get(impact_level, 0.5)
 
+        # Sa ndikon në DNA?
         dna_impact = "none"
         if category == "constitution":
             dna_impact = "high"
@@ -263,13 +264,13 @@ class NeurosonicEvolutionEngine:
             dna_impact = "medium"
 
         return {
-            "feasibility": 0.8 - (impact * 0.3),
+            "feasibility": 0.8 - (impact * 0.3),  # Më i vështirë nëse ndikim i lartë
             "impact": impact,
             "complexity": impact * 0.7,
             "dna_impact": dna_impact,
             "estimated_effort": f"{int(impact * 10)} days",
             "requires_governance": dna_impact != "none",
-            "requires_human_override": dna_impact == "high",
+            "requires_human_overide": dna_impact == "high",
         }
 
     def _analyze_changes(self, changes: Dict) -> Dict[str, Any]:
@@ -283,12 +284,13 @@ class NeurosonicEvolutionEngine:
             elif change_type in ["add", "remove"]:
                 genome_impact = "medium" if len(items) > 1 else "low"
             elif change_type == "update":
+                # Update i moduleve ekzistuese nuk prek DNA-në
                 genome_impact = "medium"
 
         return {
             "dna_impact": dna_impact,
             "genome_impact": genome_impact,
-            "recommended": dna_impact == "none",
+            "recommended": dna_impact == "none",  # Rekomandohet vetëm nëse nuk prek DNA
             "requires_governance_approval": dna_impact != "none",
             "requires_human_override": dna_impact == "high",
             "rollback_possible": genome_impact != "none",
@@ -331,6 +333,7 @@ class NeurosonicEvolutionEngine:
         }
 
 
+# Test i shpejtë
 if __name__ == "__main__":
     from neurosonic_dna import NeurosonicDNA
     from neurosonic_genome import NeurosonicGenome
@@ -343,8 +346,49 @@ if __name__ == "__main__":
     genome = NeurosonicGenome()
     evolution = NeurosonicEvolutionEngine(dna, genome)
 
+    # Test: Analizo arkitekturën
     print("\n🔍 Analiza e Arkitekturës:")
     analysis = evolution.analyze_architecture()
     print(f"   DNA Integrity: {'✅ OK' if analysis['dna_integrity'] else '❌ Problem'}")
     print(f"   Genome Coverage: {analysis['genome_coverage']['coverage_percent']:.0f}%")
+
+    if analysis["potential_conflicts"]:
+        print(f"   ⚠️ Konflikte: {len(analysis['potential_conflicts'])}")
+        for conflict in analysis["potential_conflicts"]:
+            print(f"      - {conflict['description']}")
+
+    if analysis["optimization_suggestions"]:
+        print(f"   💡 Sugjerime:")
+        for suggestion in analysis["optimization_suggestions"]:
+            print(f"      • {suggestion}")
+
+    # Test: Propozo një rregull të ri
+    print("\n📝 Propozim i ri:")
+    proposal = evolution.propose_new_rule(
+        "All AI responses must be verified by at least 3 independent sources before output",
+        category="governance",
+        impact_level="high",
+    )
+    print(f"   ID: {proposal['id']}")
+    print(f"   Status: {proposal['status']}")
+    print(f"   Feasibility: {proposal['analysis']['feasibility'] * 100:.0f}%")
+    print(f"   Requires Governance: {proposal['analysis']['requires_governance']}")
+
+    # Test: Krijo version të ri
+    print("\n📦 Version i ri:")
+    version = evolution.create_new_version(
+        {
+            "add": ["Quantum Package", "Robotics Package"],
+            "update": ["CLX Kernel to v2.0"],
+        }
+    )
+    print(f"   Version: {version['version']}")
+    print(f"   DNA Impact: {version['analysis']['dna_impact']}")
+    print(
+        f"   Requires Human Override: {version['analysis']['requires_human_override']}"
+    )
+    print(f"   Recommended: {version['analysis']['recommended']}")
+
+    print("\n" + "=" * 70)
     print("✅ Evolution Engine gati!")
+    print("=" * 70)

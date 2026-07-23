@@ -2,272 +2,292 @@
 # -*- coding: utf-8 -*-
 """
 NEUROSONIC DNA - I PANDrySHUESHëM
-Kushtetuta, rregullat dhe identiteti i sistemit.
+Identiteti i sistemit. Ndryshon VETËM me Governance Approval.
 
-10 ligjet themelore + 43 rregulla të detajuara.
-DNA nuk ndryshon kurrë pas inicializimit.
+Niveli 1 i Arkitekturës Neurosonic Trinity+ASI
 """
 
 import hashlib
+import datetime
 import json
-import time
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, List, Optional
 
 
 class NeurosonicDNA:
-    """
-    DNA e Neurosonic Trinity+ASI.
+    """Identiteti i sistemit - BIOS-i i Neurosonic"""
 
-    Përmban:
-    - 10 ligjet themelore (G001-G010)
-    - 8 rregulla sigurie (SR001-SR008)
-    - 5 rregulla data (DR001-DR005)
-    - 4 rregulla API (AR001-AR004)
-    - 6 rregulla memory (MR001-MR006)
-    - 6 rregulla governance (GVR001-GVR006)
-    - 5 rregulla quality (QR001-QR005)
-    - 6 core values (CV001-CV006)
-    """
+    # ========================================================================
+    # CONSTITUTION - 10 LIGJET THEMELORE
+    # ========================================================================
+
+    CONSTITUTION = {
+        "G001": {"name": "Truth Law", "text": "No Fake. No fabricated knowledge."},
+        "G002": {
+            "name": "Sovereignty Law",
+            "text": "Maximum Independence. Zero vendor lock-in.",
+        },
+        "G003": {
+            "name": "User Ownership Law",
+            "text": "User owns User Data. User owns Identity.",
+        },
+        "G004": {
+            "name": "Internal Infrastructure Law",
+            "text": "Everything critical built internally.",
+        },
+        "G005": {
+            "name": "Modular Law",
+            "text": "Every component is a module. Every module can be replaced.",
+        },
+        "G006": {
+            "name": "Distributed Law",
+            "text": "No Central Brain. Every Device = Cognitive Node.",
+        },
+        "G007": {
+            "name": "Security Law",
+            "text": "Zero Trust. Encryption Everywhere.",
+        },
+        "G008": {
+            "name": "Intelligence Law",
+            "text": "Every intelligence passes through validation.",
+        },
+        "G009": {
+            "name": "Knowledge Law",
+            "text": "Unified Data Model. Knowledge Graph. Versioned Knowledge.",
+        },
+        "G010": {
+            "name": "Evolution Law",
+            "text": "System never stops evolving. Backward Compatible.",
+        },
+    }
+
+    # ========================================================================
+    # CORE VALUES - VLERAT THEMELORE
+    # ========================================================================
+
+    CORE_VALUES = {
+        "truth": "Absolute commitment to truth and accuracy.",
+        "independence": "No external dependencies. Self-sufficient.",
+        "privacy": "User data is sacred. Never shared without consent.",
+        "security": "Security by design. Zero Trust.",
+        "transparency": "Every decision explainable. Every action auditable.",
+        "human_centric": "AI serves humans. Human override always possible.",
+    }
+
+    # ========================================================================
+    # SECURITY RULES - RREGULLAT E SIGURISË
+    # ========================================================================
+
+    SECURITY_RULES = {
+        "SR001": "Zero Trust Architecture - verify everything.",
+        "SR002": "Encryption at Rest - all data encrypted.",
+        "SR003": "Encryption in Transit - all communication encrypted.",
+        "SR004": "Immutable Audit Logs - no logs can be deleted.",
+        "SR005": "AI Safety - all AI actions validated before execution.",
+        "SR006": "Privacy by Design - privacy built into every component.",
+        "SR007": "Human Override - humans can override any AI decision.",
+        "SR008": "Emergency Stop - system can be shut down immediately.",
+    }
+
+    # ========================================================================
+    # DATA RULES - RREGULLAT E TË DHËNAVE
+    # ========================================================================
+
+    DATA_RULES = {
+        "DR001": "Unified Data Model - all modules use the same data format.",
+        "DR002": "User Data Ownership - user owns their data.",
+        "DR003": "Data Portability - data can be exported anytime.",
+        "DR004": "Data Deletion - user can delete data anytime.",
+        "DR005": "Data Sovereignty - data stored according to local laws.",
+    }
+
+    # ========================================================================
+    # API RULES - RREGULLAT E API-VE
+    # ========================================================================
+
+    API_RULES = {
+        "AR001": "Internal API - all internal communication via internal API.",
+        "AR002": "External API - external communication via public API only.",
+        "AR003": "Versioned API - all APIs versioned. No breaking changes.",
+        "AR004": "Secure API - all API calls authenticated and encrypted.",
+    }
+
+    # ========================================================================
+    # MEMORY RULES - RREGULLAT E MEMORIES
+    # ========================================================================
+
+    MEMORY_RULES = {
+        "MR001": "HVO Memory - Horizontal, Vertical, Orbital.",
+        "MR002": "Resonance Memory - weighted by importance.",
+        "MR003": "Film Memory - process history stored.",
+        "MR004": "Stigma Memory - learning from experience.",
+        "MR005": "Working Memory - current task context.",
+        "MR006": "Long Term Memory - permanent knowledge storage.",
+    }
+
+    # ========================================================================
+    # GOVERNANCE RULES - RREGULLAT E QEVERISJES
+    # ========================================================================
+
+    GOVERNANCE_RULES = {
+        "GR001": "Constitution Above All - no module violates constitution.",
+        "GR002": "Policy Engine - all actions governed by policies.",
+        "GR003": "Audit Trail - every action auditable.",
+        "GR004": "Explainability - every AI decision explainable.",
+        "GR005": "Human Oversight - critical decisions require human approval.",
+        "GR006": "Emergency Protocols - defined procedures for emergencies.",
+    }
+
+    # ========================================================================
+    # QUALITY RULES - RREGULLAT E CILËSISË
+    # ========================================================================
+
+    QUALITY_RULES = {
+        "QR001": "Zero Fake - no fabricated information.",
+        "QR002": "Zero Hallucination - all outputs verified.",
+        "QR003": "Zero Noise - clean data only.",
+        "QR004": "Source Verification - every fact has source.",
+        "QR005": "Hash Verification - every response has hash.",
+    }
 
     def __init__(self):
         self.name = "Neurosonic DNA v1.0"
-        self.immutable = True
-        self._created = time.time()
-        self._hash = None
-
-        # Inicializo rregullat
-        self.rules = self._init_rules()
-
-        # Gjenero hash-in e integritetit
+        self.version = "1.0.0"
+        self.immutable = True  # DNA nuk ndryshon automatikisht
+        self.created = datetime.datetime.now().isoformat()
         self._hash = self._compute_dna_hash()
 
-        print(f"🧬 {self.name} inicializuar")
-        print(f"   Hash: {self._hash}")
-
-    def _init_rules(self) -> Dict[str, List[Dict]]:
-        """Inicializon të gjitha rregullat e DNA-së"""
-        return {
-            "constitution": self._init_constitution_laws(),
-            "security": self._init_security_rules(),
-            "data": self._init_data_rules(),
-            "api": self._init_api_rules(),
-            "memory": self._init_memory_rules(),
-            "governance": self._init_governance_rules(),
-            "quality": self._init_quality_rules(),
-            "core_values": self._init_core_values(),
-        }
-
-    def _init_constitution_laws(self) -> List[Dict]:
-        return [
-            {
-                "id": "G001",
-                "name": "Truth Law",
-                "description": "Asnjë përgjigje e rreme. Çdo output ka burim të verifikueshëm.",
-            },
-            {
-                "id": "G002",
-                "name": "Privacy Law",
-                "description": "Të dhënat e përdoruesit janë pronë e tij.",
-            },
-            {
-                "id": "G003",
-                "name": "Security Law",
-                "description": "Kriptim në ruajtje dhe transmetim. Zero Trust.",
-            },
-            {
-                "id": "G004",
-                "name": "Modular Law",
-                "description": "Çdo modul zëvendësohet pa prishur sistemin.",
-            },
-            {
-                "id": "G005",
-                "name": "Distributed Law",
-                "description": "Çdo pajisje mund të bëhet Node.",
-            },
-            {
-                "id": "G006",
-                "name": "Memory Law",
-                "description": "HVO memory: Horizontal, Vertical, Orbital, Resonance, Film, Stigma.",
-            },
-            {
-                "id": "G007",
-                "name": "Governance Law",
-                "description": "Constitution mbi çdo modul. Human override.",
-            },
-            {
-                "id": "G008",
-                "name": "Economy Law",
-                "description": "Internal auth, billing, wallet, license.",
-            },
-            {
-                "id": "G009",
-                "name": "Knowledge Law",
-                "description": "Knowledge graph unik. Burime të verifikuara.",
-            },
-            {
-                "id": "G010",
-                "name": "Evolution Law",
-                "description": "DNA nuk ndryshon. Genome zgjerohet. Evolution propozon.",
-            },
-        ]
-
-    def _init_security_rules(self) -> List[Dict]:
-        return [
-            {"id": "SR001", "name": "Encryption at Rest", "mandatory": True},
-            {"id": "SR002", "name": "Encryption in Transit", "mandatory": True},
-            {"id": "SR003", "name": "Zero Trust Architecture", "mandatory": True},
-            {"id": "SR004", "name": "DDoS Protection", "mandatory": True},
-            {"id": "SR005", "name": "Audit Trail", "mandatory": True},
-            {"id": "SR006", "name": "Internal Auth Only", "mandatory": True},
-            {"id": "SR007", "name": "No External OAuth", "mandatory": True},
-            {"id": "SR008", "name": "Immutable Logs", "mandatory": True},
-        ]
-
-    def _init_data_rules(self) -> List[Dict]:
-        return [
-            {"id": "DR001", "name": "User Data Ownership", "mandatory": True},
-            {"id": "DR002", "name": "CUDM Compliance", "mandatory": True},
-            {"id": "DR003", "name": "Source Verification", "mandatory": True},
-            {"id": "DR004", "name": "Data Versioning", "mandatory": True},
-            {"id": "DR005", "name": "Auto Cleanup", "mandatory": True},
-        ]
-
-    def _init_api_rules(self) -> List[Dict]:
-        return [
-            {"id": "AR001", "name": "Internal API First", "mandatory": True},
-            {"id": "AR002", "name": "SSE Streaming Support", "mandatory": True},
-            {"id": "AR003", "name": "CUDM Format Required", "mandatory": True},
-            {"id": "AR004", "name": "Rate Limiting", "mandatory": True},
-        ]
-
-    def _init_memory_rules(self) -> List[Dict]:
-        return [
-            {"id": "MR001", "name": "HVO Base Required", "mandatory": True},
-            {"id": "MR002", "name": "Resonance Memory", "mandatory": True},
-            {"id": "MR003", "name": "Film Memory", "mandatory": True},
-            {"id": "MR004", "name": "Stigma Memory", "mandatory": True},
-            {"id": "MR005", "name": "Working Memory", "mandatory": True},
-            {"id": "MR006", "name": "Long Term Memory", "mandatory": True},
-        ]
-
-    def _init_governance_rules(self) -> List[Dict]:
-        return [
-            {"id": "GVR001", "name": "Constitution Enforcement", "mandatory": True},
-            {"id": "GVR002", "name": "Human Override Available", "mandatory": True},
-            {"id": "GVR003", "name": "Emergency Stop", "mandatory": True},
-            {"id": "GVR004", "name": "Policy Engine", "mandatory": True},
-            {"id": "GVR005", "name": "Compliance Check", "mandatory": True},
-            {"id": "GVR006", "name": "Audit Trail Active", "mandatory": True},
-        ]
-
-    def _init_quality_rules(self) -> List[Dict]:
-        return [
-            {"id": "QR001", "name": "Zero Hallucination", "mandatory": True},
-            {"id": "QR002", "name": "3 Source Verification", "mandatory": True},
-            {"id": "QR003", "name": "Hash Integrity", "mandatory": True},
-            {"id": "QR004", "name": "Timestamp Required", "mandatory": True},
-            {"id": "QR005", "name": "Confidence Score", "mandatory": True},
-        ]
-
-    def _init_core_values(self) -> List[Dict]:
-        return [
-            {"id": "CV001", "name": "Absolute Independence", "priority": 10},
-            {"id": "CV002", "name": "Truth First", "priority": 9},
-            {"id": "CV003", "name": "Privacy by Design", "priority": 8},
-            {"id": "CV004", "name": "Modular Architecture", "priority": 7},
-            {"id": "CV005", "name": "Distributed by Default", "priority": 6},
-            {"id": "CV006", "name": "Human Centric", "priority": 10},
-        ]
-
     def _compute_dna_hash(self) -> str:
-        """Llogarit hash-in e integritetit të DNA-së"""
-        data = json.dumps(self.rules, sort_keys=True, default=str)
-        return hashlib.sha256(data.encode()).hexdigest()[:16]
+        """Llogarit hash-in e DNA-së për verifikim integriteti"""
+        all_rules = self.get_all_rules()
+        hash_input = json.dumps(all_rules, sort_keys=True)
+        return hashlib.sha256(hash_input.encode()).hexdigest()[:16]
 
-    def get_all_rules(self) -> Dict[str, List]:
-        """Kthen të gjitha rregullat"""
-        return self.rules
-
-    def get_stats(self) -> Dict[str, int]:
-        """Statistika të DNA-së"""
-        total = sum(len(v) for v in self.rules.values())
+    def get_all_rules(self) -> Dict[str, Any]:
+        """Kthe të gjitha rregullat si dictionary"""
         return {
-            "total_rules": total,
-            "constitution": len(self.rules["constitution"]),
-            "security": len(self.rules["security"]),
-            "data": len(self.rules["data"]),
-            "api": len(self.rules["api"]),
-            "memory": len(self.rules["memory"]),
-            "governance": len(self.rules["governance"]),
-            "quality": len(self.rules["quality"]),
-            "core_values": len(self.rules["core_values"]),
+            "constitution": self.CONSTITUTION,
+            "core_values": self.CORE_VALUES,
+            "security": self.SECURITY_RULES,
+            "data": self.DATA_RULES,
+            "api": self.API_RULES,
+            "memory": self.MEMORY_RULES,
+            "governance": self.GOVERNANCE_RULES,
+            "quality": self.QUALITY_RULES,
         }
 
     def verify_module(self, module_id: str, module_config: Dict) -> Dict[str, Any]:
-        """Verifikon nëse një modul përputhet me DNA-në"""
-        violations = []
+        """
+        Verifikon nëse moduli përputhet me DNA-në.
 
-        # Kontrollo constitution
-        required_constitution = [law["id"] for law in self.rules["constitution"]]
-        provided_constitution = module_config.get("constitution_compatibility", [])
-        for law_id in required_constitution:
-            if law_id not in provided_constitution:
-                violations.append(f"Missing constitution law: {law_id}")
+        Args:
+            module_id: ID e modulit
+            module_config: Konfigurimi i modulit
 
-        # Kontrollo security
-        required_security = [rule["id"] for rule in self.rules["security"]]
-        provided_security = module_config.get("security_compatibility", [])
-        for rule_id in required_security:
-            if rule_id not in provided_security:
-                violations.append(f"Missing security rule: {rule_id}")
+        Returns:
+            Dict me rezultatin e verifikimit
+        """
+        results = {"module_id": module_id, "compatible": True, "violations": []}
 
-        # Kontrollo data
-        required_data = [rule["id"] for rule in self.rules["data"]]
-        provided_data = module_config.get("data_compatibility", [])
-        for rule_id in required_data:
-            if rule_id not in provided_data:
-                violations.append(f"Missing data rule: {rule_id}")
+        # Kontrollo përputhjen me Kushtetutën
+        for gene_id in self.CONSTITUTION:
+            if gene_id not in module_config.get("constitution_compatibility", []):
+                results["violations"].append(
+                    f"Mungon përputhja me Kushtetutën: {gene_id} - {self.CONSTITUTION[gene_id]['name']}"
+                )
+                results["compatible"] = False
 
-        # Kontrollo API
-        required_api = [rule["id"] for rule in self.rules["api"]]
-        provided_api = module_config.get("api_compatibility", [])
-        for rule_id in required_api:
-            if rule_id not in provided_api:
-                violations.append(f"Missing API rule: {rule_id}")
+        # Kontrollo përputhjen me sigurinë
+        for rule_id in self.SECURITY_RULES:
+            if rule_id not in module_config.get("security_compatibility", []):
+                results["violations"].append(
+                    f"Mungon rregulla sigurie: {rule_id} - {self.SECURITY_RULES[rule_id]}"
+                )
+                results["compatible"] = False
 
-        return {
-            "module_id": module_id,
-            "compatible": len(violations) == 0,
-            "violations": violations,
-            "hash": hashlib.sha256(f"{module_id}{time.time()}".encode()).hexdigest()[
-                :12
-            ],
-        }
+        # Kontrollo përputhjen me të dhënat
+        for rule_id in self.DATA_RULES:
+            if rule_id not in module_config.get("data_compatibility", []):
+                results["violations"].append(
+                    f"Mungon rregulla e të dhënave: {rule_id} - {self.DATA_RULES[rule_id]}"
+                )
+                results["compatible"] = False
 
-    def verify_constitution_action(self, action: str, context: str) -> bool:
-        """Verifikon nëse një veprim lejohet nga Kushtetuta"""
-        # Ligji 2 (Privacy): user data nuk dërgohet jashtë pa autorizim
-        if action == "send_to_external" and context == "module":
+        # Kontrollo përputhjen me API-të
+        for rule_id in self.API_RULES:
+            if rule_id not in module_config.get("api_compatibility", []):
+                results["violations"].append(
+                    f"Mungon rregulla API: {rule_id} - {self.API_RULES[rule_id]}"
+                )
+                results["compatible"] = False
+
+        return results
+
+    def verify_constitution_action(self, action: str, module: str) -> bool:
+        """
+        Kontrollon nëse një veprim specifik përputhet me Kushtetutën.
+
+        Args:
+            action: Veprimi që do të kryhet
+            module: Moduli që kërkon veprimin
+
+        Returns:
+            True nëse veprimi lejohet, False nëse bllokohet
+        """
+        # Rregulli G002: SOVRANITETI - asnjë modul nuk dërgon të dhëna jashtë pa autorizim
+        if "send_to_external" in action.lower() and module != "api_public":
             return False
-        if action == "send_to_external" and context == "api_public":
-            return True
 
-        # Ligji 3 (Security): kriptim i detyrueshëm
-        if action == "send_unencrypted":
+        # Rregulli G003: USER OWNERSHIP - nuk lejohet fshirja e të dhënave pa autorizim
+        if "delete_user_data" in action.lower() and module not in [
+            "governance",
+            "user_self",
+        ]:
             return False
 
-        # Ligji 2 (Privacy): përdoruesi mund të fshijë të dhënat e veta
-        if action == "delete_user_data" and context == "user_self":
-            return True
-        if action == "delete_user_data" and context == "system":
+        # Rregulli G007: SECURITY - kriptimi është i detyrueshëm
+        if "send_unencrypted" in action.lower():
             return False
 
         return True
+
+    def get_core_values_summary(self) -> str:
+        """Kthen përmbledhjen e vlerave themelore"""
+        summary = "🧬 NEUROSONIC CORE VALUES:\n"
+        for key, value in self.CORE_VALUES.items():
+            summary += f"  • {key.upper()}: {value}\n"
+        return summary
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Statistika të DNA-së"""
+        return {
+            "name": self.name,
+            "version": self.version,
+            "immutable": self.immutable,
+            "hash": self._hash,
+            "created": self.created,
+            "total_constitution_laws": len(self.CONSTITUTION),
+            "total_core_values": len(self.CORE_VALUES),
+            "total_security_rules": len(self.SECURITY_RULES),
+            "total_data_rules": len(self.DATA_RULES),
+            "total_api_rules": len(self.API_RULES),
+            "total_memory_rules": len(self.MEMORY_RULES),
+            "total_governance_rules": len(self.GOVERNANCE_RULES),
+            "total_quality_rules": len(self.QUALITY_RULES),
+            "total_rules": (
+                len(self.CONSTITUTION)
+                + len(self.CORE_VALUES)
+                + len(self.SECURITY_RULES)
+                + len(self.DATA_RULES)
+                + len(self.API_RULES)
+                + len(self.MEMORY_RULES)
+                + len(self.GOVERNANCE_RULES)
+                + len(self.QUALITY_RULES)
+            ),
+        }
 
 
 # Test i shpejtë
 if __name__ == "__main__":
     dna = NeurosonicDNA()
-    print(f"\n📊 Statistikat: {dna.get_stats()}")
-    print(f"🔐 Hash: {dna._hash}")
-    print(f"✅ DNA gati!")
+    print(dna.get_core_values_summary())
+    print(f"📊 Stats: {json.dumps(dna.get_stats(), indent=2)}")

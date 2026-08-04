@@ -43,6 +43,8 @@ classifiers = [
 neurosonic = "neurosonic:main"
 neurosonic-dna = "neurosonic_core:main"
 neurosonic-no-fake-police = "neurosonic_no_fake_police:main"
+clx = "neurosonic_cli.clx:main"
+clc = "neurosonic_cli.clc:main"
 
 [tool.setuptools.packages.find]
 include = ["neurosonic*"]
@@ -63,4 +65,3 @@ select = ["E", "F", "I", "N", "W"]
 
 [tool.ruff.format]
 quote-style = "double"
-indent-width = 4

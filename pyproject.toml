@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurosonic"
+version = "1.0.0"
+description = "NEUROSONIC TRINITY+ASI - Sovereign AI Platform. Zero dependencies, zero fake, absolute independence."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Neurosonic License v1.0 (Dual: MIT-like Core + Enterprise)"}
+authors = [
+    {name = "Ledjan Ahmati", email = "clisonix@pm.me"},
+]
+maintainers = [
+    {name = "ABA GmbH", email = "clisonix@pm.me"},
+]
+keywords = ["ai", "sovereign-ai", "zero-dependencies", "no-fake", "clisonix", "trinity-asi", "neuromorphic", "hvo-memory"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Natural Language :: Albanian",
+    "Natural Language :: English",
+    "Natural Language :: Greek",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+[project.urls]
+"Homepage" = "https://neurosonic.eu"
+"Repository" = "https://github.com/LedjanAhmati/www.neuroconic.eu"
+"Documentation" = "https://github.com/LedjanAhmati/www.neuroconic.eu/tree/main/docs"
+"Funding" = "https://www.paypal.com/paypalme/ahmatibau"
+"Bug Reports" = "https://github.com/LedjanAhmati/www.neuroconic.eu/issues"
+"Changelog" = "https://github.com/LedjanAhmati/www.neuroconic.eu/blob/main/CHANGELOG.md"
+"Sitemap" = "https://neurosonic.eu/sitemap.xml"
+
+[project.scripts]
+neurosonic = "neurosonic:main"
+neurosonic-dna = "neurosonic_core:main"
+neurosonic-no-fake-police = "neurosonic_no_fake_police:main"
+
+[tool.setuptools.packages.find]
+include = ["neurosonic*"]
+
+[tool.setuptools.package-data]
+neurosonic = ["docs/**/*", "memory/**/*"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-width = 4

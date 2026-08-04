@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="sq">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧬 NEUROSONIC AI OE</title>
+    <style>
+        /* ====================================================================
+           RESET & BASE
+           ==================================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #060b14;
+            --bg-secondary: #0d1a2b;
+            --bg-panel: rgba(13, 26, 43, 0.85);
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border-glass: rgba(255, 255, 255, 0.06);
+
+            --accent-cyan: #00f0ff;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-green: #00ff88;
+            --accent-orange: #ff6b35;
+            --accent-red: #ff3355;
+            --accent-pink: #ff6bcd;
+
+            --text-primary: #e8edf5;
+            --text-secondary: rgba(255, 255, 255, 0.5);
+            --text-muted: rgba(255, 255, 255, 0.2);
+
+            --font-display: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        body {
+            font-family: var(--font-display);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ====================================================================
+           NEUROSONIC SHELL - The Container
+           ==================================================================== */
+        neuro-shell {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+
+        /* ====================================================================
+           MENU BAR
+           ==================================================================== */
+        neuro-menu {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 16px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius);
+            backdrop-filter: blur(20px);
+            flex-shrink: 0;
+            height: 40px;
+        }
+
+        neuro-menu .left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        neuro-menu .logo {
+            font-size: 16px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        neuro-menu .item {
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        neuro-menu .item:hover {
+            color: #fff;
+            background: var(--bg-glass);
+        }
+
+        neuro-menu .item.active {
+            color: var(--accent-cyan);
+        }
+
+        neuro-menu .right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* ====================================================================
+           WORKSPACE
+           ==================================================================== */
+        neuro-workspace {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* ====================================================================
+           PANEL - Base Panel
+           ==================================================================== */
+        neuro-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        neuro-panel .header {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        neuro-panel .header .title {
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        neuro-panel .header .actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        neuro-panel .header .actions button {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: var(--text-muted);
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.2s ease;
+        }
+
+        neuro-panel .header .actions button:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        neuro-panel .body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+
+        neuro-panel .body::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        neuro-panel .body::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
+            border-radius: 3px;
+        }
+
+        /* ====================================================================
+           NAVIGATION PANEL
+           ==================================================================== */
+        neuro-nav {
+            width: 200px;
+            flex-shrink: 0;
+        }
+
+        neuro-nav .list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        neuro-nav .item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-family: var(--font-display);
+        }
+
+        neuro-nav .item:hover {
+            background: var(--bg-glass);
+            color: #fff;
+        }
+
+        neuro-nav .item.active {
+            background: rgba(0, 240, 255, 0.06);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        neuro-nav .item .icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        neuro-nav .item .badge {
+            margin-left: auto;
+            font-size: 9px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            background: var(--bg-glass);
+            color: var(--text-muted);
+        }
+
+        neuro-nav .item .badge.active {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--accent-cyan);
+        }
+
+        neuro-nav .divider {
+            border: none;
+            border-top: 1px solid var(--border-glass);
+            margin: 4px 0;
+        }
+
+        neuro-nav .section {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            padding: 8px 12px 4px;
+            font-weight: 700;
+        }
+
+        /* ====================================================================
+           THINK PANEL
+           ==================================================================== */
+        neuro-think {
+            flex: 1;
+        }
+
+        neuro-think .pipeline {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 0;
+            flex-wrap: wrap;
+        }
+
+        neuro-think .step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        neuro-think .step.active {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        neuro-think .step.done {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        neuro-think .arrow {
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        neuro-think .messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        neuro-think .message {
+            max-width: 85%;
+            padding: 10px 16px;
+            border-radius: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        neuro-think .message.user {
+            align-self: flex-end;
+            background: rgba(0, 240, 255, 0.06);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+        }
+
+        neuro-think .message.ai {
+            align-self: flex-start;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+        }
+
+        neuro-think .message .sender {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        neuro-think .message .text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        neuro-think .message .meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        neuro-think .message .meta .verified {
+            color: var(--accent-green);
+        }
+
+        neuro-think .input {
+            display: flex;
+            gap: 8px;
+            padding: 8px 0;
+            border-top: 1px solid var(--border-glass);
+            flex-shrink: 0;
+        }
+
+        neuro-think .input input {
+            flex: 1;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: var(--font-display);
+        }
+
+        neuro-think .input input:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        neuro-think .input input::placeholder {
+            color: var(--text-muted);
+        }
+
+        neuro-think .input .btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-display);
+        }
+
+        neuro-think .input .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
+        }
+
+        neuro-think .input .btn-icon {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+            background: var(--bg-glass);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        neuro-think .input .btn-icon:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* ====================================================================
+           PLUGIN PANEL
+           ==================================================================== */
+        neuro-plugins {
+            width: 320px;
+            flex-shrink: 0;
+        }
+
+        neuro-plugins .content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        neuro-plugins .card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+
+        neuro-plugins .card .title {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        /* Memory Orbit */
+        neuro-plugins .orbit {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 120px;
+            position: relative;
+        }
+
+        neuro-plugins .orbit .node {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid var(--border-glass);
+            background: var(--bg-primary);
+            transition: all 0.5s ease;
+            cursor: pointer;
+        }
+
+        neuro-plugins .orbit .node:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        neuro-plugins .orbit .node.h {
+            color: var(--accent-cyan);
+            left: 10%;
+            top: 35%;
+        }
+
+        neuro-plugins .orbit .node.v {
+            color: var(--accent-purple);
+            left: 45%;
+            top: 5%;
+        }
+
+        neuro-plugins .orbit .node.o {
+            color: var(--accent-orange);
+            right: 10%;
+            top: 35%;
+        }
+
+        neuro-plugins .orbit .node.r {
+            color: var(--accent-pink);
+            left: 25%;
+            bottom: 10%;
+        }
+
+        neuro-plugins .orbit .node.f {
+            color: var(--accent-green);
+            left: 45%;
+            bottom: 5%;
+        }
+
+        neuro-plugins .orbit .node.s {
+            color: var(--accent-red);
+            right: 25%;
+            bottom: 10%;
+        }
+
+        neuro-plugins .orbit .center {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.1), transparent);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        neuro-plugins .orbit .ring {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 240, 255, 0.03);
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Stats Grid */
+        neuro-plugins .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 4px;
+        }
+
+        neuro-plugins .grid .item {
+            text-align: center;
+            padding: 4px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+        }
+
+        neuro-plugins .grid .item .value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        neuro-plugins .grid .item .label {
+            font-size: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Tags */
+        neuro-plugins .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        neuro-plugins .tags .tag {
+            padding: 2px 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        neuro-plugins .tags .tag.cyan {
+            color: var(--accent-cyan);
+        }
+
+        neuro-plugins .tags .tag.green {
+            color: var(--accent-green);
+        }
+
+        neuro-plugins .tags .tag.purple {
+            color: var(--accent-purple);
+        }
+
+        neuro-plugins .tags .tag.orange {
+            color: var(--accent-orange);
+        }
+
+        /* ====================================================================
+           STATUS BAR
+           ==================================================================== */
+        neuro-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 16px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius);
+            backdrop-filter: blur(20px);
+            flex-shrink: 0;
+            height: 28px;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        neuro-status .left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        neuro-status .right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        neuro-status .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        neuro-status .dot.online {
+            background: var(--accent-green);
+        }
+
+        neuro-status .value {
+            color: var(--text-secondary);
+        }
+
+        /* ====================================================================
+           RESPONSIVE
+           ==================================================================== */
+        @media (max-width: 1200px) {
+            neuro-plugins {
+                width: 260px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            neuro-nav {
+                width: 150px;
+            }
+
+            neuro-plugins {
+                width: 220px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            neuro-workspace {
+                flex-direction: column;
+            }
+
+            neuro-nav,
+            neuro-plugins {
+                width: 100%;
+                max-height: 200px;
+            }
+
+            neuro-menu .right {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ====================================================================
+    NEUROSONIC SHELL - The Runtime
+    ==================================================================== -->
+    <neuro-shell id="shell">
+
+        <!-- MENU -->
+        <neuro-menu>
+            <div class="left">
+                <span class="logo">🧬 NEUROSONIC</span>
+                <span class="item active">Shell</span>
+                <span class="item" onclick="switchPlugin('knowledge')">Knowledge</span>
+                <span class="item" onclick="switchPlugin('memory')">Memory</span>
+                <span class="item" onclick="switchPlugin('agents')">Agents</span>
+                <span class="item" onclick="switchPlugin('labs')">Labs</span>
+                <span class="item" onclick="switchPlugin('marketplace')">Marketplace</span>
+            </div>
+            <div class="right">
+                <span id="statusHash">🔑 4f8a3c2d</span>
+                <span id="statusTime">📅 2026-07-27</span>
+                <span id="statusHeartbeat">💓 37ms</span>
+            </div>
+        </neuro-menu>
+
+        <!-- WORKSPACE -->
+        <neuro-workspace>
+
+            <!-- NAVIGATION -->
+            <neuro-nav>
+                <div class="header"><span class="title">🧭 Navigator</span></div>
+                <div class="body">
+                    <div class="section">Core</div>
+                    <div class="item active" data-plugin="think"><span class="icon">🧠</span> Think <span
+                            class="badge active">Live</span></div>
+                    <div class="item" data-plugin="knowledge"><span class="icon">📚</span> Knowledge</div>
+
+                    <div class="divider"></div>
+                    <div class="section">System</div>
+                    <div class="item" data-plugin="memory"><span class="icon">🧬</span> Memory <span
+                            class="badge">HVO</span></div>
+                    <div class="item" data-plugin="agents"><span class="icon">🤖</span> Agents <span
+                            class="badge">12</span></div>
+                    <div class="item" data-plugin="nodes"><span class="icon">🌐</span> Nodes <span
+                            class="badge">8</span></div>
+
+                    <div class="divider"></div>
+                    <div class="section">Labs</div>
+                    <div class="item" data-plugin="labs"><span class="icon">🔬</span> Labs <span class="badge">26</span>
+                    </div>
+                    <div class="item" data-plugin="marketplace"><span class="icon">🏪</span> Marketplace <span
+                            class="badge">3</span></div>
+
+                    <div class="divider"></div>
+                    <div class="section">Identity</div>
+                    <div class="item" data-plugin="profile"><span class="icon">👤</span> Profile <span
+                            class="badge active">Arben</span></div>
+                    <div class="item" data-plugin="settings"><span class="icon">⚙️</span> Settings</div>
+                </div>
+            </neuro-nav>
+
+            <!-- THINK PANEL -->
+            <neuro-think id="thinkPanel">
+                <div class="header">
+                    <span class="title">🧠 Thinking Engine</span>
+                    <span style="font-size:10px;color:var(--text-muted);font-weight:400;">Pipeline: 11 Steps</span>
+                    <div class="actions">
+                        <button onclick="clearChat()">Clear</button>
+                        <button onclick="exportChat()">Export</button>
+                    </div>
+                </div>
+                <div class="body" style="display:flex;flex-direction:column;">
+                    <!-- Pipeline Visual -->
+                    <div class="pipeline" id="pipelineVisual">
+                        <span class="step done">Scanner</span>
+                        <span class="arrow">→</span>
+                        <span class="step done">Intent</span>
+                        <span class="arrow">→</span>
+                        <span class="step done">Planner</span>
+                        <span class="arrow">→</span>
+                        <span class="step done">Memory</span>
+                        <span class="arrow">→</span>
+                        <span class="step done">Knowledge</span>
+                        <span class="arrow">→</span>
+                        <span class="step active">Reasoning</span>
+                        <span class="arrow">→</span>
+                        <span class="step">Validator</span>
+                        <span class="arrow">→</span>
+                        <span class="step">Response</span>
+                        <span class="arrow">→</span>
+                        <span class="step">Learning</span>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="messages" id="chatMessages">
+                        <div class="message ai">
+                            <div class="sender">🧬 NEUROSONIC AI OE</div>
+                            <div class="text">
+                                <strong>🧬 NEUROSONIC TRINITY+ASI</strong><br>
+                                <span style="color:var(--text-muted);font-size:13px;">
+                                    AI Operating Environment • Zero Dependencies • Zero Fake
+                                </span>
+                                <br><br>
+                                <span style="color:var(--accent-cyan);">🔍 No Fake Engine Active</span><br>
+                                <span style="color:var(--accent-purple);">🧠 HVO Memory: 6 Types</span><br>
+                                <span style="color:var(--accent-green);">🤖 12 Agents Active</span>
+                            </div>
+                            <div class="meta">
+                                <span class="verified">✅ VERIFIED</span>
+                                <span>🔑 4f8a3c2d</span>
+                                <span>📅 2026-07-27</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input -->
+                    <div class="input">
+                        <button class="btn-icon" onclick="toggleVoice()">🎤</button>
+                        <input type="text" id="chatInput" placeholder="Ask Neurosonic anything..."
+                            onkeydown="if(event.key==='Enter') sendMessage()">
+                        <button class="btn" onclick="sendMessage()">🧠 Think</button>
+                    </div>
+                </div>
+            </neuro-think>
+
+            <!-- PLUGIN PANEL -->
+            <neuro-plugins id="pluginPanel">
+                <div class="header">
+                    <span class="title" id="pluginTitle">📊 Memory Explorer</span>
+                    <div class="actions">
+                        <button onclick="refreshPlugin()">⟳</button>
+                    </div>
+                </div>
+                <div class="body">
+                    <div class="content" id="pluginContent">
+                        <!-- Memory Orbit -->
+                        <div class="card">
+                            <div class="title">🧠 HVO Memory Orbit</div>
+                            <div class="orbit">
+                                <div class="ring"></div>
+                                <span class="node h">H</span>
+                                <span class="node v">V</span>
+                                <span class="node o">O</span>
+                                <span class="node r">R</span>
+                                <span class="node f">F</span>
+                                <span class="node s">S</span>
+                                <div class="center">HVO</div>
+                            </div>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="card">
+                            <div class="title">📊 Real-time Stats</div>
+                            <div class="grid">
+                                <div class="item">
+                                    <div class="value" id="statCpu">47%</div>
+                                    <div class="label">CPU</div>
+                                </div>
+                                <div class="item">
+                                    <div class="value" id="statGpu">82%</div>
+                                    <div class="label">GPU</div>
+                                </div>
+                                <div class="item">
+                                    <div class="value" id="statMemory">64%</div>
+                                    <div class="label">Memory</div>
+                                </div>
+                                <div class="item">
+                                    <div class="value" id="statAgents">12</div>
+                                    <div class="label">Agents</div>
+                                </div>
+                                <div class="item">
+                                    <div class="value" id="statTasks">8</div>
+                                    <div class="label">Tasks</div>
+                                </div>
+                                <div class="item">
+                                    <div class="value" id="statTrust">94%</div>
+                                    <div class="label">Trust</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Agents -->
+                        <div class="card">
+                            <div class="title">🤖 Active Agents</div>
+                            <div class="tags">
+                                <span class="tag cyan">Research</span>
+                                <span class="tag green">Security</span>
+                                <span class="tag purple">Protocol</span>
+                                <span class="tag orange">Governance</span>
+                                <span class="tag cyan">Shqipëri</span>
+                                <span class="tag green">Kosovë</span>
+                                <span class="tag purple">Gjermani</span>
+                                <span class="tag cyan">ShBA</span>
+                                <span class="tag green">MB</span>
+                                <span class="tag purple">BE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </neuro-plugins>
+
+        </neuro-workspace>
+
+        <!-- STATUS BAR -->
+        <neuro-status>
+            <div class="left">
+                <span>🧬 <span class="value">Neurosonic AI OE v1.0</span></span>
+                <span><span class="dot online"></span> <span class="value">Online</span></span>
+                <span>🔒 <span class="value" style="color:var(--accent-green);">Zero Trust</span></span>
+            </div>
+            <div class="right">
+                <span>📡 <span class="value" id="statusPing">12ms</span></span>
+                <span>🌊 <span class="value" id="statusTide">28%</span></span>
+                <span>💓 <span class="value" id="statusHeart">37ms</span></span>
+                <span>🔑 <span class="value" id="statusHashBottom">4f8a3c2d</span></span>
+            </div>
+        </neuro-status>
+
+    </neuro-shell>
+
+    <!-- ====================================================================
+    NEUROSONIC RUNTIME ENGINE
+    ==================================================================== -->
+    <script>
+        // ====================================================================
+        // PLUGIN REGISTRY - Core of Neurosonic Shell
+        // ====================================================================
+        const NeuroPluginRegistry = {
+            plugins: {},
+            activePlugin: 'memory',
+
+            register: function (name, config) {
+                this.plugins[name] = config;
+                console.log(`🔌 Plugin registered: ${name}`);
+            },
+
+            get: function (name) {
+                return this.plugins[name];
+            },
+
+            render: function (name, container) {
+                const plugin = this.get(name);
+                if (!plugin) return;
+                container.innerHTML = plugin.render();
+                this.activePlugin = name;
+                document.getElementById('pluginTitle').textContent = plugin.title;
+                // Trigger plugin mount event
+                const event = new CustomEvent('plugin-mounted', { detail: { name } });
+                document.dispatchEvent(event);
+            },
+
+            list: function () {
+                return Object.keys(this.plugins);
+            }
+        };
+
+        // ====================================================================
+        // PLUGIN DEFINITIONS
+        // ====================================================================
+
+        NeuroPluginRegistry.register('memory', {
+            title: '🧬 Memory Explorer',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">🧠 HVO Memory Orbit</div>
+                        <div class="orbit">
+                            <div class="ring"></div>
+                            <span class="node h">H</span>
+                            <span class="node v">V</span>
+                            <span class="node o">O</span>
+                            <span class="node r">R</span>
+                            <span class="node f">F</span>
+                            <span class="node s">S</span>
+                            <div class="center">HVO</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="title">📊 Memory Stats</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                            <div style="padding:4px;background:var(--bg-primary);border-radius:4px;text-align:center;">
+                                <div style="font-size:14px;font-weight:700;color:var(--accent-cyan);">1,247</div>
+                                <div style="font-size:8px;color:var(--text-muted);">Entries</div>
+                            </div>
+                            <div style="padding:4px;background:var(--bg-primary);border-radius:4px;text-align:center;">
+                                <div style="font-size:14px;font-weight:700;color:var(--accent-green);">94%</div>
+                                <div style="font-size:8px;color:var(--text-muted);">Confidence</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        NeuroPluginRegistry.register('agents', {
+            title: '🤖 Agent Console',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">🤖 Active Agents</div>
+                        <div class="tags">
+                            <span class="tag cyan">Research</span>
+                            <span class="tag green">Security</span>
+                            <span class="tag purple">Protocol</span>
+                            <span class="tag orange">Governance</span>
+                            <span class="tag cyan">Shqipëri</span>
+                            <span class="tag green">Kosovë</span>
+                            <span class="tag purple">Gjermani</span>
+                            <span class="tag cyan">ShBA</span>
+                            <span class="tag green">MB</span>
+                            <span class="tag purple">BE</span>
+                            <span class="tag orange">Francë</span>
+                            <span class="tag cyan">Itali</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="title">📊 Agent Stats</div>
+                        <div class="grid">
+                            <div class="item"><div class="value">12</div><div class="label">Total</div></div>
+                            <div class="item"><div class="value">8</div><div class="label">Active</div></div>
+                            <div class="item"><div class="value">47</div><div class="label">Tasks</div></div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        NeuroPluginRegistry.register('knowledge', {
+            title: '📚 Knowledge Graph',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">📚 Knowledge Graph</div>
+                        <div style="padding:12px;background:var(--bg-primary);border-radius:6px;text-align:center;font-size:12px;color:var(--text-muted);">
+                            🧬 Knowledge Graph Active<br>
+                            <span style="font-size:10px;">3,847 nodes • 12,456 edges</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="title">🔍 Recent Queries</div>
+                        <div style="font-size:11px;color:var(--text-muted);">
+                            <div style="padding:4px 0;border-bottom:1px solid var(--border-glass);">• HVO Memory Architecture</div>
+                            <div style="padding:4px 0;border-bottom:1px solid var(--border-glass);">• No Fake Verification Engine</div>
+                            <div style="padding:4px 0;">• Neurosonic Constitution</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        NeuroPluginRegistry.register('nodes', {
+            title: '🌐 Node Network',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">🌐 Active Nodes</div>
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                            <div style="display:flex;justify-content:space-between;padding:4px 8px;background:var(--bg-primary);border-radius:4px;font-size:11px;">
+                                <span style="color:var(--accent-cyan);">Desktop-WS</span>
+                                <span style="color:var(--accent-green);">● 85%</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 8px;background:var(--bg-primary);border-radius:4px;font-size:11px;">
+                                <span style="color:var(--accent-cyan);">Laptop-ENG</span>
+                                <span style="color:var(--accent-green);">● 92%</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 8px;background:var(--bg-primary);border-radius:4px;font-size:11px;">
+                                <span style="color:var(--text-muted);">Phone-5G</span>
+                                <span style="color:var(--accent-orange);">● 65%</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 8px;background:var(--bg-primary);border-radius:4px;font-size:11px;">
+                                <span style="color:var(--accent-cyan);">Lab-RPi</span>
+                                <span style="color:var(--accent-green);">● 78%</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        NeuroPluginRegistry.register('marketplace', {
+            title: '🏪 Marketplace',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">🏪 Available Modules</div>
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                            <div style="padding:6px 10px;background:var(--bg-primary);border-radius:4px;display:flex;justify-content:space-between;font-size:11px;">
+                                <span style="color:var(--accent-cyan);">Quantum Package</span>
+                                <span style="color:var(--accent-green);">$99</span>
+                            </div>
+                            <div style="padding:6px 10px;background:var(--bg-primary);border-radius:4px;display:flex;justify-content:space-between;font-size:11px;">
+                                <span style="color:var(--accent-purple);">Robotics Suite</span>
+                                <span style="color:var(--accent-green);">$149</span>
+                            </div>
+                            <div style="padding:6px 10px;background:var(--bg-primary);border-radius:4px;display:flex;justify-content:space-between;font-size:11px;">
+                                <span style="color:var(--accent-orange);">Medical Lab</span>
+                                <span style="color:var(--accent-green);">$199</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        NeuroPluginRegistry.register('labs', {
+            title: '🔬 Clisonix Labs',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">🔬 26 Clisonix Labs</div>
+                        <div class="tags">
+                            <span class="tag cyan">Zurich Engine</span>
+                            <span class="tag green">Security</span>
+                            <span class="tag purple">Memory</span>
+                            <span class="tag orange">Quantum</span>
+                            <span class="tag cyan">Robotics</span>
+                            <span class="tag green">Protocol</span>
+                            <span class="tag purple">Governance</span>
+                            <span class="tag cyan">Energy</span>
+                            <span class="tag green">Medical</span>
+                            <span class="tag orange">Industrial</span>
+                            <span class="tag purple">Research</span>
+                            <span class="tag cyan">Vision</span>
+                            <span class="tag green">Audio</span>
+                            <span class="tag orange">Biology</span>
+                            <span class="tag purple">Chemistry</span>
+                            <span class="tag cyan">Physics</span>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        NeuroPluginRegistry.register('profile', {
+            title: '👤 Digital Persona',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">👤 Identity</div>
+                        <div style="display:flex;align-items:center;gap:12px;padding:8px;background:var(--bg-primary);border-radius:6px;">
+                            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">🔧</div>
+                            <div>
+                                <div style="font-weight:600;color:#fff;">Arben Hoxha</div>
+                                <div style="font-size:11px;color:var(--text-muted);">Inxhinier Makinerie</div>
+                                <div style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);">NGI-ENG-0042</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="title">🎯 Skills & Permissions</div>
+                        <div class="tags">
+                            <span class="tag cyan">CAD</span>
+                            <span class="tag green">3D Modeling</span>
+                            <span class="tag purple">Stress Test</span>
+                            <span class="tag orange">Materials</span>
+                            <span class="tag cyan">Research</span>
+                            <span class="tag green">Analysis</span>
+                        </div>
+                        <div style="margin-top:4px;font-size:10px;color:var(--text-muted);">Permissions: read, write, think, deploy</div>
+                    </div>
+                    <div class="card">
+                        <div class="title">📊 Memory & Knowledge</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;">
+                            <div style="padding:4px;background:var(--bg-primary);border-radius:4px;text-align:center;">
+                                <span style="color:var(--accent-cyan);">1,247</span>
+                                <span style="color:var(--text-muted);font-size:9px;"> Memories</span>
+                            </div>
+                            <div style="padding:4px;background:var(--bg-primary);border-radius:4px;text-align:center;">
+                                <span style="color:var(--accent-green);">94%</span>
+                                <span style="color:var(--text-muted);font-size:9px;"> Confidence</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        NeuroPluginRegistry.register('settings', {
+            title: '⚙️ System Settings',
+            render: function () {
+                return `
+                    <div class="card">
+                        <div class="title">⚙️ System</div>
+                        <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;">
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-glass);">
+                                <span style="color:var(--text-muted);">Theme</span>
+                                <span style="color:var(--accent-cyan);">Dark Matter</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-glass);">
+                                <span style="color:var(--text-muted);">Language</span>
+                                <span style="color:var(--accent-cyan);">Shqip</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-glass);">
+                                <span style="color:var(--text-muted);">Node</span>
+                                <span style="color:var(--accent-cyan);">NGI-ENG-0042</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+                                <span style="color:var(--text-muted);">Version</span>
+                                <span style="color:var(--accent-cyan);">1.0.0</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // ====================================================================
+        // SHELL FUNCTIONS
+        // ====================================================================
+
+        function switchPlugin(name) {
+            const container = document.getElementById('pluginContent');
+            NeuroPluginRegistry.render(name, container);
+
+            // Update nav
+            document.querySelectorAll('neuro-nav .item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll(`neuro-nav .item[data-plugin="${name}"]`).forEach(el => el.classList.add('active'));
+
+            // Update menu
+            document.querySelectorAll('neuro-menu .item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('neuro-menu .item').forEach(el => {
+                if (el.textContent.toLowerCase().includes(name)) {
+                    el.classList.add('active');
+                }
+            });
+        }
+
+        function refreshPlugin() {
+            const active = NeuroPluginRegistry.activePlugin;
+            switchPlugin(active);
+        }
+
+        // ====================================================================
+        // CHAT ENGINE
+        // ====================================================================
+
+        const responses = [
+            "📊 Analizova kërkesën tënde. Rezultatet janë të verifikuara me 3 burime.",
+            "🔍 Kërkimi përfundoi. Të gjitha burimet pajtohen.",
+            "🧬 Duke përdorur HVO Memory, gjeta lidhje horizontale dhe vertikale.",
+            "✅ Informacioni u verifikua. Besueshmëria: 94%",
+            "🌊 Tide Engine tregon se kjo pyetje kërkon analizë të thellë.",
+            "🧠 Thinking Pipeline përfundoi 11 hapa.",
+            "📜 Ligji i Parë: No Fake. Deklarata u verifikua.",
+            "🔐 Internal Auth: Ju jeni të autentifikuar.",
+            "⚡ Lightning SPP: Skanimi përfundoi.",
+            "🤖 Agjentët konfirmuan të dhënat."
+        ];
+
+        const sources = ["instat.gov.al", "open.data.al", "europa.eu", "un.org", "who.int"];
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage('user', text);
+            input.value = '';
+
+            // Update pipeline
+            document.querySelectorAll('neuro-think .step').forEach((el, i) => {
+                setTimeout(() => {
+                    el.className = 'step done';
+                }, i * 80);
+            });
+
+            setTimeout(() => {
+                const response = responses[Math.floor(Math.random() * responses.length)];
+                const hash = Math.random().toString(36).substring(2, 10);
+                const confidence = (Math.random() * 15 + 85).toFixed(1);
+                const selectedSources = [];
+                for (let i = 0; i < 3; i++) {
+                    selectedSources.push(sources[Math.floor(Math.random() * sources.length)]);
+                }
+
+                addMessage('ai', response, hash, confidence, selectedSources);
+            }, 1200 + Math.random() * 800);
+        }
+
+        function addMessage(type, text, hash, confidence, sources) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+
+            const sender = type === 'user' ? '👤 You' : '🧬 NEUROSONIC AI';
+
+            div.innerHTML = `
+                <div class="sender">${sender}</div>
+                <div class="text">${text}</div>
+                <div class="meta">
+                    ${type === 'ai' ? '<span class="verified">✅ VERIFIED</span>' : ''}
+                    ${hash ? `<span>🔑 ${hash}</span>` : ''}
+                    ${confidence ? `<span>📊 ${confidence}%</span>` : ''}
+                    <span>📅 ${new Date().toLocaleTimeString()}</span>
+                </div>
+                ${sources && sources.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${sources.map(s => `<span style="font-size:9px;color:var(--accent-cyan);padding:1px 6px;background:var(--bg-primary);border-radius:4px;">📚 ${s}</span>`).join('')}</div>` : ''}
+            `;
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearChat() {
+            document.getElementById('chatMessages').innerHTML = '';
+            addMessage('ai', '🧹 Chat cleared. Ready for new queries.');
+        }
+
+        function exportChat() {
+            const messages = document.getElementById('chatMessages').innerHTML;
+            const blob = new Blob([messages], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'neurosonic_chat.html';
+            a.click();
+        }
+
+        function toggleVoice() {
+            const btn = document.querySelector('neuro-think .input .btn-icon');
+            btn.textContent = '🔴';
+            setTimeout(() => {
+                document.getElementById('chatInput').value = 'Cila është struktura e HVO Memory?';
+                sendMessage();
+                btn.textContent = '🎤';
+            }, 2000);
+        }
+
+        // ====================================================================
+        // STATUS ENGINE
+        // ====================================================================
+
+        function updateStatus() {
+            document.getElementById('statusHeart').textContent = (Math.floor(Math.random() * 30) + 25) + 'ms';
+            document.getElementById('statusHeartbeat').textContent = '💓 ' + (Math.floor(Math.random() * 30) + 25) + 'ms';
+            document.getElementById('statusTide').textContent = (Math.floor(Math.random() * 40) + 10) + '%';
+            document.getElementById('statusPing').textContent = (Math.floor(Math.random() * 20) + 5) + 'ms';
+            document.getElementById('statusHash').textContent = '🔑 ' + Math.random().toString(36).substring(2, 10);
+            document.getElementById('statusHashBottom').textContent = Math.random().toString(36).substring(2, 10);
+
+            document.getElementById('statCpu').textContent = (Math.floor(Math.random() * 30) + 30) + '%';
+            document.getElementById('statGpu').textContent = (Math.floor(Math.random() * 20) + 70) + '%';
+            document.getElementById('statMemory').textContent = (Math.floor(Math.random() * 20) + 50) + '%';
+            document.getElementById('statTrust').textContent = (Math.floor(Math.random() * 5) + 92) + '%';
+            document.getElementById('statAgents').textContent = Math.floor(Math.random() * 3) + 10;
+            document.getElementById('statTasks').textContent = Math.floor(Math.random() * 10) + 3;
+        }
+
+        setInterval(updateStatus, 3000);
+
+        // ====================================================================
+        // CLICK HANDLERS FOR NAV
+        // ====================================================================
+
+        document.querySelectorAll('neuro-nav .item[data-plugin]').forEach(el => {
+            el.addEventListener('click', function () {
+                switchPlugin(this.dataset.plugin);
+            });
+        });
+
+        // ====================================================================
+        // KEYBOARD SHORTCUTS
+        // ====================================================================
+
+        document.addEventListener('keydown', function (e) {
+            // Ctrl+K - Focus chat input
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('chatInput').focus();
+            }
+            // Escape - Clear input
+            if (e.key === 'Escape') {
+                document.getElementById('chatInput').blur();
+            }
+            // Ctrl+1-7 - Switch plugins
+            const plugins = ['memory', 'agents', 'knowledge', 'nodes', 'labs', 'marketplace', 'profile'];
+            if (e.ctrlKey && e.key >= '1' && e.key <= '7') {
+                e.preventDefault();
+                const idx = parseInt(e.key) - 1;
+                if (plugins[idx]) switchPlugin(plugins[idx]);
+            }
+        });
+
+        // ====================================================================
+        // INIT
+        // ====================================================================
+
+        // Load default plugin
+        switchPlugin('memory');
+
+        // Update time
+        document.getElementById('statusTime').textContent = '📅 ' + new Date().toISOString().split('T')[0];
+
+        console.log('🧬 NEUROSONIC AI OPERATING ENVIRONMENT v1.0');
+        console.log('🏢 ABA GmbH HRB 21069 Bochum');
+        console.log('📧 clisonix@pm.me');
+        console.log('🔌 Plugins loaded:', NeuroPluginRegistry.list());
+        console.log('⌨️  Keyboard shortcuts: Ctrl+K (focus), Ctrl+1-7 (plugins)');
+        console.log('✅ Shell runtime initialized');
+
+        // Dispatch shell ready event
+        document.dispatchEvent(new CustomEvent('shell-ready', {
+            detail: {
+                version: '1.0.0',
+                plugins: NeuroPluginRegistry.list(),
+                activePlugin: 'memory'
+            }
+        }));
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  neurosonic:
+    build: .
+    container_name: neurosonic-trinity-asi
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./memory:/app/memory
+      - ./logs:/app/logs
+      - ./docs:/app/docs
+    environment:
+      - NEUROSONIC_MODE=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - neurosonic-net
+
+networks:
+  neurosonic-net:
+    driver: bridge

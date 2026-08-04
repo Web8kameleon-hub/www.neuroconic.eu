@@ -1,0 +1,22 @@
+# Neurosonic / Clisonix Trinity+ASI
+# KOSMIC DOMINATION - SEO Configuration
+
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /docs/
+Allow: /README.md
+Allow: /README.sq.md
+Allow: /NO_FAKE_POLICY.md
+Allow: /CONTRIBUTING.md
+Allow: /sitemap.xml
+Disallow: /private/
+
+# Sitemap
+Sitemap: https://www.neurosonic.eu/sitemap.xml
+
+# Crawl rate
+Crawl-delay: 1
+
+# Host
+Host: https://www.neurosonic.eu

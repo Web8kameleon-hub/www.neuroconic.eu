@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neurosonic Trinity+ASI Dashboard</title>
+    <style>
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2235;
+            --border: #1e3a5f;
+            --accent: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --font-mono: 'Courier New', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 1rem; }
+        .logo {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.2rem; color: white;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .header-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+        .status-dot.offline { background: var(--danger); animation: none; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; transition: all 0.3s; }
+        .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .stat-card .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .value { font-size: 1.8rem; font-weight: bold; margin-top: 0.3rem; font-family: var(--font-mono); }
+        .stat-card .value.green { color: var(--success); }
+        .stat-card .value.blue { color: var(--accent); }
+        .stat-card .value.purple { color: var(--accent-secondary); }
+        .stat-card .value.yellow { color: var(--warning); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.3s; }
+        .card:hover { border-color: var(--accent); }
+        .card-header { background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(124,58,237,0.05)); padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .card-header h2 { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .card-header .icon { font-size: 1.2rem; }
+        .card-body { padding: 1.5rem; max-height: 600px; overflow-y: auto; }
+        .rule-category { margin-bottom: 1rem; }
+        .rule-category h3 { font-size: 0.85rem; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        .rule-item { display: flex; align-items: center; padding: 0.4rem 0.5rem; border-radius: 6px; font-size: 0.85rem; font-family: var(--font-mono); gap: 0.5rem; }
+        .rule-item:hover { background: rgba(0,212,255,0.05); }
+        .rule-id { color: var(--accent); font-weight: bold; min-width: 60px; }
+        .rule-name { color: var(--text); }
+        .rule-desc { color: var(--text-muted); font-size: 0.8rem; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem; }
+        tr:hover td { background: rgba(0,212,255,0.03); }
+        .tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; font-family: var(--font-mono); }
+        .tag-core { background: rgba(16,185,129,0.2); color: var(--success); }
+        .tag-ai { background: rgba(124,58,237,0.2); color: var(--accent-secondary); }
+        .tag-memory { background: rgba(245,158,11,0.2); color: var(--warning); }
+        .tag-agent { background: rgba(0,212,255,0.2); color: var(--accent); }
+        .tag-security { background: rgba(239,68,68,0.2); color: var(--danger); }
+        .tag-lightning { background: rgba(59,130,246,0.2); color: #3b82f6; }
+        .tag-tide { background: rgba(16,185,129,0.2); color: var(--success); }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.6rem 0.8rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--font-mono); font-size: 0.85rem; transition: border-color 0.3s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.85rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,212,255,0.3); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sm { padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+        .result-box { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-top: 1rem; font-family: var(--font-mono); font-size: 0.8rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+        .result-box .success { color: var(--success); }
+        .result-box .error { color: var(--danger); }
+        .result-box .info { color: var(--accent); }
+        .result-box .warning { color: var(--warning); }
+        .conflict-item { padding: 0.6rem; border-left: 3px solid var(--warning); background: rgba(245,158,11,0.05); border-radius: 0 6px 6px 0; margin-bottom: 0.5rem; }
+        .conflict-item.high { border-left-color: var(--danger); background: rgba(239,68,68,0.05); }
+        .conflict-item.low { border-left-color: var(--accent); background: rgba(0,212,255,0.05); }
+        .card-body::-webkit-scrollbar { width: 6px; }
+        .card-body::-webkit-scrollbar-track { background: var(--bg-dark); }
+        .card-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .card-body::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+        .tab { padding: 0.6rem 1.2rem; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.3s; }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 1000; transform: translateX(120%); transition: transform 0.3s; max-width: 400px; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--danger); }
+        .toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+        .toast .toast-message { font-size: 0.85rem; color: var(--text-muted); }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .header { padding: 0.8rem 1rem; } .header h1 { font-size: 1.2rem; } .stats-row { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">N</div>
+            <h1>Neurosonic Trinity+ASI</h1>
+        </div>
+        <div class="header-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </header>
+    <div class="toast" id="toast"><div class="toast-title" id="toastTitle">Success</div><div class="toast-message" id="toastMessage">Operation completed</div></div>
+    <div class="container">
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card"><div class="label">DNA Integrity</div><div class="value green" id="statDna">--</div></div>
+            <div class="stat-card"><div class="label">Genome Packages</div><div class="value blue" id="statGenome">--</div></div>
+            <div class="stat-card"><div class="label">Total Rules</div><div class="value purple" id="statRules">--</div></div>
+            <div class="stat-card"><div class="label">Lightning Service</div><div class="value yellow" id="statLightning">--</div></div>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">🧬</span> DNA - Immutable Core</h2><span class="toggle-icon">▼</span></div>
+                <div class="card-body"><div id="dnaContent"><div class="loading"></div></div></div>
+            </div>
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">📦</span> Genome - Packages</h2><span class="toggle-icon">▼</span></div>
+                <div class="card-body">
+                    <div class="tabs"><div class="tab active" onclick="switchTab(this,'genomeTable')">Table</div><div class="tab" onclick="switchTab(this,'genomeCategories')">Categories</div></div>
+                    <div id="genomeTable" class="tab-content active">
+                        <div class="table-container"><table id="genomeTableBody"><thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Version</th><th>Dependencies</th></tr></thead><tbody></tbody></table></div>
+                    </div>
+                    <div id="genomeCategories" class="tab-content"><div id="categoriesContent"></div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">✅</span> Compatibility Matrix</h2><span class="toggle-icon">▼</span></div>
+                <div class="card-body">
+                    <div class="form-group"><label>Module ID</label><input type="text" id="modId" value="MOD-NEW-001"></div>
+                    <div class="form-group"><label>Module Config (JSON)</label><textarea id="modConfig" rows="6">{"name":"New Module","api_version":"1.0","memory_type":"HVO","encryption":"AES256","zero_trust":true,"sse_support":true,"tide_compatible":true,"license":"Neurosonic","cudm_compatible":true,"user_data_ownership":true,"dependencies":["NGI-CORE-0001"],"constitution_compatibility":["G001","G002","G003","G004","G005","G006","G007","G008","G009","G010"],"security_compatibility":["SR001","SR002","SR003","SR004","SR005","SR006","SR007","SR008"],"data_compatibility":["DR001","DR002","DR003","DR004","DR005"],"api_compatibility":["AR001","AR002","AR003","AR004"]}</textarea></div>
+                    <button class="btn btn-primary" onclick="verifyModule()">🔍 Verify Module</button>
+                    <div class="result-box" id="compatResult"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">🌿</span> Evolution Engine</h2><span class="toggle-icon">▼</span></div>
+                <div class="card-body">
+                    <div class="tabs"><div class="tab active" onclick="switchTab(this,'evolutionAnalyze')">Analysis</div><div class="tab" onclick="switchTab(this,'evolutionPropose')">Propose</div><div class="tab" onclick="switchTab(this,'evolutionProposals')">Proposals</div></div>
+                    <div id="evolutionAnalyze" class="tab-content active"><button class="btn btn-primary btn-sm" onclick="analyzeArchitecture()">🔍 Analyze Architecture</button><div class="result-box" id="analysisResult"></div></div>
+                    <div id="evolutionPropose" class="tab-content">
+                        <div class="form-group"><label>Description</label><input type="text" id="propDesc" value="Add new governance rule"></div>
+                        <div class="form-group"><label>Category</label><select id="propCat"><option value="governance">Governance</option><option value="security">Security</option><option value="data">Data</option><option value="api">API</option><option value="memory">Memory</option></select></div>
+                        <div class="form-group"><label>Impact Level</label><select id="propImpact"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+                        <button class="btn btn-primary btn-sm" onclick="proposeChange()">📝 Propose Change</button><div class="result-box" id="proposeResult"></div>
+                    </div>
+                    <div id="evolutionProposals" class="tab-content"><button class="btn btn-primary btn-sm" onclick="loadProposals()">📋 Load Proposals</button><div class="result-box" id="proposalsResult"></div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">⚡</span> Lightning SPP 3.14</h2><span class="toggle-icon">▼</span></div>
+                <div class="card-body">
+                    <div class="tabs"><div class="tab active" onclick="switchTab(this,'lightningScan')">Scan</div><div class="tab" onclick="switchTab(this,'lightningProcess')">Process</div><div class="tab" onclick="switchTab(this,'lightningPrint')">Print</div><div class="tab" onclick="switchTab(this,'lightningPipeline')">Pipeline</div></div>
+                    <div id="lightningScan" class="tab-content active">
+                        <div class="form-group"><label>Source</label><input type="text" id="scanSource" value="https://example.com/doc.pdf"></div>
+                        <div class="form-group"><label>Mode</label><select id="scanMode"><option value="tidewave">TideWave</option><option value="lightning">Lightning</option><option value="resonance">Resonance</option><option value="nanodecibel">NanoDecibel</option><option value="hybrid">Hybrid</option></select></div>
+                        <button class="btn btn-primary btn-sm" onclick="lightningScan()">📡 Scan</button><div class="result-box" id="scanResult"></div>
+                    </div>
+                    <div id="lightningProcess" class="tab-content">
+                        <div class="form-group"><label>Data</label><textarea id="procData" rows="3">Sample data to process...</textarea></div>
+                        <div class="form-group"><label>Engine</label><select id="procEngine"><option value="hybrid">Hybrid</option><option value="clisonic">Clisonic AI</option><option value="clx">CLX</option><option value="xcl">XCL</option></select></div>
+                        <button class="btn btn-primary btn-sm" onclick="lightningProcess()">⚙️ Process</button><div class="result-box" id="processResult"></div>
+                    </div>
+                    <div id="lightningPrint" class="tab-content">
+                        <div class="form-group"><label>Data</label><textarea id="printData" rows="3">Content to print...</textarea></div>
+                        <div class="form-group"><label>Quality</label><select id="printQuality"><option value="stigma">Stigma Premium</option><option value="high">High</option><option value="normal">Normal</option><option value="draft">Draft</option></select></div>
+                        <button class="btn btn-primary btn-sm" onclick="lightningPrint()">🖨️ Print</button><div class="result-box" id="printResult"></div>
+                    </div>
+                    <div id="lightningPipeline" class="tab-content">
+                        <div class="form-group"><label>Source</label><input type="text" id="pipeSource" value="https://example.com/doc.pdf"></div>
+                        <button class="btn btn-primary btn-sm" onclick="lightningPipeline()">🔗 Execute Pipeline</button><div class="result-box" id="pipelineResult"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">📊</span> Lightning Statistics</h2><span class="toggle-icon">▼</span></div>
+                <div class="card-body"><button class="btn btn-primary btn-sm" onclick="loadLightningStats()">📊 Load Stats</button><div class="result-box" id="statsResult"></div></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        function showToast(title, message, type='success') {
+            const t=document.getElementById('toast');t.className='toast '+type;
+            document.getElementById('toastTitle').textContent=title;
+            document.getElementById('toastMessage').textContent=message;
+            t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);
+        }
+        function toggleCard(h){const b=h.nextElementSibling,i=h.querySelector('.toggle-icon');
+            const o=b.style.display!=='none';b.style.display=o?'none':'block';i.textContent=o?'▶':'▼';}
+        function switchTab(t,c){const p=t.parentElement;
+            p.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+            const ct=p.nextElementSibling;if(ct){ct.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+            const tg=document.getElementById(c);if(tg)tg.classList.add('active');}}
+        async function apiGet(e){const r=await fetch(API_BASE+e);if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}
+        async function apiPost(e,b){const r=await fetch(API_BASE+e,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}
+        async function checkHealth(){const d=document.getElementById('statusDot'),t=document.getElementById('statusText');
+            try{const h=await apiGet('/api/health');d.className='status-dot';
+            t.textContent='Online - '+new Date(h.timestamp*1000).toLocaleTimeString();
+            document.getElementById('statDna').textContent=h.dna_integrity?'✅ OK':'❌ FAIL';
+            document.getElementById('statGenome').textContent=h.genome_packages;
+            document.getElementById('statLightning').textContent=h.lightning_service?'✅ Online':'⭕ Offline';return h;}
+            catch(e){d.className='status-dot offline';t.textContent='Offline';return null;}}
+        async function loadDNA(){const c=document.getElementById('dnaContent');
+            try{const d=await apiGet('/api/dna');
+            let h=`<div style="margin-bottom:1rem;"><div><strong>Name:</strong> ${d.name}</div><div><strong>Hash:</strong> <span style="color:var(--accent);font-family:var(--font-mono)">${d.hash}</span></div><div><strong>Immutable:</strong> <span style="color:var(--success)">${d.immutable}</span></div></div>`;
+            for(const[cat,rules]of Object.entries(d.rules)){h+=`<div class="rule-category"><h3>${cat.replace('_',' ').toUpperCase()} (${rules.length})</h3>`;
+                for(const r of rules){const n=r.name||r.id,desc=r.description||(r.mandatory?'🔒 Mandatory':r.priority?`Priority: ${r.priority}`:'');
+                h+=`<div class="rule-item"><span class="rule-id">${r.id}</span><span class="rule-name">${n}</span>${desc?`<span class="rule-desc">- ${desc}</span>`:''}</div>`;}
+            h+=`</div>`;}c.innerHTML=h;document.getElementById('statRules').textContent=d.stats.total_rules;}
+            catch(e){c.innerHTML=`<div class="error">❌ Failed: ${e.message}</div>`;}}
+        async function loadGenome(){try{const d=await apiGet('/api/genome');
+            const tb=document.querySelector('#genomeTableBody tbody');
+            tb.innerHTML=d.packages.slice(0,30).map(p=>`<tr><td style="font-family:var(--font-mono);font-size:0.75rem;">${p.id}</td><td><strong>${p.name}</strong></td><td><span class="tag tag-${p.category}">${p.category}</span></td><td>${p.version}</td><td style="font-size:0.75rem;">${p.dependencies.join(', ')||'-'}</td></tr>`).join('');
+            const cc=document.getElementById('categoriesContent');let ch='';
+            for(const[cat,pkgs]of Object.entries(d.categories)){ch+=`<div class="rule-category"><h3>${cat.toUpperCase()} (${pkgs.length})</h3>${pkgs.map(id=>{const p=d.packages.find(x=>x.id===id);return `<div class="rule-item"><span class="rule-id">${id}</span><span class="rule-name">${p?p.name:id}</span></div>`;}).join('')}</div>`;}
+            cc.innerHTML=ch;}catch(e){console.error(e);}}
+        async function verifyModule(){const r=document.getElementById('compatResult');
+            r.innerHTML='<span class="loading"></span> Verifying...';
+            try{const c=JSON.parse(document.getElementById('modConfig').value);
+            const d=await apiPost('/api/compatibility/verify',{module_id:document.getElementById('modId').value,config:c});
+            const s=d.compatible?'✅ INSTALL ALLOWED':'❌ INSTALL = BLOCKED';
+            r.innerHTML=`<div class="${d.compatible?'success':'error'}">${s}</div><div>Score: ${d.score.toFixed(0)}%</div><div>Hash: ${d.hash}</div>${d.violations.length?'<br><strong>Violations:</strong>\n'+d.violations.map(v=>'  ❌ '+v).join('\n'):''}<br><br><strong>Checks:</strong>${Object.entries(d.checks).map(([k,v])=>'\n  '+(v?'✅':'❌')+' '+k).join('')}`;
+            showToast('Verification',d.compatible?'Module compatible!':'Module blocked!',d.compatible?'success':'error');}
+            catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function analyzeArchitecture(){const r=document.getElementById('analysisResult');
+            r.innerHTML='<span class="loading"></span> Analyzing...';
+            try{const d=await apiGet('/api/evolution/analyze');
+            let h=`<div class="success">✅ DNA Integrity: ${d.dna_integrity}</div><div>Genome Coverage: ${d.genome_coverage.coverage_percent.toFixed(0)}%</div><div>Total Packages: ${d.genome_coverage.total_packages}</div><br><strong>Suggestions:</strong>`;
+            d.optimization_suggestions.forEach(s=>h+=`\n  💡 ${s}`);
+            if(d.potential_conflicts.length){h+=`<br><br><strong>⚠️ Conflicts:</strong>`;d.potential_conflicts.forEach(c=>h+=`\n  <span class="${c.severity==='high'?'error':'warning'}">[${c.severity}]</span> ${c.description}`);}
+            else h+=`\n  ✅ No conflicts found`;
+            r.innerHTML=h;showToast('Analysis',`Coverage: ${d.genome_coverage.coverage_percent.toFixed(0)}%`);}
+            catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function proposeChange(){const r=document.getElementById('proposeResult');
+            r.innerHTML='<span class="loading"></span> Proposing...';
+            try{const d=await apiPost('/api/evolution/propose',{description:document.getElementById('propDesc').value,category:document.getElementById('propCat').value,impact_level:document.getElementById('propImpact').value});
+            r.innerHTML=`<div class="success">✅ Proposal: ${d.id}</div><div>Status: ${d.status}</div><div>Feasibility: ${(d.analysis.feasibility*100).toFixed(0)}%</div><div>DNA Impact: ${d.analysis.dna_impact}</div>`;
+            showToast('Proposal Created',d.id);}catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function loadProposals(){const r=document.getElementById('proposalsResult');
+            r.innerHTML='<span class="loading"></span> Loading...';
+            try{const d=await apiGet('/api/evolution/proposals');
+            let h=`<div class="success">Total: ${d.stats.total_proposals}</div><div>Approved: ${d.stats.approved_proposals} | Rejected: ${d.stats.rejected_proposals} | Pending: ${d.stats.pending_proposals}</div>`;
+            if(d.proposals.length){h+=`<br><strong>Recent:</strong>`;d.proposals.forEach(p=>h+=`\n  📝 ${p.id}: ${p.description.substring(0,60)}... [${p.status}]`);}
+            r.innerHTML=h;}catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function lightningScan(){const r=document.getElementById('scanResult');r.innerHTML='<span class="loading"></span> Scanning...';
+            try{const d=await apiPost('/api/lightning/scan',{source:document.getElementById('scanSource').value,mode:document.getElementById('scanMode').value});
+            r.innerHTML=`<div class="${d.status==='completed'||d.status==='success'?'success':'warning'}">Status: ${d.status}</div><div>ID: ${d.id}</div><div>Confidence: ${(d.confidence*100).toFixed(1)}%</div>${d.error?`<div class="error">Error: ${d.error}</div>`:''}`;}
+            catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function lightningProcess(){const r=document.getElementById('processResult');r.innerHTML='<span class="loading"></span> Processing...';
+            try{const d=await apiPost('/api/lightning/process',{data:document.getElementById('procData').value,engine:document.getElementById('procEngine').value});
+            r.innerHTML=`<div class="${d.status==='completed'||d.status==='success'?'success':'warning'}">Status: ${d.status}</div><div>ID: ${d.id}</div><div>Confidence: ${(d.confidence*100).toFixed(1)}%</div>${d.error?`<div class="error">Error: ${d.error}</div>`:''}`;}
+            catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function lightningPrint(){const r=document.getElementById('printResult');r.innerHTML='<span class="loading"></span> Printing...';
+            try{const d=await apiPost('/api/lightning/print',{data:document.getElementById('printData').value,quality:document.getElementById('printQuality').value});
+            r.innerHTML=`<div class="${d.status==='completed'||d.status==='success'?'success':'warning'}">Status: ${d.status}</div><div>ID: ${d.id}</div><div>Source: ${d.source}</div>${d.error?`<div class="error">Error: ${d.error}</div>`:''}`;}
+            catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function lightningPipeline(){const r=document.getElementById('pipelineResult');r.innerHTML='<span class="loading"></span> Pipeline...';
+            try{const d=await apiPost('/api/lightning/pipeline',{source:document.getElementById('pipeSource').value});
+            r.innerHTML=`<div class="${d.status==='completed'||d.status==='success'?'success':'warning'}">Status: ${d.status}</div><div>Pipeline ID: ${d.pipeline_id}</div><div>Time: ${d.total_time_ms.toFixed(1)}ms</div>`;
+            showToast('Pipeline',`Time: ${d.total_time_ms.toFixed(1)}ms`);}catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function loadLightningStats(){const r=document.getElementById('statsResult');r.innerHTML='<span class="loading"></span> Loading...';
+            try{const d=await apiGet('/api/lightning/stats');
+            r.innerHTML=`<div class="success">Service: ${d.service_available?'✅ Online':'⭕ Offline'}</div><div>Scans: ${d.total_scans}</div><div>Processes: ${d.total_processes}</div><div>Prints: ${d.total_prints}</div><div>Pipelines: ${d.total_pipelines}</div><div>Avg Scan: ${d.average_scan_time_ms.toFixed(1)}ms</div><div>Avg Process: ${d.average_process_time_ms.toFixed(1)}ms</div><div>Errors: ${d.errors}</div>`;}
+            catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+        async function init(){await checkHealth();loadDNA();loadGenome();setInterval(checkHealth,10000);}
+        init();
+    </script>
+</body>
+</html>
+

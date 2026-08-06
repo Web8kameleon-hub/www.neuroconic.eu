@@ -31,6 +31,10 @@ from neurosonic_lightning_bridge import (
     ProcessingEngine,
     PrintQuality,
 )
+from clisonix_ecosystem_bridge import (
+    ClisonixEcosystemBridge,
+    ECOSYSTEM_REPOS,
+)
 
 app = FastAPI(
     title="Neurosonic Trinity+ASI API",
@@ -53,10 +57,11 @@ genome = NeurosonicGenome()
 matrix = NeurosonicCompatibilityMatrix(dna, genome)
 evolution = NeurosonicEvolutionEngine(dna, genome)
 bridge = NeurosonicLightningBridge(dna=dna, genome=genome)
+ecosystem = ClisonixEcosystemBridge()
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
-print("  DNA | GENOME | COMPATIBILITY | EVOLUTION | LIGHTNING")
+print("  DNA | GENOME | COMPATIBILITY | EVOLUTION | LIGHTNING | ECOSYSTEM")
 print("=" * 60)
 
 
@@ -321,6 +326,48 @@ async def lightning_stats():
 @app.get("/api/lightning/profile")
 async def lightning_profile():
     return bridge.get_profile()
+
+
+# ========================================================================
+# Ecosystem Bridge Endpoints - 15 repos
+# ========================================================================
+
+
+@app.get("/api/ecosystem")
+async def ecosystem_status():
+    """Statusi i plote i ekosistemit Clisonix"""
+    return ecosystem.get_ecosystem_status()
+
+
+@app.post("/api/ecosystem/discover")
+async def ecosystem_discover():
+    """Zbulon repos online ne ekosistem"""
+    return ecosystem.discover()
+
+
+@app.post("/api/ecosystem/pulse")
+async def ecosystem_pulse():
+    """Dergon pulse per te gjitha repos"""
+    return ecosystem.broadcast_pulse()
+
+
+@app.get("/api/ecosystem/repos")
+async def ecosystem_repos():
+    """Lista e te gjitha repos ne ekosistem"""
+    return {
+        "total": len(ECOSYSTEM_REPOS),
+        "ecosystem_id": ecosystem.ecosystem_id,
+        "repos": [
+            {
+                "name": name,
+                "language": cfg["language"],
+                "port": cfg["port"],
+                "role": cfg["role"],
+                "url": cfg["url"],
+            }
+            for name, cfg in ECOSYSTEM_REPOS.items()
+        ],
+    }
 
 
 # ========================================================================

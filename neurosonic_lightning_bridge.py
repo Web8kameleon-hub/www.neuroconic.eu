@@ -18,16 +18,13 @@ Komponentet reale:
 """
 
 import os
-import sys
 import json
 import time
 import hashlib
-import datetime
 import urllib.request
-import urllib.parse
 import urllib.error
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, field
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -86,13 +83,12 @@ class NeurosonicLightningBridge:
     Komanda per te nisur Lightning SPP:
         wwwmmm serve 8080
 
-    Endpoints:
-        GET  /api/health
-        POST /api/v1/scan
-        POST /api/v1/process
-        POST /api/v1/print
-        POST /api/v1/pipeline
-        POST /api/v1/batch
+    Endpoints real te serverit:
+        GET  /health
+        POST /scan
+        POST /process
+        POST /print
+        POST /pipeline
     """
 
     def __init__(self, base_url: str = "http://localhost:8080", dna=None, genome=None):
@@ -124,17 +120,29 @@ class NeurosonicLightningBridge:
 
     def _check_health(self) -> bool:
         """Kontrollon nese Lightning SPP eshte duke ekzekutuar"""
-        try:
-            req = urllib.request.Request(f"{self.base_url}/api/health", method="GET")
-            with urllib.request.urlopen(req, timeout=2) as resp:
-                data = json.loads(resp.read().decode())
-                return data.get("status") == "healthy" or resp.status == 200
-        except Exception as e:
-            print(f"    Health check: {e}")
-            return False
+        # Server serves at /health (not /api/health)
+        for path in ("/health", "/api/health"):
+            try:
+                req = urllib.request.Request(f"{self.base_url}{path}", method="GET")
+                with urllib.request.urlopen(req, timeout=2) as resp:
+                    data = json.loads(resp.read().decode())
+                    if data.get("status") == "healthy" or resp.status == 200:
+                        return True
+            except Exception as e:
+                print(f"    Health check {path}: {e}")
+        return False
 
     def _request(self, endpoint: str, data: Any = None, method: str = "POST") -> Dict:
         """Ben thirrje HTTP reale ne Lightning SPP"""
+        # Map API paths to server's actual bare paths
+        if endpoint.startswith("/api/v1"):
+            endpoint = endpoint.replace("/api/v1", "", 1)
+        # /scan/high-quality -> /scan (server has no high-quality route)
+        if endpoint.endswith("/high-quality"):
+            endpoint = endpoint.replace("/high-quality", "", 1)
+        # /process/hybrid and /process/ai -> /process (server has no sub-routes)
+        if endpoint.startswith("/process/"):
+            endpoint = "/process"
         url = f"{self.base_url}{endpoint}"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
@@ -182,32 +190,22 @@ class NeurosonicLightningBridge:
         start_time = time.time()
         scan_id = self._generate_id("scan")
 
-        # Perputhet me API real te Lightning SPP
+        payload = {
+            "source": source,
+            "mode": mode.value,
+            "dpi": 600 if mode == LightningMode.NANODECIBEL else 300,
+            "use_resonance": mode in [LightningMode.RESONANCE, LightningMode.TIDEWAVE],
+            "use_nano_decibel": mode == LightningMode.NANODECIBEL,
+        }
+
         if mode == LightningMode.NANODECIBEL:
-            # HighQualityScanAsync - perdor NanoDecibel
-            result = self._request(
-                "/api/v1/scan/high-quality",
-                {
-                    "source": source,
-                    "mode": mode.value,
-                    "use_resonance": True,
-                    "use_nano_decibel": True,
-                    "dpi": 600,
-                },
-            )
+            # HighQualityScanAsync - fallback to /scan if high-quality missing
+            result = self._request("/api/v1/scan/high-quality", payload)
+            if "error" in result:
+                result = self._request("/api/v1/scan", payload)
         else:
             # QuickScanAsync - perdor TideWave + Resonance
-            result = self._request(
-                "/api/v1/scan",
-                {
-                    "source": source,
-                    "mode": mode.value,
-                    "dpi": 300,
-                    "use_resonance": mode
-                    in [LightningMode.RESONANCE, LightningMode.TIDEWAVE],
-                    "use_nano_decibel": mode == LightningMode.NANODECIBEL,
-                },
-            )
+            result = self._request("/api/v1/scan", payload)
 
         elapsed = time.time() - start_time
         self.statistics["total_scans"] += 1
@@ -229,7 +227,7 @@ class NeurosonicLightningBridge:
             )
 
         return LightningResult(
-            id=result.get("id", scan_id),
+            id=result.get("id", result.get("scan_id", scan_id)),
             status=result.get("status", "completed"),
             data=result.get("data"),
             hash=result.get("hash", hashlib.sha256(source.encode()).hexdigest()[:12]),
@@ -271,7 +269,6 @@ class NeurosonicLightningBridge:
         else:
             data_bytes = str(data).encode()
 
-        # Perputhet me API real te Lightning SPP
         payload = {
             "data": data_bytes.hex(),
             "engine": engine.value,
@@ -283,6 +280,7 @@ class NeurosonicLightningBridge:
         }
 
         if engine == ProcessingEngine.HYBRID:
+            # No /process/hybrid on server -> maps to /process in _request
             result = self._request("/api/v1/process/hybrid", payload)
         elif engine == ProcessingEngine.CLISONIC:
             result = self._request("/api/v1/process/ai", payload)
@@ -309,7 +307,7 @@ class NeurosonicLightningBridge:
             )
 
         return LightningResult(
-            id=result.get("id", process_id),
+            id=result.get("id", result.get("process_id", process_id)),
             status=result.get("status", "completed"),
             data=result.get("data"),
             hash=result.get(
@@ -348,7 +346,6 @@ class NeurosonicLightningBridge:
         else:
             data_bytes = str(data).encode()
 
-        # Perputhet me API real te Lightning SPP
         result = self._request(
             "/api/v1/print",
             {
@@ -378,7 +375,7 @@ class NeurosonicLightningBridge:
             )
 
         return LightningResult(
-            id=result.get("id", print_id),
+            id=result.get("id", result.get("print_id", print_id)),
             status=result.get("status", "completed"),
             data=result.get("output_path", "printed"),
             hash=result.get(
@@ -451,18 +448,21 @@ class NeurosonicLightningBridge:
 
     def batch_process(self, sources: List[str]) -> Dict[str, Any]:
         """
-        Batch processing real duke perdorur BatchProcessAsync.
-
-        Args:
-            sources: Lista e source-ve per perpunim
-
-        Returns:
-            Dict me rezultatet e batch
+        Batch processing - server has no /batch route, so scan each source.
         """
         start_time = time.time()
         batch_id = self._generate_id("batch")
+        results = []
 
-        result = self._request("/api/v1/batch", {"sources": sources})
+        # Fallback: process each source individually since server has no /batch
+        for src in sources:
+            try:
+                r = self.scan(src, LightningMode.TIDEWAVE)
+                results.append(
+                    {"source": src, "status": r.status, "id": r.id, "error": r.error}
+                )
+            except Exception as e:
+                results.append({"source": src, "status": "error", "error": str(e)})
 
         total_time = time.time() - start_time
         self.statistics["total_batches"] += 1
@@ -470,18 +470,11 @@ class NeurosonicLightningBridge:
         return {
             "batch_id": batch_id,
             "sources_count": len(sources),
-            "status": result.get(
-                "status", "completed" if "error" not in result else "error"
-            ),
-            "results": result.get("results", []),
+            "status": "completed",
+            "results": results,
             "total_time_ms": total_time * 1000,
             "timestamp": time.time(),
         }
-
-    # ========================================================================
-    # STATISTICS
-    # ========================================================================
-
     def get_statistics(self) -> Dict[str, Any]:
         """Statistikat e integrimit"""
         return {

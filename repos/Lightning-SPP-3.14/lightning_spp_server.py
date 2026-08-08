@@ -272,15 +272,26 @@ class LightningSPPHandler(http.server.BaseHTTPRequestHandler):
     """HTTP Handler per Lightning SPP 3.14"""
 
     def _send_json(self, data: Dict, status: int = 200):
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        self.send_header("X-Lightning-SPP-Version", VERSION)
-        self.send_header("X-Zero-Fake", str(ZERO_FAKE).lower())
-        self.end_headers()
-        self.wfile.write(json.dumps(data, indent=2).encode())
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header(
+                "Access-Control-Allow-Headers", "Content-Type, Authorization"
+            )
+            self.send_header("X-Lightning-SPP-Version", VERSION)
+            self.send_header("X-Zero-Fake", str(ZERO_FAKE).lower())
+            self.end_headers()
+            self.wfile.write(json.dumps(data, indent=2).encode())
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # Klienti e mbylli lidhjen para se serveri te perfundonte shkrimin.
+            # Kjo ndodh kur klienti bekon timeout ose largohet mes kerkeses.
+            # Nuk eshte gabim i serverit - thjesht e injorojme ne menyre te paster.
+            pass
+        except OSError:
+            # Gabime te tjera te socket-it (sistem i mbyllur, etj.)
+            pass
 
     def _read_body(self) -> Dict:
         content_length = int(self.headers.get("Content-Length", 0))

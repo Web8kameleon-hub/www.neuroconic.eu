@@ -1,0 +1,40 @@
+{
+  "name": "Neurosonic Trinity+ASI",
+  "short_name": "Neurosonic",
+  "description": "Sovereign, modular AI operating system with an immutable constitution, HVO memory, and Zero Fake engine.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#060b14",
+  "theme_color": "#060b14",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["ai", "software", "developer_tools", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Architecture",
+      "url": "/docs/Architecture.md",
+      "description": "View the Neurosonic architecture documentation"
+    },
+    {
+      "name": "Constitution",
+      "url": "/docs/Constitution.md",
+      "description": "View the Neurosonic constitution"
+    }
+  ]
+}
+

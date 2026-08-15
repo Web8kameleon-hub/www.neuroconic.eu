@@ -123,6 +123,23 @@ neurosonic.eu/
 
 ---
 
+## 🌐 Production Hosting
+
+Production uses Docker Compose with separate Nginx, FastAPI, and Lightning SPP
+services:
+
+```bash
+cp .env.example .env
+docker compose config
+docker compose build --pull
+docker compose up -d
+```
+
+Read the [hosting guide](docs/deployment/HOSTING.md),
+[operations runbook](docs/deployment/OPERATIONS.md),
+[hosting security guide](docs/deployment/SECURITY.md), and
+[release checklist](docs/deployment/RELEASE_CHECKLIST.md).
+
 ## 🔬 Testet
 
 ```bash

@@ -1,0 +1,19 @@
+# Neurosonic Trinity+ASI
+
+> A modular AI operating environment focused on data ownership, verifiable outputs, zero-trust security, and human oversight.
+
+## Primary resources
+
+- [Website](https://www.neurosonic.eu/): Product interface and overview.
+- [Source repository](https://github.com/LedjanAhmati/www.neurosonic.eu): Source code and project information.
+- [Architecture](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/Architecture.md): System architecture.
+- [Constitution](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/Constitution.md): Governance principles.
+- [Unified Data Model](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/CUDM.md): Data-model documentation.
+- [Privacy policy](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/legal/PRIVACY.md): Privacy information.
+- [Security policy](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/SECURITY.md): Security reporting and policy.
+
+## Terminology
+
+- **HVO Memory**: The project's named memory model, documented in the architecture.
+- **No Fake**: A project policy and validation principle; see the No Fake policy in the repository.
+- **Trinity+ASI**: The product name used for the Neurosonic AI operating environment.

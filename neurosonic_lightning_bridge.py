@@ -146,6 +146,10 @@ class NeurosonicLightningBridge:
         url = f"{self.base_url}{endpoint}"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
+        # SPP dhe backend-i nisen paralelisht. Një health-check i dështuar gjatë
+        # startup-it nuk duhet ta lërë bridge-in offline përgjithmonë.
+        if not self.service_available:
+            self.service_available = self._check_health()
         if not self.service_available:
             return {"error": "Lightning SPP service not available", "status": "error"}
 
@@ -477,6 +481,7 @@ class NeurosonicLightningBridge:
         }
     def get_statistics(self) -> Dict[str, Any]:
         """Statistikat e integrimit"""
+        self.service_available = self._check_health()
         return {
             "total_scans": self.statistics["total_scans"],
             "total_processes": self.statistics["total_processes"],

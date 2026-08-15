@@ -1,4 +1,14 @@
+# OPTIONAL DEPENDENCIES - Backend API
+# Neurosonic core (neurosonic.py) works with ZERO dependencies
+# Backend API is optional and requires these packages:
+
 fastapi==0.139.2
 uvicorn==0.51.0
 pydantic==2.13.4
 
+# NOTE: You can run Neurosonic without backend:
+#   python neurosonic.py
+# 
+# To use the REST API backend:
+#   pip install -r backend/requirements.txt
+#   python backend/main.py

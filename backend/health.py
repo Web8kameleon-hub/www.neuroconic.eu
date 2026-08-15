@@ -16,6 +16,8 @@ import time
 import json
 import os
 import hashlib
+import urllib.error
+import urllib.request
 from typing import Dict, List, Any, Optional
 from fastapi import APIRouter
 
@@ -23,6 +25,19 @@ router = APIRouter(prefix="/api", tags=["shell"])
 
 # Referencë globale për kernel-in Neurosonic
 _neuro = None
+
+
+def _lightning_spp_is_available() -> bool:
+    """Kontrollon shërbimin real, jo vetëm gjendjen e ruajtur gjatë startup-it."""
+    url = os.environ.get("LIGHTNING_SPP_URL", "http://localhost:8080").rstrip("/")
+    try:
+        with urllib.request.urlopen(f"{url}/health", timeout=1.5) as response:
+            if response.status != 200:
+                return False
+            payload = json.loads(response.read().decode("utf-8"))
+            return payload.get("status") == "healthy"
+    except (OSError, ValueError, urllib.error.URLError):
+        return False
 
 
 def set_neuro(neuro_instance):
@@ -85,7 +100,7 @@ def shell_health():
     economy_status = "ok"
     auth_status = "ok"
     no_fake_status = "active"
-    lightning_status = "active"
+    lightning_status = "active" if _lightning_spp_is_available() else "inactive"
 
     if _neuro:
         try:

@@ -18,6 +18,7 @@ Thumbs.db
 *.log
 logs/*.log
 memory/*.json
+repos/Lightning-SPP-3.14/memory/*.json
 memory/long_term/*
 memory/working/*
 memory/session/*

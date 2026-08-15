@@ -32,7 +32,6 @@ WORKDIR /app
 # =============================================================================
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -47,13 +46,17 @@ COPY . .
 # NEUROSONIC BRIDGE - Lidhje me ekosistemin
 # =============================================================================
 
-RUN mkdir -p /app/bridge /app/memory /app/logs
+RUN addgroup --system lightning && adduser --system --ingroup lightning lightning \
+    && mkdir -p /app/bridge /app/memory /app/logs \
+    && chown -R lightning:lightning /app
 
 # =============================================================================
 # PORTA
 # =============================================================================
 
 EXPOSE 8080
+
+USER lightning
 
 # =============================================================================
 # KOMANDA E NISJES

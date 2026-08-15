@@ -1,0 +1,4 @@
+  File "<string>", line 1
+    import py_compile,sys; \n    py_compile.compile('repos/Lightning-SPP-3.14/lightning_spp_server.py', doraise=True); \n    print('RESULT=OK')
+                            ^
+SyntaxError: unexpected character after line continuation character

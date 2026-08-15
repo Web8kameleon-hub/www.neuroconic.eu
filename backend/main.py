@@ -16,6 +16,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+# PowerShell/redirected Windows processes may inherit cp1252. Status symbols
+# must never prevent the API from binding its port.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 # Shto parent directory per import - absolute path
 _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, _project_root)
@@ -35,6 +41,7 @@ from clisonix_ecosystem_bridge import (
     ClisonixEcosystemBridge,
     ECOSYSTEM_REPOS,
 )
+from backend.health import router as shell_health_router
 
 app = FastAPI(
     title="Neurosonic Trinity+ASI API",
@@ -42,14 +49,25 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS - lejo frontend nga cdokush burim
+# Në production frontend-i përdor të njëjtin origin përmes reverse proxy.
+# Origjina shtesë mund të jepen si listë CSV në CORS_ORIGINS.
+_cors_origins = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CORS_ORIGINS", "http://localhost:5500,http://127.0.0.1:5500"
+    ).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Shell runtime, health, and diagnostics endpoints.
+app.include_router(shell_health_router)
 
 # Inicializo modulet Neurosonic
 dna = NeurosonicDNA()
@@ -287,6 +305,7 @@ async def lightning_print(req: PrintRequest):
         "id": result.id,
         "status": result.status,
         "data": result.data,
+        "source": result.source,
         "hash": result.hash,
         "confidence": result.confidence,
         "error": result.error,

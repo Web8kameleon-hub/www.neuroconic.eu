@@ -21,7 +21,7 @@ import socketserver
 import urllib.request
 import urllib.error
 import threading
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 # ============================================================================
 # KONFIGURACIONI
@@ -33,20 +33,33 @@ VERSION = "3.14"
 MODE = os.environ.get("LIGHTNING_SPP_MODE", "production")
 ZERO_FAKE = os.environ.get("ZERO_FAKE", "true").lower() == "true"
 NEUROSONIC_CORE = os.environ.get("NEUROSONIC_CORE", "http://neurosonic-core:8765")
+DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "memory", "spp_db.json")
+DB_PATH = os.environ.get("LIGHTNING_SPP_DB_PATH", DEFAULT_DB_PATH)
 
 # ============================================================================
 # MEMORY & DATA
 # ============================================================================
 
-memory = {"scans": [], "processes": [], "prints": [], "events": [], "heartbeats": []}
+memory: Dict[str, Any] = {
+    "scans": [],
+    "processes": [],
+    "prints": [],
+    "events": [],
+    "heartbeats": [],
+}
 
 
 class JsonDB:
     """Database e thjeshte JSON"""
 
-    def __init__(self, path: str = "/app/memory/spp_db.json"):
+    def __init__(self, path: str = DB_PATH):
         self.path = path
-        self.data = {"scans": [], "processes": [], "prints": [], "stats": {}}
+        self.data: Dict[str, Any] = {
+            "scans": [],
+            "processes": [],
+            "prints": [],
+            "stats": {},
+        }
         self._load()
 
     def _load(self):
@@ -398,6 +411,12 @@ class LightningSPPHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
+    # Windows PowerShell can inherit a legacy cp1252 output encoding. Keep
+    # status symbols from crashing the service before the socket is opened.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     print("=" * 70)
     print(f"⚡ LIGHTNING SPP {VERSION} SERVER")
     print(f"   Scan -> Process -> Print Engine")

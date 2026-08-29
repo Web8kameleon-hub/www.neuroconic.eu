@@ -58,6 +58,23 @@ python neurosonic.py
 
 ---
 
+## 🌐 Hostimi Production
+
+Për hostim përdoret Docker Compose me Nginx, FastAPI dhe Lightning SPP si
+shërbime të ndara:
+
+```bash
+cp .env.example .env
+docker compose config
+docker compose build --pull
+docker compose up -d
+```
+
+Lexo [udhëzuesin e hostimit](docs/deployment/HOSTING.md),
+[runbook-un operacional](docs/deployment/OPERATIONS.md),
+[sigurinë e hostimit](docs/deployment/SECURITY.md) dhe
+[checklist-in e release-it](docs/deployment/RELEASE_CHECKLIST.md).
+
 ## 🔬 Testet
 
 ```bash

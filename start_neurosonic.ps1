@@ -11,14 +11,27 @@ Write-Host ""
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BackendScript = Join-Path $ProjectRoot "scripts\popup_backend.ps1"
 $FrontendScript = Join-Path $ProjectRoot "scripts\popup_frontend.ps1"
-$SppScript = Join-Path $ProjectRoot "repos\Lightning-SPP-3.14\lightning_spp_server.py"
+$SppLauncher = Join-Path $ProjectRoot "scripts\popup_spp.ps1"
 $DashboardUrl = "http://localhost:5500/neurosonic_dashboard.html"
 
 # Hap dritare per Lightning SPP (port 8080) - Sherben Scan/Process/Print
 Write-Host "[1/4] Duke nisur Lightning SPP 3.14..." -ForegroundColor Yellow
-Start-Process PowerShell -ArgumentList "-NoExit", "-Command", "Set-Location '$ProjectRoot'; python '$SppScript'"
+Start-Process PowerShell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-File", $SppLauncher
 
-Start-Sleep -Seconds 3
+$sppReady = $false
+for ($attempt = 1; $attempt -le 10; $attempt++) {
+    Start-Sleep -Seconds 1
+    try {
+        $response = Invoke-RestMethod -Uri "http://localhost:8080/health" -TimeoutSec 1
+        if ($response.status -eq "healthy") {
+            $sppReady = $true
+            break
+        }
+    } catch { }
+}
+if (-not $sppReady) {
+    Write-Host "[GABIM] Lightning SPP nuk u hap ne porten 8080. Shiko dritaren e tij." -ForegroundColor Red
+}
 
 # Hap dritare per Backend
 Write-Host "[2/4] Duke hapur Backend API..." -ForegroundColor Yellow

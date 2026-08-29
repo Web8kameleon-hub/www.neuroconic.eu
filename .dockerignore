@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+.venv-1
+.vscode
+__pycache__
+*.py[cod]
+*.log
+*.swp
+.env
+logs
+memory
+repos/Lightning-SPP-3.14/memory
+build
+dist
+node_modules
+_compile_result.txt

@@ -10,6 +10,8 @@ Niveli 2.5 i Arkitekturës Neurosonic Trinity+ASI
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 import json
+import hashlib
+import time
 from neurosonic_dna import NeurosonicDNA
 from neurosonic_genome import NeurosonicGenome
 
@@ -24,6 +26,9 @@ class CompatibilityResult:
     checks: Dict[str, bool] = field(default_factory=dict)
     violations: List[str] = field(default_factory=list)
     details: Dict[str, Any] = field(default_factory=dict)
+    score: float = 0.0
+    hash: str = ""
+    timestamp: float = 0.0
 
 
 class NeurosonicCompatibilityMatrix:
@@ -114,6 +119,21 @@ class NeurosonicCompatibilityMatrix:
         # Nëse ndonjë kontroll dështon, INSTALL = BLOCKED
         compatible = all(checks.values())
 
+        score = (sum(checks.values()) / len(checks) * 100) if checks else 0.0
+        timestamp = time.time()
+        result_hash = hashlib.sha256(
+            json.dumps(
+                {
+                    "module_id": module_id,
+                    "compatible": compatible,
+                    "checks": checks,
+                    "violations": violations,
+                },
+                sort_keys=True,
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest()[:16]
+
         return CompatibilityResult(
             module_id=module_id,
             module_name=module_config.get("name", module_id),
@@ -130,6 +150,9 @@ class NeurosonicCompatibilityMatrix:
                 "license": license_result,
                 "data": data_result,
             },
+            score=score,
+            hash=result_hash,
+            timestamp=timestamp,
         )
 
     def _verify_genome_compatibility(self, config: Dict) -> Dict[str, Any]:

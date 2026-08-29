@@ -16,26 +16,28 @@ Write-Host ""
 
 # Shko ne projekt
 Set-Location $ProjectRoot
+$env:PYTHONUTF8 = "1"
 
-# Aktivizo virtual environment nese ekziston
-$venvPath = Join-Path $ProjectRoot ".venv\Scripts\Activate.ps1"
-if (Test-Path $venvPath) {
-    & $venvPath
+$VenvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
+if (Test-Path $VenvPython) {
+    $PythonExe = $VenvPython
+} else {
+    $PythonExe = (Get-Command python -ErrorAction Stop).Source
 }
 
 # Kontrollo nese fastapi eshte i instaluar
-$fastapiCheck = python -c "import fastapi" 2>&1
+$fastapiCheck = & $PythonExe -c "import fastapi" 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "📦 Instaloj dependencies..." -ForegroundColor Yellow
-    pip install fastapi uvicorn pydantic
+    Write-Host "[SETUP] Instaloj dependencies..." -ForegroundColor Yellow
+    & $PythonExe -m pip install fastapi uvicorn pydantic
 }
 
 # Nise backend-in
-Write-Host "🚀 Duke nisur Neurosonic Backend API..." -ForegroundColor Green
-python backend/main.py
+Write-Host "[START] Duke nisur Neurosonic Backend API..." -ForegroundColor Green
+& $PythonExe -u backend/main.py
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Gabim! Backend API nuk u nis." -ForegroundColor Red
+    Write-Host "[GABIM] Backend API nuk u nis." -ForegroundColor Red
     Write-Host "Shtypni ENTER per te mbyllur..." -ForegroundColor Yellow
     Read-Host
 }

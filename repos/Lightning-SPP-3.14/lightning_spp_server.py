@@ -21,7 +21,7 @@ import socketserver
 import urllib.request
 import urllib.error
 import threading
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 # ============================================================================
 # KONFIGURACIONI
@@ -33,20 +33,33 @@ VERSION = "3.14"
 MODE = os.environ.get("LIGHTNING_SPP_MODE", "production")
 ZERO_FAKE = os.environ.get("ZERO_FAKE", "true").lower() == "true"
 NEUROSONIC_CORE = os.environ.get("NEUROSONIC_CORE", "http://neurosonic-core:8765")
+DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "memory", "spp_db.json")
+DB_PATH = os.environ.get("LIGHTNING_SPP_DB_PATH", DEFAULT_DB_PATH)
 
 # ============================================================================
 # MEMORY & DATA
 # ============================================================================
 
-memory = {"scans": [], "processes": [], "prints": [], "events": [], "heartbeats": []}
+memory: Dict[str, Any] = {
+    "scans": [],
+    "processes": [],
+    "prints": [],
+    "events": [],
+    "heartbeats": [],
+}
 
 
 class JsonDB:
     """Database e thjeshte JSON"""
 
-    def __init__(self, path: str = "/app/memory/spp_db.json"):
+    def __init__(self, path: str = DB_PATH):
         self.path = path
-        self.data = {"scans": [], "processes": [], "prints": [], "stats": {}}
+        self.data: Dict[str, Any] = {
+            "scans": [],
+            "processes": [],
+            "prints": [],
+            "stats": {},
+        }
         self._load()
 
     def _load(self):
@@ -272,15 +285,26 @@ class LightningSPPHandler(http.server.BaseHTTPRequestHandler):
     """HTTP Handler per Lightning SPP 3.14"""
 
     def _send_json(self, data: Dict, status: int = 200):
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        self.send_header("X-Lightning-SPP-Version", VERSION)
-        self.send_header("X-Zero-Fake", str(ZERO_FAKE).lower())
-        self.end_headers()
-        self.wfile.write(json.dumps(data, indent=2).encode())
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header(
+                "Access-Control-Allow-Headers", "Content-Type, Authorization"
+            )
+            self.send_header("X-Lightning-SPP-Version", VERSION)
+            self.send_header("X-Zero-Fake", str(ZERO_FAKE).lower())
+            self.end_headers()
+            self.wfile.write(json.dumps(data, indent=2).encode())
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # Klienti e mbylli lidhjen para se serveri te perfundonte shkrimin.
+            # Kjo ndodh kur klienti bekon timeout ose largohet mes kerkeses.
+            # Nuk eshte gabim i serverit - thjesht e injorojme ne menyre te paster.
+            pass
+        except OSError:
+            # Gabime te tjera te socket-it (sistem i mbyllur, etj.)
+            pass
 
     def _read_body(self) -> Dict:
         content_length = int(self.headers.get("Content-Length", 0))
@@ -387,6 +411,12 @@ class LightningSPPHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
+    # Windows PowerShell can inherit a legacy cp1252 output encoding. Keep
+    # status symbols from crashing the service before the socket is opened.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     print("=" * 70)
     print(f"⚡ LIGHTNING SPP {VERSION} SERVER")
     print(f"   Scan -> Process -> Print Engine")

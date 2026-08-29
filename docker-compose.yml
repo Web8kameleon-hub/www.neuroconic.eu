@@ -1,22 +1,78 @@
-version: '3.8'
+name: neurosonic
 
 services:
-  neurosonic:
-    build: .
-    container_name: neurosonic-trinity-asi
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./memory:/app/memory
-      - ./logs:/app/logs
-      - ./docs:/app/docs
-    environment:
-      - NEUROSONIC_MODE=production
-      - PYTHONUNBUFFERED=1
+  lightning-spp:
+    build:
+      context: ./repos/Lightning-SPP-3.14
+      dockerfile: Dockerfile
     restart: unless-stopped
-    networks:
-      - neurosonic-net
+    environment:
+      LIGHTNING_SPP_HOST: 0.0.0.0
+      LIGHTNING_SPP_PORT: 8080
+      LIGHTNING_SPP_MODE: production
+      LIGHTNING_SPP_DB_PATH: /app/memory/spp_db.json
+      NEUROSONIC_CORE: http://backend:8000
+      ZERO_FAKE: "true"
+    volumes:
+      - spp-memory:/app/memory
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
 
-networks:
-  neurosonic-net:
-    driver: bridge
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      lightning-spp:
+        condition: service_healthy
+    environment:
+      NEUROSONIC_MODE: production
+      LIGHTNING_SPP_URL: http://lightning-spp:8080
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://neurosonic.eu,https://www.neurosonic.eu}
+      PYTHONUNBUFFERED: "1"
+      PYTHONUTF8: "1"
+    volumes:
+      - backend-memory:/app/memory
+      - backend-logs:/app/logs
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  spp-memory:
+  backend-memory:
+  backend-logs:

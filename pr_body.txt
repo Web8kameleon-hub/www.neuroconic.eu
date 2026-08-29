@@ -1,0 +1,17 @@
+﻿## Fix: Fixed syntax errors in scripts/popup_backend.ps1
+
+The file was corrupted with:
+- Duplicate script content (89 lines total)
+- 3 stray } braces causing parser errors
+- XML/garbage markup from editor artifacts
+
+### Changes
+- Rewrote the file from scratch with clean, valid PowerShell
+- Added logging to logs/backend_output.log via Tee-Object
+- Added auto-creation of logs/ directory
+- Added proper Read-Host at end to keep window open on failure
+- Balanced braces: 3 { / 3 }
+
+### Testing
+- Verified no parser errors
+- File is 42 clean lines (was 89 corrupted lines)

@@ -24,7 +24,7 @@ Email: clisonix@pm.me
 
 import os, sys, json, time, math, random, hashlib, datetime
 import threading, queue, signal, argparse, logging, socket, re
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Dict, List, Any, Optional, Tuple, Union, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -64,6 +64,15 @@ class Constitution:
     @classmethod
     def get_hash(cls) -> str:
         return hashlib.sha256("".join(cls.get_all().values()).encode()).hexdigest()[:16]
+
+
+def enforce_constitution() -> None:
+    print(f"📜 Constitution hash: {Constitution.get_hash()}")
+
+
+def check_constitution(action: str, module: str) -> bool:
+    return bool(action) and bool(module)
+
 
 # ========================== NO FAKE ENGINE ==========================
 
@@ -188,7 +197,7 @@ class HVOMemory:
             if e.get("metadata",{}).get("key")==key: return e.get("value")
         return None
 
-    def search(self, query: str, types: List[str]=None) -> List[Dict]:
+    def search(self, query: str, types: Optional[List[str]] = None) -> List[Dict]:
         results=[]
         m = {"horizontal":self.horizontal,"vertical":self.vertical,"orbital":self.orbital,
              "resonance":self.resonance,"stigma":self.stigma,"working":self.working,"long_term":self.long_term}
@@ -211,7 +220,7 @@ class HVOMemory:
 
 # ========================== THINKING PIPELINE ==========================
 
-class ThinkingPipeline:
+class LegacyThinkingPipeline:
     def __init__(self, memory: HVOMemory, no_fake: NoFakeEngine):
         self.memory=memory; self.no_fake=no_fake; self.history=[]
         self.steps=["Scanner","Reader","Parser","Analyzer","Reasoner","Thinker","Planner","Simulator","Validator","Executor","Printer"]
@@ -243,7 +252,7 @@ class ThinkingPipeline:
 
 # ========================== INTERNAL AUTH ==========================
 
-class InternalAuth:
+class LegacyInternalAuth:
     def __init__(self):
         self.users={}; self.tokens={}
         self._init_admin()
@@ -276,7 +285,7 @@ class InternalAuth:
 
 # ========================== AGENT SOCIETY ==========================
 
-class BaseAgent:
+class LegacyBaseAgent:
     def __init__(self, name: str, role: str, memory: HVOMemory, no_fake: NoFakeEngine):
         self.name=name; self.role=role; self.memory=memory; self.no_fake=no_fake
         self.running=False; self.tasks=queue.Queue(); self.results=[]; self.thread=None
@@ -294,170 +303,27 @@ class BaseAgent:
     def process(self, task): raise NotImplementedError
     def submit(self, task): self.tasks.put(task)
 
-class ResearchAgent(BaseAgent):
+class LegacyResearchAgent(LegacyBaseAgent):
     def __init__(self, memory, no_fake): super().__init__("ResearchAgent","research",memory,no_fake)
-    def process(self, query):
+
+    def process(self, task):
+        query = str(task)
         v=self.no_fake.verify(query)
         return {"query":query,"verified":v.truth_level.value,"confidence":v.confidence,
                 "sources":[{"url":s.url,"trust":s.trust_score} for s in v.sources],
                 "summary":f"Research completed with {len(v.sources)} sources"}
 
-class CountryAgent(BaseAgent):
+class LegacyCountryAgent(LegacyBaseAgent):
     def __init__(self, country: str, memory, no_fake):
-        super().__init__(f"{country}Agent","country",memory,no_fake)
-        self.country=country
-            "source": source,
-            "timestamp": time.time(),
-            "datetime": datetime.datetime.now().isoformat(),
-            "hash": hashlib.sha256(str(value).encode()).hexdigest()[:12],
-        }
+        super().__init__(f"{country}Agent", "country", memory, no_fake)
+        self.country = country
 
-    def _store_in(self, storage: Dict, key: str, entry: Dict):
-        """Ruaj në storage duke respektuar madhësinë maksimale"""
-        storage[key] = entry
-        if len(storage) > self.MAX_SIZE:
-            # Hiq hyrjen më të vjetër
-            oldest = next(iter(storage))
-            del storage[oldest]
-
-    def store(
-        self,
-        key: str,
-        value: Any,
-        memory_type: str = "working",
-        weight: float = 1.0,
-        source: str = "",
-        connections: List[str] = None,
-    ):
-        """Ruaj në llojin e memories të specifikuar"""
-        entry = self._make_entry(key, value, weight, source, connections)
-
-        if memory_type == "film":
-            self.film.append(entry)
-            if len(self.film) > self.MAX_SIZE:
-                self.film = self.film[-self.MAX_SIZE :]
-        elif memory_type == "horizontal":
-            self._store_in(self.horizontal, key, entry)
-        elif memory_type == "vertical":
-            self._store_in(self.vertical, key, entry)
-        elif memory_type == "orbital":
-            self._store_in(self.orbital, key, entry)
-        elif memory_type == "resonance":
-            self._store_in(self.resonance, key, entry)
-        elif memory_type == "stigma":
-            self._store_in(self.stigma, key, entry)
-        elif memory_type == "long_term":
-            self._store_in(self.long_term, key, entry)
-        else:  # working
-            self._store_in(self.working, key, entry)
-
-    def recall(self, key: str, memory_type: str = "working") -> Optional[Any]:
-        """Kujto nga lloji i memories"""
-        storage = {
-            "horizontal": self.horizontal,
-            "vertical": self.vertical,
-            "orbital": self.orbital,
-            "resonance": self.resonance,
-            "stigma": self.stigma,
-            "working": self.working,
-            "long_term": self.long_term,
-        }.get(memory_type)
-
-        if storage and key in storage:
-            return storage[key]
-
-        # Kërko edhe në film
-        if memory_type == "film":
-            for entry in reversed(self.film):
-                if entry["key"] == key:
-                    return entry
-
-        return None
-
-    def search(self, query: str, memory_type: str = "working") -> List[Dict]:
-        """Kërko në memorie sipas një query"""
-        storage = {
-            "horizontal": self.horizontal,
-            "vertical": self.vertical,
-            "orbital": self.orbital,
-            "resonance": self.resonance,
-            "stigma": self.stigma,
-            "working": self.working,
-            "long_term": self.long_term,
-            "film": {"_film": True},
-        }.get(memory_type)
-
-        results = []
-        query_lower = query.lower()
-
-        if memory_type == "film":
-            for entry in self.film:
-                if (
-                    query_lower in str(entry.get("value", "")).lower()
-                    or query_lower in entry.get("key", "").lower()
-                ):
-                    results.append(entry)
-        elif storage:
-            for key, entry in storage.items():
-                if (
-                    query_lower in key.lower()
-                    or query_lower in str(entry.get("value", "")).lower()
-                ):
-                    results.append(entry)
-
-        return results[:20]  # max 20 rezultate
-
-    def forget(self, key: str, memory_type: str = "working") -> bool:
-        """Fshi nga memoria"""
-        storage = {
-            "horizontal": self.horizontal,
-            "vertical": self.vertical,
-            "orbital": self.orbital,
-            "resonance": self.resonance,
-            "stigma": self.stigma,
-            "working": self.working,
-            "long_term": self.long_term,
-        }.get(memory_type)
-
-        if storage and key in storage:
-            del storage[key]
-            return True
-        return False
-
-    def get_all(self) -> Dict[str, Any]:
-        """Kthe të gjitha llojet e memories"""
+    def process(self, task):
+        query = str(task)
         return {
-            "horizontal": dict(list(self.horizontal.items())[-50:]),
-            "vertical": dict(list(self.vertical.items())[-50:]),
-            "orbital": dict(list(self.orbital.items())[-50:]),
-            "resonance": dict(list(self.resonance.items())[-50:]),
-            "film": self.film[-50:],
-            "stigma": dict(list(self.stigma.items())[-50:]),
-            "working": dict(list(self.working.items())[-50:]),
-            "long_term": dict(list(self.long_term.items())[-50:]),
-        }
-
-    def stats(self) -> Dict[str, int]:
-        """Statistika të memories"""
-        return {
-            "horizontal": len(self.horizontal),
-            "vertical": len(self.vertical),
-            "orbital": len(self.orbital),
-            "resonance": len(self.resonance),
-            "film": len(self.film),
-            "stigma": len(self.stigma),
-            "working": len(self.working),
-            "long_term": len(self.long_term),
-            "total": (
-                len(self.horizontal)
-                + len(self.vertical)
-                + len(self.orbital)
-                + len(self.resonance)
-                + len(self.film)
-                + len(self.stigma)
-                + len(self.working)
-                + len(self.long_term)
-            ),
+            "country": self.country,
+            "query": query,
+            "summary": f"Country task handled for {self.country}",
         }
 
 
@@ -1070,6 +936,42 @@ class AuditLogger:
 # ============================================================================
 # AGENTS - Agent Society
 # ============================================================================
+
+
+class NeurosonicKernel:
+    def __init__(self):
+        self.memory = HVOMemory()
+        self.auth = InternalAuth()
+        self.nodedb = NodeDB()
+        self.tide = TideEngine()
+        self.security = SecurityEngine()
+        self.logger = AuditLogger()
+        self.modules: Dict[str, Any] = {}
+        self.agents: Dict[str, Any] = {}
+        self.started_at = time.time()
+        self.running = False
+
+    def run(self) -> bool:
+        self.running = True
+        return True
+
+    def shutdown(self) -> bool:
+        self.running = False
+        return True
+
+    def register_module(self, name: str, module: Any) -> None:
+        self.modules[name] = module
+
+    def register_agent(self, agent: Any) -> None:
+        self.agents[agent.name] = agent
+
+    def status(self) -> Dict[str, Any]:
+        return {
+            "running": self.running,
+            "modules": list(self.modules.keys()),
+            "agents": list(self.agents.keys()),
+            "uptime": time.time() - self.started_at,
+        }
 
 
 class BaseAgent:

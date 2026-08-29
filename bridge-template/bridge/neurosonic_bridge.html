@@ -1,0 +1,127 @@
+<!--
+NEUROSONIC BRIDGE - Lidhje me Neurosonic Core (HTML/JS)
+Per cdo repo HTML ne ekosistem.
+Perdoret nga: clisonix-blog, clisonix-news
+-->
+<script>
+/* NeurosonicBridge - HTML/JS bridge per komunikim me Neurosonic Core */
+class NeurosonicBridge {
+    constructor(repoName, repoUrl = '', port = 9001) {
+        this.repoName = repoName;
+        this.repoUrl = repoUrl || `https://github.com/Web8kameleon-hub/${repoName}`;
+        this.coreUrl = 'http://localhost:8765';
+        this.port = port;
+        this.status = 'initialized';
+        this.lastPulse = null;
+        this.bridgeId = this._hash(`${repoName}${Date.now()}`).substring(0, 16);
+    }
+
+    _hash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(16);
+    }
+
+    connect() {
+        try {
+            const payload = JSON.stringify({
+                bridge_id: this.bridgeId,
+                repo: this.repoName,
+                url: this.repoUrl,
+                port: this.port,
+                language: 'html'
+            });
+            // fetch POST ne Neurosonic Core (nese eshte dukket online)
+            if (typeof fetch === 'function') {
+                fetch(`${this.coreUrl}/api/bridge/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload
+                }).then(r => {
+                    this.status = r.status === 200 ? 'connected' : 'offline';
+                }).catch(() => { this.status = 'offline'; });
+                this.status = 'connecting';
+                return true;
+            }
+            this.status = 'connected';
+            return true;
+        } catch (e) {
+            this.status = 'offline';
+            return false;
+        }
+    }
+
+    sendPulse(status = 'active') {
+        this.lastPulse = {
+            bridge_id: this.bridgeId,
+            repo: this.repoName,
+            status: status,
+            timestamp: Date.now() / 1000,
+            datetime: new Date().toISOString(),
+            hash: this._hash(`${this.repoName}${Date.now()}${status}`)
+        };
+        return this.lastPulse;
+    }
+
+    getStatus() {
+        return {
+            bridge_id: this.bridgeId,
+            repo: this.repoName,
+            status: this.status,
+            connected: this.status === 'connected',
+            last_pulse: this.lastPulse,
+            core_url: this.coreUrl,
+            port: this.port
+        };
+    }
+
+    getStatusBadge() {
+        const colors = { connected: 'brightgreen', offline: 'red', initialized: 'yellow' };
+        const color = colors[this.status] || 'lightgrey';
+        return `![Bridge](https://img.shields.io/badge/Bridge-${this.status}-${color})`;
+    }
+}
+
+/* Pulse - Sinjali i gjalle i repo-s */
+class Pulse {
+    constructor(repoName) {
+        this.repoName = repoName;
+        this.beats = [];
+        this.alive = true;
+    }
+
+    beat(status = 'ok') {
+        const pulse = {
+            repo: this.repoName,
+            status: status,
+            timestamp: Date.now() / 1000,
+            datetime: new Date().toISOString(),
+            beat_number: this.beats.length + 1
+        };
+        this.beats.push(pulse);
+        return pulse;
+    }
+
+    getStats() {
+        const total = this.beats.length;
+        if (total === 0) return { total_beats: 0, alive: this.alive };
+        const last = this.beats[total - 1];
+        const secondsSince = Date.now() / 1000 - last.timestamp;
+        return {
+            total_beats: total,
+            alive: secondsSince < 300,
+            last_beat: last.datetime,
+            seconds_since_last: secondsSince,
+            status: secondsSince < 300 ? 'healthy' : 'critical'
+        };
+    }
+}
+
+// Ekspozo global
+window.NeurosonicBridge = NeurosonicBridge;
+window.Pulse = Pulse;
+</script>

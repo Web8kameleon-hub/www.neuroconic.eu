@@ -73,7 +73,6 @@ def enforce_constitution() -> None:
 def check_constitution(action: str, module: str) -> bool:
     return bool(action) and bool(module)
 
-
 # ========================== NO FAKE ENGINE ==========================
 
 class TruthLevel(Enum):
@@ -305,7 +304,6 @@ class LegacyBaseAgent:
 
 class LegacyResearchAgent(LegacyBaseAgent):
     def __init__(self, memory, no_fake): super().__init__("ResearchAgent","research",memory,no_fake)
-
     def process(self, task):
         query = str(task)
         v=self.no_fake.verify(query)

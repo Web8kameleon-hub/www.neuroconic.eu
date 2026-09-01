@@ -168,7 +168,7 @@
                 <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">✅</span> Compatibility Matrix</h2><span class="toggle-icon">▼</span></div>
                 <div class="card-body">
                     <div class="form-group"><label>Module ID</label><input type="text" id="modId" value="MOD-NEW-001"></div>
-                    <div class="form-group"><label>Module Config (JSON)</label><textarea id="modConfig" rows="6">{"name":"New Module","api_version":"1.0","api_path":"/api/v1/module","memory_type":"HVO","encryption":"AES256","zero_trust":true,"sse_support":true,"tide_compatible":true,"license":"Neurosonic","cudm_compatible":true,"user_data_ownership":true,"dependencies":["NGI-CORE-0001"],"constitution_compatibility":["G001","G002","G003","G004","G005","G006","G007","G008","G009","G010"],"security_compatibility":["SR001","SR002","SR003","SR004","SR005","SR006","SR007","SR008"],"data_compatibility":["DR001","DR002","DR003","DR004","DR005"],"api_compatibility":["AR001","AR002","AR003","AR004"]}</textarea></div>
+                    <div class="form-group"><label>Module Config (JSON)</label><textarea id="modConfig" rows="6">{"name":"New Module","api_version":"1.0","memory_type":"HVO","encryption":"AES256","zero_trust":true,"sse_support":true,"tide_compatible":true,"license":"Neurosonic","cudm_compatible":true,"user_data_ownership":true,"dependencies":["NGI-CORE-0001"],"constitution_compatibility":["G001","G002","G003","G004","G005","G006","G007","G008","G009","G010"],"security_compatibility":["SR001","SR002","SR003","SR004","SR005","SR006","SR007","SR008"],"data_compatibility":["DR001","DR002","DR003","DR004","DR005"],"api_compatibility":["AR001","AR002","AR003","AR004"]}</textarea></div>
                     <button class="btn btn-primary" onclick="verifyModule()">🔍 Verify Module</button>
                     <div class="result-box" id="compatResult"></div>
                 </div>
@@ -192,22 +192,22 @@
                 <div class="card-body">
                     <div class="tabs"><div class="tab active" onclick="switchTab(this,'lightningScan')">Scan</div><div class="tab" onclick="switchTab(this,'lightningProcess')">Process</div><div class="tab" onclick="switchTab(this,'lightningPrint')">Print</div><div class="tab" onclick="switchTab(this,'lightningPipeline')">Pipeline</div></div>
                     <div id="lightningScan" class="tab-content active">
-                        <div class="form-group"><label>Source</label><input type="text" id="scanSource" value="https://example.com/doc.pdf"></div>
+                        <div class="form-group"><label>Source</label><input type="text" id="scanSource" value="" required></div>
                         <div class="form-group"><label>Mode</label><select id="scanMode"><option value="tidewave">TideWave</option><option value="lightning">Lightning</option><option value="resonance">Resonance</option><option value="nanodecibel">NanoDecibel</option><option value="hybrid">Hybrid</option></select></div>
                         <button class="btn btn-primary btn-sm" onclick="lightningScan()">📡 Scan</button><div class="result-box" id="scanResult"></div>
                     </div>
                     <div id="lightningProcess" class="tab-content">
-                        <div class="form-group"><label>Data</label><textarea id="procData" rows="3">Sample data to process...</textarea></div>
+                        <div class="form-group"><label>Data</label><textarea id="procData" rows="3" required></textarea></div>
                         <div class="form-group"><label>Engine</label><select id="procEngine"><option value="hybrid">Hybrid</option><option value="clisonic">Clisonic AI</option><option value="clx">CLX</option><option value="xcl">XCL</option></select></div>
                         <button class="btn btn-primary btn-sm" onclick="lightningProcess()">⚙️ Process</button><div class="result-box" id="processResult"></div>
                     </div>
                     <div id="lightningPrint" class="tab-content">
-                        <div class="form-group"><label>Data</label><textarea id="printData" rows="3">Content to print...</textarea></div>
+                        <div class="form-group"><label>Data</label><textarea id="printData" rows="3" required></textarea></div>
                         <div class="form-group"><label>Quality</label><select id="printQuality"><option value="stigma">Stigma Premium</option><option value="high">High</option><option value="normal">Normal</option><option value="draft">Draft</option></select></div>
                         <button class="btn btn-primary btn-sm" onclick="lightningPrint()">🖨️ Print</button><div class="result-box" id="printResult"></div>
                     </div>
                     <div id="lightningPipeline" class="tab-content">
-                        <div class="form-group"><label>Source</label><input type="text" id="pipeSource" value="https://example.com/doc.pdf"></div>
+                        <div class="form-group"><label>Source</label><input type="text" id="pipeSource" value="" required></div>
                         <button class="btn btn-primary btn-sm" onclick="lightningPipeline()">🔗 Execute Pipeline</button><div class="result-box" id="pipelineResult"></div>
                     </div>
                 </div>
@@ -219,9 +219,37 @@
         </div>
     </div>
     <script>
-        // Same-origin në production (Nginx proxy); ruan zhvillimin lokal në :5500.
-        const API_BASE = window.NEUROSONIC_API_BASE ||
-            (location.port === '5500' ? 'http://localhost:8000' : '');
+                let API_BASE = typeof window.NEUROSONIC_API_BASE === 'string' ? window.NEUROSONIC_API_BASE : '';
+                function getApiCandidates() {
+                    const candidates = [];
+                    const add = (v) => { if (typeof v === 'string' && !candidates.includes(v)) candidates.push(v); };
+                    add(API_BASE);
+                    add('');
+                    add('http://127.0.0.1:8000');
+                    add('http://localhost:8000');
+                    return candidates;
+                }
+                async function apiRequest(endpoint, options) {
+                    let lastError = null;
+                    for (const base of getApiCandidates()) {
+                        const url = (base || '') + endpoint;
+                        try {
+                            const response = await fetch(url, options);
+                            if (!response.ok) {
+                                if ((response.status === 404 || response.status === 501) && base === '') {
+                                    lastError = new Error(`HTTP ${response.status}`);
+                                    continue;
+                                }
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+                            API_BASE = base;
+                            return await response.json();
+                        } catch (error) {
+                            lastError = error;
+                        }
+                    }
+                    throw lastError || new Error('Failed to fetch');
+                }
         function showToast(title, message, type='success') {
             const t=document.getElementById('toast');t.className='toast '+type;
             document.getElementById('toastTitle').textContent=title;
@@ -234,8 +262,8 @@
             p.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
             const ct=p.nextElementSibling;if(ct){ct.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
             const tg=document.getElementById(c);if(tg)tg.classList.add('active');}}
-        async function apiGet(e){const r=await fetch(API_BASE+e);if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}
-        async function apiPost(e,b){const r=await fetch(API_BASE+e,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}
+            async function apiGet(e) { return await apiRequest(e, { method: 'GET' }); }
+            async function apiPost(e, b) { return await apiRequest(e, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }); }
         async function checkHealth(){const d=document.getElementById('statusDot'),t=document.getElementById('statusText');
             try{const h=await apiGet('/api/health');d.className='status-dot';
             t.textContent='Online - '+new Date(h.timestamp*1000).toLocaleTimeString();
@@ -287,11 +315,13 @@
             r.innerHTML=h;}catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
         async function lightningScan(){const r=document.getElementById('scanResult');r.innerHTML='<span class="loading"></span> Scanning...';
             try{const d=await apiPost('/api/lightning/scan',{source:document.getElementById('scanSource').value,mode:document.getElementById('scanMode').value});
-            r.innerHTML=`<div class="${d.status==='completed'||d.status==='success'?'success':'warning'}">Status: ${d.status}</div><div>ID: ${d.id}</div><div>Confidence: ${(d.confidence*100).toFixed(1)}%</div>${d.error?`<div class="error">Error: ${d.error}</div>`:''}`;}
+                r.innerHTML = `<div class="${d.status === 'completed' || d.status === 'success' || d.status === 'scanned' ? 'success' : 'warning'}">Status: ${d.status}</div><div>ID: ${d.id}</div>${d.confidence == null ? '' : `<div>Confidence: ${(d.confidence * 100).toFixed(1)}%</div>`}${d.error ? `<div class="error">Error: ${d.error}</div>` : ''}`;
+            }
             catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
         async function lightningProcess(){const r=document.getElementById('processResult');r.innerHTML='<span class="loading"></span> Processing...';
             try{const d=await apiPost('/api/lightning/process',{data:document.getElementById('procData').value,engine:document.getElementById('procEngine').value});
-            r.innerHTML=`<div class="${d.status==='completed'||d.status==='success'?'success':'warning'}">Status: ${d.status}</div><div>ID: ${d.id}</div><div>Confidence: ${(d.confidence*100).toFixed(1)}%</div>${d.error?`<div class="error">Error: ${d.error}</div>`:''}`;}
+                r.innerHTML = `<div class="${d.status === 'completed' || d.status === 'success' || d.status === 'processed' ? 'success' : 'warning'}">Status: ${d.status}</div><div>ID: ${d.id}</div>${d.confidence == null ? '' : `<div>Confidence: ${(d.confidence * 100).toFixed(1)}%</div>`}${d.error ? `<div class="error">Error: ${d.error}</div>` : ''}`;
+            }
             catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
         async function lightningPrint(){const r=document.getElementById('printResult');r.innerHTML='<span class="loading"></span> Printing...';
             try{const d=await apiPost('/api/lightning/print',{data:document.getElementById('printData').value,quality:document.getElementById('printQuality').value});

@@ -13,6 +13,7 @@ import hashlib
 from typing import Dict, List, Any, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 # Shto parent directory per import - absolute path
@@ -37,11 +38,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS - lejo frontend nga cdokush burim
+_cors_origins = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -77,25 +82,25 @@ class EvolutionProposeRequest(BaseModel):
 
 class ScanRequest(BaseModel):
     source: str
-    mode: str = "tidewave"
+    mode: LightningMode = LightningMode.TIDEWAVE
 
 
 class ProcessRequest(BaseModel):
     data: str
-    engine: str = "hybrid"
+    engine: ProcessingEngine = ProcessingEngine.HYBRID
     ai_enhance: bool = True
 
 
 class PrintRequest(BaseModel):
     data: str
-    quality: str = "stigma"
+    quality: PrintQuality = PrintQuality.STIGMA
 
 
 class PipelineRequest(BaseModel):
     source: str
-    scan_mode: str = "tidewave"
-    process_engine: str = "hybrid"
-    print_quality: str = "stigma"
+    scan_mode: LightningMode = LightningMode.TIDEWAVE
+    process_engine: ProcessingEngine = ProcessingEngine.HYBRID
+    print_quality: PrintQuality = PrintQuality.STIGMA
 
 
 class BatchRequest(BaseModel):
@@ -114,18 +119,63 @@ async def root():
         "version": "1.0.0",
         "status": "online",
         "modules": ["dna", "genome", "compatibility", "evolution", "lightning"],
+        "ui": {
+            "dashboard": "/dashboard",
+            "dashboard_file": "/neurosonic_dashboard.html",
+            "dna_ui": "/dna-ui",
+            "dna_ui_file": "/neurosonic_dna_ui.html",
+            "frontend_entry": "/index.html",
+        },
         "docs": "/docs",
     }
 
 
+@app.get("/neurosonic_dashboard.html", include_in_schema=False)
+async def dashboard():
+    """Shërben dashboard-in nga i njëjti origin me API-n."""
+    return FileResponse(os.path.join(_project_root, "neurosonic_dashboard.html"))
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard_alias():
+    """Alias i qartë për dashboard-in e API/ops."""
+    return FileResponse(os.path.join(_project_root, "neurosonic_dashboard.html"))
+
+
+@app.get("/index.html", include_in_schema=False)
+async def frontend_index():
+    """Shërben hyrjen historike të frontend-it."""
+    return FileResponse(os.path.join(_project_root, "index.html"))
+
+
+@app.get("/dna-ui", include_in_schema=False)
+async def dna_ui():
+    """UI e dedikuar për ADN-në."""
+    return FileResponse(os.path.join(_project_root, "neurosonic_dna_ui.html"))
+
+
+@app.get("/neurosonic_dna_ui.html", include_in_schema=False)
+async def dna_ui_file():
+    """Alias historik për UI e ADN-së."""
+    return FileResponse(os.path.join(_project_root, "neurosonic_dna_ui.html"))
+
+
+@app.get("/dna-dashboard", include_in_schema=False)
+async def dna_dashboard_alias():
+    """Alias i qartë për dashboard-in DNA UI."""
+    return FileResponse(os.path.join(_project_root, "neurosonic_dna_ui.html"))
+
+
 @app.get("/api/health")
 async def health():
+    lightning_service = bridge._check_health()
+    bridge.service_available = lightning_service
     return {
         "status": "healthy",
         "timestamp": time.time(),
         "dna_integrity": dna._hash == dna._compute_dna_hash(),
         "genome_packages": len(genome.packages),
-        "lightning_service": bridge.service_available,
+        "lightning_service": lightning_service,
         "api_version": "1.0.0",
     }
 
@@ -198,14 +248,31 @@ async def get_genome():
 async def verify_compatibility(req: ModuleVerifyRequest):
     result = matrix.verify_module(req.module_id, req.config)
     report = matrix.generate_report(result)
+    total_checks = len(result.checks) if result.checks else 0
+    passed_checks = sum(1 for passed in result.checks.values() if passed)
+    score = (passed_checks / total_checks) * 100 if total_checks else 0.0
+    payload_hash = hashlib.sha256(
+        json.dumps(
+            {
+                "module_id": result.module_id,
+                "module_name": result.module_name,
+                "compatible": result.compatible,
+                "checks": result.checks,
+                "violations": result.violations,
+            },
+            sort_keys=True,
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    timestamp = time.time()
     return {
         "module_id": result.module_id,
         "compatible": result.compatible,
-        "score": result.score,
+        "score": score,
         "violations": result.violations,
         "checks": result.checks,
-        "hash": result.hash,
-        "timestamp": result.timestamp,
+        "hash": payload_hash,
+        "timestamp": timestamp,
         "report": report,
     }
 
@@ -236,15 +303,12 @@ async def get_proposals():
 
 @app.post("/api/lightning/scan")
 async def lightning_scan(req: ScanRequest):
-    try:
-        mode = LightningMode(req.mode)
-    except ValueError:
-        mode = LightningMode.TIDEWAVE
-    result = bridge.scan(req.source, mode)
+    result = bridge.scan(req.source, req.mode)
     return {
         "id": result.id,
         "status": result.status,
         "data": result.data,
+        "source": result.source,
         "hash": result.hash,
         "confidence": result.confidence,
         "error": result.error,
@@ -254,11 +318,7 @@ async def lightning_scan(req: ScanRequest):
 
 @app.post("/api/lightning/process")
 async def lightning_process(req: ProcessRequest):
-    try:
-        engine = ProcessingEngine(req.engine)
-    except ValueError:
-        engine = ProcessingEngine.HYBRID
-    result = bridge.process(req.data, engine, req.ai_enhance)
+    result = bridge.process(req.data, req.engine, req.ai_enhance)
     return {
         "id": result.id,
         "status": result.status,
@@ -272,15 +332,12 @@ async def lightning_process(req: ProcessRequest):
 
 @app.post("/api/lightning/print")
 async def lightning_print(req: PrintRequest):
-    try:
-        quality = PrintQuality(req.quality)
-    except ValueError:
-        quality = PrintQuality.STIGMA
-    result = bridge.print_result(req.data, quality)
+    result = bridge.print_result(req.data, req.quality)
     return {
         "id": result.id,
         "status": result.status,
         "data": result.data,
+        "source": result.source,
         "hash": result.hash,
         "confidence": result.confidence,
         "error": result.error,
@@ -290,19 +347,9 @@ async def lightning_print(req: PrintRequest):
 
 @app.post("/api/lightning/pipeline")
 async def lightning_pipeline(req: PipelineRequest):
-    try:
-        scan_mode = LightningMode(req.scan_mode)
-    except ValueError:
-        scan_mode = LightningMode.TIDEWAVE
-    try:
-        proc_engine = ProcessingEngine(req.process_engine)
-    except ValueError:
-        proc_engine = ProcessingEngine.HYBRID
-    try:
-        print_q = PrintQuality(req.print_quality)
-    except ValueError:
-        print_q = PrintQuality.STIGMA
-    result = bridge.execute_pipeline(req.source, scan_mode, proc_engine, print_q)
+    result = bridge.execute_pipeline(
+        req.source, req.scan_mode, req.process_engine, req.print_quality
+    )
     return result
 
 
@@ -330,7 +377,7 @@ if __name__ == "__main__":
     import uvicorn
 
     print("\n🔌 Neurosonic Backend API duke u nisur...")
-    print("   http://localhost:8000")
-    print("   http://localhost:8000/docs (Swagger UI)")
-    print("   http://localhost:8000/redoc (ReDoc)\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    host = os.environ.get("NEUROSONIC_HOST", "127.0.0.1")
+    port = int(os.environ.get("NEUROSONIC_PORT", "8000"))
+    print(f"   Backend listening on {host}:{port}\n")
+    uvicorn.run(app, host=host, port=port, reload=False)

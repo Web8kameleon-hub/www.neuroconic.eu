@@ -122,10 +122,15 @@ class LightningSPPEngine:
 
     def scan(self, data: Any) -> Dict[str, Any]:
         """Scan - Lexon te dhenat hyrese"""
-        scan_id = hashlib.sha256(f"scan_{time.time()}_{data}".encode()).hexdigest()[:16]
+        serialized = json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        scan_id = hashlib.sha256(
+            b"scan:" + str(time.time_ns()).encode("ascii") + serialized
+        ).hexdigest()[:16]
         result = {
             "scan_id": scan_id,
             "input": str(data)[:100],
+            "input_hash": hashlib.sha256(serialized).hexdigest(),
+            "input_size_bytes": len(serialized),
             "timestamp": time.time(),
             "datetime": datetime.datetime.now().isoformat(),
             "status": "scanned",
@@ -136,6 +141,9 @@ class LightningSPPEngine:
 
     def process(self, scan_result: Dict) -> Dict[str, Any]:
         """Process - Perpunon te dhenat"""
+        input_value = scan_result.get("input", scan_result.get("data"))
+        if input_value is None:
+            input_value = json.dumps(scan_result, sort_keys=True, ensure_ascii=False)
         process_id = hashlib.sha256(
             f"proc_{time.time()}_{scan_result.get('scan_id', '')}".encode()
         ).hexdigest()[:16]
@@ -144,7 +152,7 @@ class LightningSPPEngine:
         processed = {
             "process_id": process_id,
             "scan_id": scan_result.get("scan_id", "unknown"),
-            "input": scan_result.get("input", ""),
+            "input": input_value,
             "hash": hashlib.sha256(str(scan_result).encode()).hexdigest(),
             "timestamp": time.time(),
             "datetime": datetime.datetime.now().isoformat(),
@@ -156,6 +164,10 @@ class LightningSPPEngine:
 
     def print_result(self, process_result: Dict) -> Dict[str, Any]:
         """Print - Nxjerr rezultatin perfundimtar"""
+        content = process_result.get("data", process_result.get("input"))
+        if content is None:
+            content = json.dumps(process_result, sort_keys=True, ensure_ascii=False)
+        content_bytes = str(content).encode("utf-8")
         print_id = hashlib.sha256(
             f"print_{time.time()}_{process_result.get('process_id', '')}".encode()
         ).hexdigest()[:16]
@@ -165,8 +177,8 @@ class LightningSPPEngine:
             "process_id": process_result.get("process_id", "unknown"),
             "scan_id": process_result.get("scan_id", "unknown"),
             "output": {
-                "summary": f"Processed {process_result.get('input', 'empty')}",
-                "hash": process_result.get("hash", ""),
+                "content_hash": hashlib.sha256(content_bytes).hexdigest(),
+                "size_bytes": len(content_bytes),
                 "timestamp": time.time(),
                 "datetime": datetime.datetime.now().isoformat(),
             },
@@ -178,6 +190,7 @@ class LightningSPPEngine:
 
     def pipeline(self, input_data: Any) -> Dict[str, Any]:
         """Pipeline i plote: Scan -> Process -> Print"""
+        pipeline_started = time.time()
         scan = self.scan(input_data)
         proc = self.process(scan)
         pr = self.print_result(proc)
@@ -191,7 +204,7 @@ class LightningSPPEngine:
             "process": proc,
             "print": pr,
             "status": "completed",
-            "total_time": time.time() - self.start_time,
+            "total_time": time.time() - pipeline_started,
         }
 
     def get_health(self) -> Dict[str, Any]:
@@ -362,7 +375,7 @@ class LightningSPPHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(pulse)
 
         elif path.startswith("/scan/"):
-            # Simulim skanimi nga nje input
+            # Skanim determinist i input-it të dhënë në path.
             input_data = path.replace("/scan/", "")
             result = engine.scan(input_data)
             self._send_json(result)
@@ -392,6 +405,17 @@ class LightningSPPHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/pipeline":
             result = engine.pipeline(body)
             self._send_json(result)
+
+        elif path == "/batch":
+            sources = body.get("sources")
+            if not isinstance(sources, list) or not sources:
+                self._send_json(
+                    {"error": "sources must be a non-empty list", "status": "error"},
+                    400,
+                )
+                return
+            results = [engine.pipeline(source) for source in sources]
+            self._send_json({"status": "completed", "results": results})
 
         elif path == "/bridge/register":
             success = bridge.register()

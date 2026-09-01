@@ -1,6 +1,6 @@
 # ====================================================================
-# NEUROSONIC FRONTEND STARTUP
-# Hap nje dritare te re PowerShell per Frontend Server
+# NEUROSONIC LIGHTNING SPP STARTUP
+# Hap nje dritare te re pwsh per Lightning SPP server
 # ====================================================================
 
 $ErrorActionPreference = "Stop"
@@ -11,28 +11,26 @@ $PythonExe = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path $PythonExe)) {
     $PythonExe = (Get-Command python -ErrorAction Stop).Source
 }
-$port = 5500
+
+$LightningEntry = Join-Path $ProjectRoot "repos\Lightning-SPP-3.14\lightning_spp_server.py"
+if (-not (Test-Path $LightningEntry)) {
+    throw "Lightning SPP entrypoint nuk u gjet: $LightningEntry"
+}
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  NEUROSONIC FRONTEND - Duke u nisur..." -ForegroundColor Cyan
+Write-Host "  NEUROSONIC LIGHTNING SPP - Duke u nisur..." -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Frontend Server: http://localhost:$port" -ForegroundColor Green
-Write-Host "Dashboard (recommended): http://localhost:8000/neurosonic_dashboard.html" -ForegroundColor Green
-Write-Host "Dashboard (frontend):    http://localhost:$port/neurosonic_dashboard.html" -ForegroundColor DarkGray
+Write-Host "Lightning SPP: http://localhost:8080" -ForegroundColor Green
 Write-Host ""
 
-# Shko ne projekt
 Set-Location $ProjectRoot
 
-# Nise Python HTTP server per frontend
-Write-Host "🚀 Duke nisur Frontend Server..." -ForegroundColor Green
-$env:PYTHONUTF8 = "1"
-& $PythonExe -m http.server $port --bind 0.0.0.0
+Write-Host "🚀 Duke nisur Lightning SPP..." -ForegroundColor Green
+& $PythonExe -u $LightningEntry
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Gabim! Frontend server nuk u nis." -ForegroundColor Red
+    Write-Host "❌ Gabim! Lightning SPP nuk u nis." -ForegroundColor Red
     Write-Host "Shtypni ENTER per te mbyllur..." -ForegroundColor Yellow
     Read-Host
 }
-

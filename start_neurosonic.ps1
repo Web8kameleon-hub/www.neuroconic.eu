@@ -1,7 +1,10 @@
 # ====================================================================
-# NEUROSONIC TRINITY+ASI - STARTUP LAUNCHER
-# Hap 3 dritare PowerShell: Backend, Frontend, dhe hap browser-in
+# NEUROSONIC TRINITY+ASI - STARTUP LAUNCHER (PWSH POPUP)
+# Hap 3 dritare popup me pwsh: Lightning SPP, Backend, Frontend.
 # ====================================================================
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  NEUROSONIC TRINITY+ASI STARTUP" -ForegroundColor Cyan
@@ -9,61 +12,45 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$BackendScript = Join-Path $ProjectRoot "scripts\popup_backend.ps1"
-$FrontendScript = Join-Path $ProjectRoot "scripts\popup_frontend.ps1"
-$SppLauncher = Join-Path $ProjectRoot "scripts\popup_spp.ps1"
-$DashboardUrl = "http://localhost:5500/neurosonic_dashboard.html"
+$PwshExe = (Get-Command pwsh -ErrorAction Stop).Source
 
-# Hap dritare per Lightning SPP (port 8080) - Sherben Scan/Process/Print
-Write-Host "[1/4] Duke nisur Lightning SPP 3.14..." -ForegroundColor Yellow
-Start-Process PowerShell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-File", $SppLauncher
+$LightningPopup = Join-Path $ProjectRoot "scripts\popup_lightning.ps1"
+$BackendPopup = Join-Path $ProjectRoot "scripts\popup_backend.ps1"
+$FrontendPopup = Join-Path $ProjectRoot "scripts\popup_frontend.ps1"
 
-$sppReady = $false
-for ($attempt = 1; $attempt -le 10; $attempt++) {
-    Start-Sleep -Seconds 1
-    try {
-        $response = Invoke-RestMethod -Uri "http://localhost:8080/health" -TimeoutSec 1
-        if ($response.status -eq "healthy") {
-            $sppReady = $true
-            break
-        }
-    } catch { }
-}
-if (-not $sppReady) {
-    Write-Host "[GABIM] Lightning SPP nuk u hap ne porten 8080. Shiko dritaren e tij." -ForegroundColor Red
+foreach ($ScriptPath in @($LightningPopup, $BackendPopup, $FrontendPopup)) {
+    if (-not (Test-Path $ScriptPath)) {
+        throw "Popup script nuk u gjet: $ScriptPath"
+    }
 }
 
-# Hap dritare per Backend
-Write-Host "[2/4] Duke hapur Backend API..." -ForegroundColor Yellow
-Start-Process PowerShell -ArgumentList "-NoExit", "-Command", "& '$BackendScript'"
-
+Write-Host "[1/3] Duke hapur popup per Lightning SPP..." -ForegroundColor Yellow
+Start-Process -FilePath $PwshExe -ArgumentList @("-NoExit", "-File", $LightningPopup) -WorkingDirectory $ProjectRoot
 Start-Sleep -Seconds 2
 
-# Hap dritare per Frontend
-Write-Host "[3/4] Duke hapur Frontend Server..." -ForegroundColor Yellow
-Start-Process PowerShell -ArgumentList "-NoExit", "-Command", "& '$FrontendScript'"
+Write-Host "[2/3] Duke hapur popup per Backend API..." -ForegroundColor Yellow
+Start-Process -FilePath $PwshExe -ArgumentList @("-NoExit", "-File", $BackendPopup) -WorkingDirectory $ProjectRoot
+Start-Sleep -Seconds 2
 
-Start-Sleep -Seconds 3
+Write-Host "[3/3] Duke hapur popup per Frontend..." -ForegroundColor Yellow
+Start-Process -FilePath $PwshExe -ArgumentList @("-NoExit", "-File", $FrontendPopup) -WorkingDirectory $ProjectRoot
 
-# Hap browser
-Write-Host "[4/4] Duke hapur Dashboard ne browser..." -ForegroundColor Yellow
-Start-Process $DashboardUrl
+if ($env:NEUROSONIC_NO_BROWSER -ne "1") {
+    Start-Sleep -Seconds 2
+    Write-Host "Duke hapur dashboard ne browser..." -ForegroundColor DarkGray
+    Start-Process "http://localhost:8000/neurosonic_dashboard.html"
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  🚀 NEUROSONIC ESHTE DUKE EKZEKUTUAR!" -ForegroundColor Green
+Write-Host "  🚀 POPUP 1/2/3 U NISEN ME PWSH" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Lightning SPP: http://localhost:8080" -ForegroundColor Cyan
 Write-Host "  Backend API:   http://localhost:8000" -ForegroundColor Cyan
-Write-Host "  API Docs:      http://localhost:8000/docs" -ForegroundColor Cyan
 Write-Host "  Frontend:      http://localhost:5500" -ForegroundColor Cyan
-Write-Host "  Dashboard:     http://localhost:5500/neurosonic_dashboard.html" -ForegroundColor Cyan
+Write-Host "  Dashboard API/Ops: http://localhost:8000/dashboard" -ForegroundColor Cyan
+Write-Host "  Dashboard DNA UI:  http://localhost:8000/dna-ui" -ForegroundColor Cyan
+Write-Host "  Frontend Dashboard: http://localhost:5500/neurosonic_dashboard.html" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "  ⚠️  MOS MBYLLNI DRITARET E POWERSHELL!" -ForegroundColor Red
-Write-Host "     Ato sherbejne Lightning SPP, Backend dhe Frontend." -ForegroundColor Red
-Write-Host ""
-
-# Mbaj skriptin hapur
-Read-Host "Shtypni ENTER per te mbyllur kete dritare"
 

@@ -70,8 +70,8 @@ class LightningResult:
     hash: str
     timestamp: float
     source: str
-    confidence: float = 0.0
-    size_bytes: int = 0
+    confidence: Optional[float] = None
+    size_bytes: Optional[int] = None
     error: Optional[str] = None
 
 
@@ -95,8 +95,13 @@ class NeurosonicLightningBridge:
         POST /api/v1/batch
     """
 
-    def __init__(self, base_url: str = "http://localhost:8080", dna=None, genome=None):
-        self.base_url = base_url.rstrip("/")
+    def __init__(self, base_url: Optional[str] = None, dna=None, genome=None):
+        configured_url = (
+            base_url
+            or os.environ.get("LIGHTNING_SPP_URL")
+            or "http://127.0.0.1:8080"
+        )
+        self.base_url = configured_url.rstrip("/")
         self.dna = dna
         self.genome = genome
         self.scan_cache = {}
@@ -125,7 +130,7 @@ class NeurosonicLightningBridge:
     def _check_health(self) -> bool:
         """Kontrollon nese Lightning SPP eshte duke ekzekutuar"""
         try:
-            req = urllib.request.Request(f"{self.base_url}/api/health", method="GET")
+            req = urllib.request.Request(f"{self.base_url}/health", method="GET")
             with urllib.request.urlopen(req, timeout=2) as resp:
                 data = json.loads(resp.read().decode())
                 return data.get("status") == "healthy" or resp.status == 200
@@ -135,13 +140,21 @@ class NeurosonicLightningBridge:
 
     def _request(self, endpoint: str, data: Any = None, method: str = "POST") -> Dict:
         """Ben thirrje HTTP reale ne Lightning SPP"""
+        endpoint_map = {
+            "/api/v1/scan": "/scan",
+            "/api/v1/scan/high-quality": "/scan",
+            "/api/v1/process": "/process",
+            "/api/v1/process/hybrid": "/process",
+            "/api/v1/process/ai": "/process",
+            "/api/v1/print": "/print",
+            "/api/v1/pipeline": "/pipeline",
+            "/api/v1/batch": "/batch",
+        }
+        endpoint = endpoint_map.get(endpoint, endpoint)
         url = f"{self.base_url}{endpoint}"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
-        # SPP dhe backend-i nisen paralelisht. Një health-check i dështuar gjatë
-        # startup-it nuk duhet ta lërë bridge-in offline përgjithmonë.
-        if not self.service_available:
-            self.service_available = self._check_health()
+        self.service_available = self._check_health()
         if not self.service_available:
             return {"error": "Lightning SPP service not available", "status": "error"}
 
@@ -232,15 +245,18 @@ class NeurosonicLightningBridge:
                 error=result["error"],
             )
 
+        response_hash = result.get("hash") or hashlib.sha256(
+            json.dumps(result, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()[:12]
         return LightningResult(
             id=result.get("id", scan_id),
-            status=result.get("status", "completed"),
-            data=result.get("data"),
-            hash=result.get("hash", hashlib.sha256(source.encode()).hexdigest()[:12]),
+            status=result.get("status", "error"),
+            data=result.get("data", result.get("input")),
+            hash=response_hash,
             timestamp=time.time(),
             source=source,
-            confidence=result.get("confidence", 0.95),
-            size_bytes=result.get("size_bytes", len(source.encode())),
+            confidence=result.get("confidence"),
+            size_bytes=result.get("size_bytes"),
         )
 
     # ========================================================================
@@ -312,17 +328,18 @@ class NeurosonicLightningBridge:
                 error=result["error"],
             )
 
+        response_hash = result.get("hash") or hashlib.sha256(
+            json.dumps(result, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()[:12]
         return LightningResult(
             id=result.get("id", process_id),
-            status=result.get("status", "completed"),
-            data=result.get("data"),
-            hash=result.get(
-                "hash", hashlib.sha256(str(data).encode()).hexdigest()[:12]
-            ),
+            status=result.get("status", "error"),
+            data=result.get("data", result.get("input")),
+            hash=response_hash,
             timestamp=time.time(),
             source=engine.value,
-            confidence=result.get("confidence", 0.97),
-            size_bytes=result.get("size_bytes", len(data_bytes)),
+            confidence=result.get("confidence"),
+            size_bytes=result.get("size_bytes"),
         )
 
     # ========================================================================
@@ -381,17 +398,18 @@ class NeurosonicLightningBridge:
                 error=result["error"],
             )
 
+        response_hash = result.get("hash") or hashlib.sha256(
+            json.dumps(result, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()[:12]
         return LightningResult(
             id=result.get("id", print_id),
-            status=result.get("status", "completed"),
-            data=result.get("output_path", "printed"),
-            hash=result.get(
-                "hash", hashlib.sha256(f"{time.time()}".encode()).hexdigest()[:12]
-            ),
+            status=result.get("status", "error"),
+            data=result.get("output_path", result.get("output")),
+            hash=response_hash,
             timestamp=time.time(),
             source=f"print_{quality.value}",
-            confidence=result.get("confidence", 0.99),
-            size_bytes=result.get("size_bytes", len(data_bytes)),
+            confidence=result.get("confidence"),
+            size_bytes=result.get("size_bytes"),
         )
 
     # ========================================================================
@@ -441,9 +459,7 @@ class NeurosonicLightningBridge:
 
         return {
             "pipeline_id": pipeline_id,
-            "status": result.get(
-                "status", "completed" if "error" not in result else "error"
-            ),
+            "status": result.get("status", "error"),
             "result": result,
             "total_time_ms": total_time * 1000,
             "timestamp": time.time(),
@@ -474,10 +490,8 @@ class NeurosonicLightningBridge:
         return {
             "batch_id": batch_id,
             "sources_count": len(sources),
-            "status": result.get(
-                "status", "completed" if "error" not in result else "error"
-            ),
-            "results": result.get("results", []),
+            "status": result.get("status", "error"),
+            "results": result.get("results"),
             "total_time_ms": total_time * 1000,
             "timestamp": time.time(),
         }
@@ -488,7 +502,6 @@ class NeurosonicLightningBridge:
 
     def get_statistics(self) -> Dict[str, Any]:
         """Statistikat e integrimit"""
-        self.service_available = self._check_health()
         return {
             "total_scans": self.statistics["total_scans"],
             "total_processes": self.statistics["total_processes"],
@@ -508,10 +521,8 @@ class NeurosonicLightningBridge:
         return {
             "name": "Neurosonic-Lightning Bridge",
             "version": "1.0.0",
-            "real_services": True,
-            "zero_fake": True,
             "service_url": self.base_url,
-            "service_available": self.service_available,
+            "service_available": self._check_health(),
             "protocol": "HTTP REST",
             "formats": ["JSON", "bytes"],
             "source": "https://github.com/Web8kameleon-hub/Lightning-SPP-3.14",

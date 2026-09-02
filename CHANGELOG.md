@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.6 - 2026-09-02
+
+Reliability and integrity release focused on anti-echo enforcement in `shell/think` and Nginx failover hardening for backend rolling restarts.
+
+### Added (v1.0.6)
+
+- Add anti-echo regression suite in `tests/test_shell_think_anti_echo.py`.
+- Add operational rolling update script `scripts/rolling_update_backends.ps1`.
+- Add usage guide `docs/guides/rolling_update_backends.md`.
+- Add second backend service `backend_b` in `docker-compose.yml` for failover.
+
+### Changed (v1.0.6)
+
+- Enforce anti-echo contract in `backend/main.py` for `/api/shell/think`: echo responses now return `degraded/failed` with `raw_response` instead of false success.
+- Extend `shell/think` response metadata with `router`, `provider`, `model`, `execution`, and `generated_tokens` when available.
+- Enrich trace pipeline records with `component` and `entered` fields across Scanner→Intent→Planner→Memory→Knowledge→Reasoning→Validator→Response.
+- Route Nginx API/UI proxy through backend pool (`backend`, `backend_b`) with upstream retry/failover in `deploy/nginx.conf`.
+
+### Release Sync (v1.0.6)
+
+- Git tag: `v1.0.6`
+- Commit: `TBD`
+- Release URL: `TBD`
+
 ## v1.0.5 - 2026-09-02
 
 UI runtime integrity release focused on removing static placeholder signals from the DNA UI shell and adding compliance footer controls.

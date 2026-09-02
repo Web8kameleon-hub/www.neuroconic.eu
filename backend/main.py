@@ -777,8 +777,31 @@ async def shell_think(req: ShellThinkRequest):
     prompt = req.prompt.strip()
     input_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest() if prompt else ""
 
+    def _normalize_for_echo(text: str) -> str:
+        return " ".join((text or "").split()).strip().lower()
+
+    def _extract_runtime_metadata(result_data: Any) -> tuple[str | None, str | None, int | None]:
+        if not isinstance(result_data, dict):
+            return None, None, None
+
+        provider = result_data.get("provider") or result_data.get("source")
+        model = result_data.get("model") or result_data.get("model_name")
+        generated_tokens_raw = (
+            result_data.get("generated_tokens")
+            or result_data.get("tokens")
+            or result_data.get("eval_count")
+        )
+        try:
+            generated_tokens = int(generated_tokens_raw) if generated_tokens_raw is not None else None
+        except (TypeError, ValueError):
+            generated_tokens = None
+
+        return provider, model, generated_tokens
+
     def _trace_step(
         step: str,
+        component: str,
+        entered: bool,
         status: str,
         duration_ms: float,
         input_hash_value: str,
@@ -787,6 +810,8 @@ async def shell_think(req: ShellThinkRequest):
     ) -> dict[str, Any]:
         return {
             "step": step,
+            "component": component,
+            "entered": entered,
             "status": status,
             "duration_ms": round(duration_ms, 3),
             "input_hash": input_hash_value,
@@ -807,6 +832,8 @@ async def shell_think(req: ShellThinkRequest):
         pipeline_trace.append(
             _trace_step(
                 step="ui_prompt",
+                component="ui.prompt",
+                entered=True,
                 status="failed",
                 duration_ms=elapsed_ms,
                 input_hash_value=input_hash,
@@ -835,6 +862,8 @@ async def shell_think(req: ShellThinkRequest):
     pipeline_trace.append(
         _trace_step(
             step="ui_prompt",
+            component="ui.prompt",
+            entered=True,
             status="ok",
             duration_ms=0,
             input_hash_value=input_hash,
@@ -849,6 +878,8 @@ async def shell_think(req: ShellThinkRequest):
     pipeline_trace.append(
         _trace_step(
             step="bridge_process",
+            component="bridge.runtime",
+            entered=True,
             status="error" if (result.error or result.status == "error") else "ok",
             duration_ms=bridge_elapsed_ms,
             input_hash_value=input_hash,
@@ -864,6 +895,8 @@ async def shell_think(req: ShellThinkRequest):
             [
                 _trace_step(
                     step="scanner",
+                    component="pipeline.scanner",
+                    entered=False,
                     status="not_instrumented",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -871,6 +904,8 @@ async def shell_think(req: ShellThinkRequest):
                 ),
                 _trace_step(
                     step="intent",
+                    component="pipeline.intent",
+                    entered=False,
                     status="not_instrumented",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -878,6 +913,8 @@ async def shell_think(req: ShellThinkRequest):
                 ),
                 _trace_step(
                     step="planner",
+                    component="pipeline.planner",
+                    entered=False,
                     status="not_instrumented",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -885,6 +922,8 @@ async def shell_think(req: ShellThinkRequest):
                 ),
                 _trace_step(
                     step="memory",
+                    component="pipeline.memory",
+                    entered=False,
                     status="not_instrumented",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -892,6 +931,8 @@ async def shell_think(req: ShellThinkRequest):
                 ),
                 _trace_step(
                     step="knowledge",
+                    component="pipeline.knowledge",
+                    entered=False,
                     status="not_instrumented",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -899,6 +940,8 @@ async def shell_think(req: ShellThinkRequest):
                 ),
                 _trace_step(
                     step="reasoning",
+                    component="pipeline.reasoning",
+                    entered=False,
                     status="not_instrumented",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -906,6 +949,8 @@ async def shell_think(req: ShellThinkRequest):
                 ),
                 _trace_step(
                     step="validator",
+                    component="pipeline.validator",
+                    entered=False,
                     status="not_instrumented",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -913,6 +958,8 @@ async def shell_think(req: ShellThinkRequest):
                 ),
                 _trace_step(
                     step="response",
+                    component="pipeline.response",
+                    entered=True,
                     status="failed",
                     duration_ms=0,
                     input_hash_value=input_hash,
@@ -962,12 +1009,141 @@ async def shell_think(req: ShellThinkRequest):
                 pass
 
     output_hash = hashlib.sha256(output_text.encode("utf-8")).hexdigest()
-    echo_detected = output_text.strip().lower() == prompt.strip().lower()
+    echo_detected = _normalize_for_echo(output_text) == _normalize_for_echo(prompt)
+    provider, model, generated_tokens = _extract_runtime_metadata(result.data)
+    has_non_empty_output = bool(output_text.strip())
+    reasoning_validated = has_non_empty_output and not echo_detected
+
+    if not reasoning_validated:
+        execution_status = "degraded" if echo_detected else "failed"
+        failure_reason = (
+            "Echo response detected; no generated reasoning output from provider"
+            if echo_detected
+            else "No reasoning output returned by provider"
+        )
+
+        pipeline_trace.extend(
+            [
+                _trace_step(
+                    step="scanner",
+                    component="pipeline.scanner",
+                    entered=False,
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value=input_hash,
+                ),
+                _trace_step(
+                    step="intent",
+                    component="pipeline.intent",
+                    entered=False,
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value=input_hash,
+                ),
+                _trace_step(
+                    step="planner",
+                    component="pipeline.planner",
+                    entered=False,
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value=input_hash,
+                ),
+                _trace_step(
+                    step="memory",
+                    component="pipeline.memory",
+                    entered=False,
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value=input_hash,
+                ),
+                _trace_step(
+                    step="knowledge",
+                    component="pipeline.knowledge",
+                    entered=False,
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value=input_hash,
+                ),
+                _trace_step(
+                    step="reasoning",
+                    component="pipeline.reasoning",
+                    entered=True,
+                    status="degraded" if echo_detected else "failed",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value=output_hash,
+                    details={"echo_detected": echo_detected, "provider": provider, "model": model},
+                ),
+                _trace_step(
+                    step="validator",
+                    component="pipeline.validator",
+                    entered=True,
+                    status="failed",
+                    duration_ms=0,
+                    input_hash_value=output_hash,
+                    output_hash_value=result.hash or output_hash,
+                    details={"reasoning_validated": False},
+                ),
+                _trace_step(
+                    step="response",
+                    component="pipeline.response",
+                    entered=True,
+                    status=execution_status,
+                    duration_ms=0,
+                    input_hash_value=result.hash or output_hash,
+                    output_hash_value=output_hash,
+                    details={"reason": failure_reason},
+                ),
+            ]
+        )
+
+        return {
+            "success": False,
+            "status": execution_status,
+            "error": result.error or failure_reason,
+            "response": "",
+            "raw_response": output_text,
+            "hash": result.hash,
+            "confidence": result.confidence,
+            "engine": selected_engine.value,
+            "router": selected_engine.value,
+            "provider": provider,
+            "model": model,
+            "execution": execution_status,
+            "generated_tokens": generated_tokens,
+            "latency_ms": elapsed_ms,
+            "timestamp": time.time(),
+            "verified": False,
+            "verification": {
+                "integrity_verified": bool(result.hash),
+                "source_verified": True,
+                "reasoning_validated": False,
+            },
+            "trace": {
+                "trace_id": trace_id,
+                "engine": selected_engine.value,
+                "started_at": started_at,
+                "finished_at": time.time(),
+                "elapsed_ms": elapsed_ms,
+                "input_hash": input_hash,
+                "output_hash": output_hash,
+                "echo_detected": echo_detected,
+                "pipeline": pipeline_trace,
+            },
+            "sources": [bridge.base_url, "dna:" + dna._hash],
+        }
 
     pipeline_trace.extend(
         [
             _trace_step(
                 step="scanner",
+                component="pipeline.scanner",
+                entered=False,
                 status="not_instrumented",
                 duration_ms=0,
                 input_hash_value=input_hash,
@@ -975,6 +1151,8 @@ async def shell_think(req: ShellThinkRequest):
             ),
             _trace_step(
                 step="intent",
+                component="pipeline.intent",
+                entered=False,
                 status="not_instrumented",
                 duration_ms=0,
                 input_hash_value=input_hash,
@@ -982,6 +1160,8 @@ async def shell_think(req: ShellThinkRequest):
             ),
             _trace_step(
                 step="planner",
+                component="pipeline.planner",
+                entered=False,
                 status="not_instrumented",
                 duration_ms=0,
                 input_hash_value=input_hash,
@@ -989,6 +1169,8 @@ async def shell_think(req: ShellThinkRequest):
             ),
             _trace_step(
                 step="memory",
+                component="pipeline.memory",
+                entered=False,
                 status="not_instrumented",
                 duration_ms=0,
                 input_hash_value=input_hash,
@@ -996,6 +1178,8 @@ async def shell_think(req: ShellThinkRequest):
             ),
             _trace_step(
                 step="knowledge",
+                component="pipeline.knowledge",
+                entered=False,
                 status="not_instrumented",
                 duration_ms=0,
                 input_hash_value=input_hash,
@@ -1003,14 +1187,18 @@ async def shell_think(req: ShellThinkRequest):
             ),
             _trace_step(
                 step="reasoning",
-                status="not_instrumented",
+                component="pipeline.reasoning",
+                entered=True,
+                status="ok",
                 duration_ms=0,
                 input_hash_value=input_hash,
                 output_hash_value=output_hash,
-                details={"echo_detected": echo_detected},
+                details={"echo_detected": False, "provider": provider, "model": model},
             ),
             _trace_step(
                 step="validator",
+                component="pipeline.validator",
+                entered=True,
                 status="ok" if result.hash else "degraded",
                 duration_ms=0,
                 input_hash_value=output_hash,
@@ -1018,6 +1206,8 @@ async def shell_think(req: ShellThinkRequest):
             ),
             _trace_step(
                 step="response",
+                component="pipeline.response",
+                entered=True,
                 status="ok",
                 duration_ms=0,
                 input_hash_value=result.hash or output_hash,
@@ -1029,7 +1219,6 @@ async def shell_think(req: ShellThinkRequest):
 
     integrity_verified = bool(result.hash)
     source_verified = True
-    reasoning_validated = not echo_detected
 
     return {
         "success": True,
@@ -1038,6 +1227,11 @@ async def shell_think(req: ShellThinkRequest):
         "hash": result.hash,
         "confidence": result.confidence,
         "engine": selected_engine.value,
+        "router": selected_engine.value,
+        "provider": provider,
+        "model": model,
+        "execution": "completed",
+        "generated_tokens": generated_tokens,
         "latency_ms": elapsed_ms,
         "timestamp": time.time(),
         "verified": integrity_verified,

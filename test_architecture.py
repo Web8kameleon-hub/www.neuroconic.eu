@@ -306,7 +306,7 @@ def test_compatibility_matrix_layer(dna, genome):
  "data_compatibility",
  ]
  for check in expected_checks:
- assert check in good_result.checks, f"Missing check: {check}"
+  assert check in good_result.checks, f"Missing check: {check}"
  assert all(good_result.checks.values()), "All checks should pass for good module"
  print(" 3.3 Te 8 kontrollet jane ekzekutuar")
 
@@ -489,11 +489,11 @@ def test_integration(dna, genome):
 
  # Hapi 6: Propozo rregull te ri nese nevojitet
  if analysis["potential_conflicts"]:
- print(f" Hapi 6: U gjeten {len(analysis['potential_conflicts'])} konflikte")
- for conflict in analysis["potential_conflicts"]:
- print(f" Propozohet rregull per: {conflict['description']}")
+    print(f" Hapi 6: U gjeten {len(analysis['potential_conflicts'])} konflikte")
+    for conflict in analysis["potential_conflicts"]:
+     print(f" Propozohet rregull per: {conflict['description']}")
  else:
- print(" Hapi 6: Nuk u gjeten konflikte")
+    print(" Hapi 6: Nuk u gjeten konflikte")
 
  # Hapi 7: Krijo version te ri
  version = evolution.create_new_version(

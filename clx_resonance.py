@@ -458,7 +458,7 @@ class Agent:
         self.resonator = pipeline.resonator
     
     def process(self, data: Any) -> Dict[str, Any]:
-        raise NotImplementedError
+        raise RuntimeError(f"{self.__class__.__name__}.process must be overridden")
 
 class PerceptionAgent(Agent):
     """Percepton dhe strukturon të dhënat hyrëse"""
@@ -867,9 +867,9 @@ class ResonanceCLI:
         """REPL me rezonancë dhe agentë"""
         print("""
 ╔══════════════════════════════════════════════════════════════╗
-║  ��� CLX Resonance Engine v2.0                               ║
+║  ��� CLX Resonance Engine v2.0                               ║
 ║  ⚡ Thinking Pipeline me Agjentë Rezonantë                  ║
-║  ��� Nanovolt Accuracy · Lightning Speed                    ║
+║  ��� Nanovolt Accuracy · Lightning Speed                    ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Komandat:                                                  ║
 ║  /resonate <text>  - Analizë rezonance                     ║
@@ -884,7 +884,7 @@ class ResonanceCLI:
             try:
                 prompt = input("clx⚡ ").strip()
             except (EOFError, KeyboardInterrupt):
-                print("\n��� Mirupafshim!")
+                print("\n��� Mirupafshim!")
                 break
             
             if not prompt:
@@ -899,7 +899,7 @@ class ResonanceCLI:
                 continue
             
             # Proceso përmes pipeline-it
-            print("��� Processing through resonance pipeline...")
+            print("��� Processing through resonance pipeline...")
             result = self.pipeline.process(prompt)
             
             # Shfaq rezultatin me rezonancë
@@ -910,7 +910,7 @@ class ResonanceCLI:
             print(response)
             print("="*60)
             print(f"⏱️  {metadata.get('total_time', 0):.3f}s")
-            print(f"��� Resonance Energy: {metadata.get('resonance_energy', 0):.3f}")
+            print(f"��� Resonance Energy: {metadata.get('resonance_energy', 0):.3f}")
             print(f"✅ Validation Score: {metadata.get('validation_score', 0):.2f}")
             print("="*60 + "\n")
     
@@ -933,13 +933,13 @@ class ResonanceCLI:
             print()
         
         elif command == "agents":
-            print("\n��� Agentët aktivë:")
+            print("\n��� Agentët aktivë:")
             for agent in self.pipeline.agents:
                 print(f"  • {agent.__class__.__name__}")
             print()
         
         elif command == "audit":
-            print("\n��� Audit i fundit:")
+            print("\n��� Audit i fundit:")
             try:
                 with open(self.audit.audit_file, 'r') as f:
                     lines = f.readlines()
@@ -950,7 +950,7 @@ class ResonanceCLI:
             print()
         
         elif command == "metrics":
-            print("\n��� Metrikat:")
+            print("\n��� Metrikat:")
             for name, metrics in self.audit.metrics.items():
                 if metrics:
                     latest = metrics[-1]
@@ -1018,19 +1018,19 @@ def main():
                 print(stage['data'])
     
     elif args.mode == "batch":
-        print("��� Batch processing - duke lexuar nga stdin...")
+        print("��� Batch processing - duke lexuar nga stdin...")
         prompts = [line.strip() for line in sys.stdin if line.strip()]
         
         if not prompts:
             print("❌ Nuk ka prompt-e për processing")
             return 1
         
-        print(f"��� Duke procesuar {len(prompts)} prompt-e...")
+        print(f"��� Duke procesuar {len(prompts)} prompt-e...")
         
         for i, prompt in enumerate(prompts, 1):
             print(f"\n[{i}/{len(prompts)}]")
             result = pipeline.process(prompt)
-            print(f"��� {result.get('response', '')[:200]}...")
+            print(f"��� {result.get('response', '')[:200]}...")
     
     # Mbyll audit
     pipeline.audit.close()

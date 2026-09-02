@@ -1453,7 +1453,7 @@
                 }, i * 80);
             });
 
-                         e('ai', '⏳ Processing with real services...', null, null, [], null);
+                addMessage('ai', '⏳ Processing with real services...', null, null, [], null, null);
 
             try {
                 const result = await apiPost('/api/shell/think', {
@@ -1470,8 +1470,9 @@
                     responseText,
                     result.hash || null,
                     result.confidence == null ? null : Number(result.confidence).toFixed(1),
-                    Arr                esult.sources) ? result.sources : [],
-                    result.trace || null,                                           ation || null
+                    Array.isArray(result.sources) ? result.sources : [],
+                    result.trace || null,
+                    result.verification || null
                 );
             } catch (error) {
                 addMessage(

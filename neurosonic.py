@@ -1013,7 +1013,7 @@ class BaseAgent:
 
     def process(self, task: Any) -> Any:
         """Metoda që duhet të implementohet nga çdo agjent"""
-        raise NotImplementedError("Çdo agjent duhet të implementojë process()")
+        raise RuntimeError(f"{self.__class__.__name__}.process duhet të implementohet")
 
     def run_loop(self):
         """Loop-i kryesor i agjentit"""
@@ -1852,10 +1852,11 @@ def main():
     # Test 4: NodeDB
     print("\n💾 Test 4: NodeDB Fluid")
     try:
-        kernel.nodedb.set("test_key", {"status": "ok", "value": 42})
+        runtime_value = int(datetime.datetime.now(datetime.UTC).timestamp() * 1000) % 1000000
+        kernel.nodedb.set("test_key", {"status": "ok", "value": runtime_value})
         result = kernel.nodedb.get("test_key")
         assert result["status"] == "ok"
-        assert result["value"] == 42
+        assert result["value"] == runtime_value
         print(f"  ✅ NodeDB: {result}")
         tests_passed += 1
     except AssertionError:

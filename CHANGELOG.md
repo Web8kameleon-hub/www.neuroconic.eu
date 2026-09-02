@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.11 - 2026-09-02
+
+Runtime sync release that finalizes remaining local updates and fixes DNA UI chat payload handling.
+
+### Changed (v1.0.11)
+
+- Sync remaining local updates in `.vscode/settings.json`, `clx_resonance.py`, and `neurosonic.py`.
+- Fix corrupted chat call path in `neurosonic_dna_ui.html` (`addMessage(...)`, `Array.isArray(result.sources)`, `result.verification`).
+- Remove `StarletteDeprecationWarning` in tests by installing and pinning `httpx2` for dev/test environments.
+
+### Validation (v1.0.11)
+
+- `pytest -q` completed successfully: `18 passed` (warning removed).
+- `python neurosonic_no_fake_police.py --ci` status: `PASTUR`.
+
+### Release Sync (v1.0.11)
+
+- Git tag: `v1.0.11`
+- Commit: `737b8e1`
+- Tag URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/tree/v1.0.11>
+
 ## v1.0.9 - 2026-09-02
 
 Warning cleanup and diagnostics hardening release focused on SEO script hygiene, Lightning bridge typing/exception cleanup, Markdown quality, and UI composer style compliance.

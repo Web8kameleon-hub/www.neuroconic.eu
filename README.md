@@ -32,6 +32,7 @@ Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar 
   - [📑 Table of Contents](#-table-of-contents)
   - [🧩 Komponentët Kryesorë](#-komponentët-kryesorë)
   - [🚀 Ekzekutimi i Menjëhershëm](#-ekzekutimi-i-menjëhershëm)
+  - [🛠️ Startup Recovery (Popup + Auto-clean Ports)](#️-startup-recovery-popup--auto-clean-ports)
   - [📁 Struktura e Projektit](#-struktura-e-projektit)
   - [⚖️ Kushtetuta (5 Shtyllat)](#️-kushtetuta-5-shtyllat)
   - [🔬 Testet](#-testet)
@@ -72,6 +73,24 @@ cd www.neurosonic.eu
 # Run - Zero installs!
 python neurosonic.py
 ```
+
+## 🛠️ Startup Recovery (Popup + Auto-clean Ports)
+
+Nëse një instancë e vjetër mban portet (`8080`, `8000`, `5500`),
+launcher-i kryesor tani i pastron automatikisht para nisjes së popup-ve.
+
+```powershell
+pwsh -File .\start_neurosonic.ps1
+```
+
+Çfarë ndodh automatikisht:
+
+- Lirohen portet `8080` (Lightning SPP), `8000` (Backend), `5500` (Frontend)
+- Hapet nga një dritare `pwsh` për secilin shërbim
+- Hapet dashboard-i në `http://localhost:8000/neurosonic_dashboard.html`
+
+Nëse `8080` është ende i zënë, `scripts/popup_lightning.ps1` tani jep
+diagnostikë të qartë me PID/ProcessName dhe nuk bie me traceback të paqartë.
 
 ---
 

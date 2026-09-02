@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
+
+import pytest
+
 from neurosonic_ui_designer import PersonalNodeStore, UIDesignEngine
 
 
@@ -65,3 +70,47 @@ def test_attach_plugin_to_schema_updates_integrations() -> None:
     assert plugins[0]["connector_scope"] == "iot"
     assert plugins[0]["service_role"] == "api-support-only"
     assert updated["dna_contract"]["immutable"] is True
+
+
+def test_export_profile_to_git_requires_valid_repo(tmp_path) -> None:
+    store = PersonalNodeStore(root_dir=str(tmp_path / "profiles"))
+    store.save_profile("demo", {"schema_version": "1.0", "widgets": []})
+
+    with pytest.raises(ValueError):
+        store.export_profile_to_git(
+            profile_id="demo",
+            repository_path=str(tmp_path / "not_a_repo"),
+        )
+
+
+def test_export_profile_to_git_stages_file(tmp_path) -> None:
+    if shutil.which("git") is None:
+        pytest.skip("git executable not available")
+
+    store = PersonalNodeStore(root_dir=str(tmp_path / "profiles"))
+    store.save_profile("demo", {"schema_version": "1.0", "widgets": [{"id": "w1"}]})
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(repo_path), check=True, capture_output=True)
+
+    result = store.export_profile_to_git(
+        profile_id="demo",
+        repository_path=str(repo_path),
+        relative_output_path="exports/demo.json",
+        commit=False,
+    )
+
+    exported_file = repo_path / "exports" / "demo.json"
+    assert exported_file.exists()
+    assert result["commit_created"] is False
+    assert result["relative_path"] == "exports/demo.json"
+
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=str(repo_path),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "exports/demo.json" in status.stdout

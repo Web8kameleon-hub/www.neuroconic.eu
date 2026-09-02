@@ -73,7 +73,8 @@
 
     <div class="card">
       <h3>Dynamic Plugins (Any Address)</h3>
-      <p class="muted">Use email, app endpoint, website, internal API, or local service. Third-party billing/contracts remain user responsibility.</p>
+    <p class="muted">Use email, app endpoint, website, internal API, or local service. Third-party subscriptions, billing,
+        and contracts remain user responsibility.</p>
       <div class="grid">
         <div>
           <label for="pluginAddress">Plugin Address</label>
@@ -127,6 +128,40 @@
       </div>
       <div id="pluginsResult" class="result top-gap-sm">No plugins attached yet.</div>
     </div>
+<div class="card">
+    <h3>Save to Your Git Repository</h3>
+    <p class="muted">Export your profile JSON to your own repo path. Neurosonic is API-support-only and not responsible
+        for repository access, subscriptions, or provider billing.</p>
+    <div class="grid">
+        <div>
+            <label for="gitRepoPath">Local Git Repository Path</label>
+            <input id="gitRepoPath" title="Absolute path to your local git repository"
+                placeholder="C:\\Users\\you\\my-ui-repo" />
+        </div>
+        <div>
+            <label for="gitOutputPath">Relative Export Path</label>
+            <input id="gitOutputPath" title="Relative path inside repository"
+                placeholder="personal_node/profiles/default.json" />
+        </div>
+        <div>
+            <label for="gitCommitMessage">Commit Message</label>
+            <input id="gitCommitMessage" title="Git commit message" placeholder="Save Neurosonic profile" />
+        </div>
+        <div class="row-ack">
+            <input id="gitCommit" type="checkbox" class="checkbox-auto" />
+            <label for="gitCommit" class="label-inline">Create commit after staging file</label>
+        </div>
+    </div>
+    <div class="row-ack">
+        <input id="gitLiabilityAck" type="checkbox" class="checkbox-auto" />
+        <label for="gitLiabilityAck" class="label-inline">I confirm third-party subscriptions, billing, contracts, and
+            repo permissions are my responsibility.</label>
+    </div>
+    <div class="row-actions">
+        <button onclick="saveProfileToGit()">Save Profile To Git</button>
+    </div>
+    <div id="gitSaveResult" class="result top-gap-sm">No git export yet.</div>
+</div>
   </div>
 
   <script>
@@ -234,6 +269,24 @@
       } catch (err) {
         document.getElementById("pluginsResult").textContent = "Error: " + err.message;
       }
+    }
+
+    async function saveProfileToGit() {
+        const profileId = document.getElementById("profile").value || "default";
+        const payload = {
+            repository_path: document.getElementById("gitRepoPath").value,
+            relative_output_path: document.getElementById("gitOutputPath").value || null,
+            commit: !!document.getElementById("gitCommit").checked,
+            commit_message: document.getElementById("gitCommitMessage").value || null,
+            liability_ack: !!document.getElementById("gitLiabilityAck").checked
+        };
+
+        try {
+            const data = await postJson(`/api/ui/panels/${encodeURIComponent(profileId)}/git-save`, payload);
+            document.getElementById("gitSaveResult").textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+            document.getElementById("gitSaveResult").textContent = "Error: " + err.message;
+        }
     }
   </script>
 </body>

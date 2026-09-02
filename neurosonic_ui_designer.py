@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
 import time
 import uuid
 from typing import Any
@@ -89,6 +90,101 @@ class PersonalNodeStore:
             "hash": payload_to_save.get("schema_hash", ""),
             "updated_at": payload_to_save["updated_at"],
         }
+
+    def export_profile_to_git(
+        self,
+        profile_id: str,
+        repository_path: str,
+        relative_output_path: str | None = None,
+        commit: bool = False,
+        commit_message: str | None = None,
+    ) -> dict[str, Any]:
+        if not repository_path or not repository_path.strip():
+            raise ValueError("repository_path is required")
+
+        repo_abs = os.path.abspath(repository_path.strip())
+        if not os.path.isdir(repo_abs):
+            raise ValueError("repository_path does not exist")
+        if not os.path.isdir(os.path.join(repo_abs, ".git")):
+            raise ValueError("repository_path is not a git repository")
+
+        profile = self.load_profile(profile_id)
+        if profile is None:
+            raise FileNotFoundError(f"Profile '{profile_id}' not found")
+
+        default_rel = os.path.join("personal_node", "profiles", f"{profile_id}.json")
+        rel_output = (relative_output_path or default_rel).strip()
+        normalized_rel = os.path.normpath(rel_output)
+
+        if os.path.isabs(normalized_rel):
+            raise ValueError("relative_output_path must be relative")
+
+        target_abs = os.path.abspath(os.path.join(repo_abs, normalized_rel))
+        repo_prefix = repo_abs + os.sep
+        if target_abs != repo_abs and not target_abs.startswith(repo_prefix):
+            raise ValueError("relative_output_path escapes repository root")
+
+        os.makedirs(os.path.dirname(target_abs), exist_ok=True)
+        with open(target_abs, "w", encoding="utf-8") as file:
+            json.dump(profile, file, ensure_ascii=False, indent=2)
+
+        git_rel = os.path.relpath(target_abs, repo_abs).replace("\\", "/")
+        self._run_git_command(["git", "add", "--", git_rel], cwd=repo_abs)
+
+        commit_attempted = bool(commit)
+        commit_created = False
+        commit_note = "Staged file with git add."
+        resolved_message = (commit_message or "").strip() or f"Save Neurosonic profile {profile_id}"
+
+        if commit:
+            diff_result = self._run_git_command(
+                ["git", "diff", "--cached", "--quiet", "--", git_rel],
+                cwd=repo_abs,
+                check=False,
+            )
+            if diff_result.returncode == 0:
+                commit_note = "No staged changes detected for commit."
+            else:
+                self._run_git_command(
+                    ["git", "commit", "-m", resolved_message, "--", git_rel],
+                    cwd=repo_abs,
+                )
+                commit_created = True
+                commit_note = "Commit created in user repository."
+
+        return {
+            "profile_id": profile_id,
+            "repository_path": repo_abs,
+            "file_path": target_abs,
+            "relative_path": git_rel,
+            "commit_attempted": commit_attempted,
+            "commit_created": commit_created,
+            "commit_message": resolved_message if commit else None,
+            "notice": "User owns repository, credentials, subscriptions, and third-party contracts.",
+            "status": commit_note,
+            "updated_at": time.time(),
+        }
+
+    def _run_git_command(
+        self,
+        command: list[str],
+        cwd: str,
+        check: bool = True,
+    ) -> subprocess.CompletedProcess[str]:
+        try:
+            result = subprocess.run(
+                command,
+                cwd=cwd,
+                text=True,
+                capture_output=True,
+                check=check,
+            )
+            return result
+        except FileNotFoundError as exc:
+            raise RuntimeError("git executable not found on system") from exc
+        except subprocess.CalledProcessError as exc:
+            stderr = (exc.stderr or "").strip() or (exc.stdout or "").strip()
+            raise RuntimeError(f"git command failed: {stderr}") from exc
 
 
 class UIDesignEngine:

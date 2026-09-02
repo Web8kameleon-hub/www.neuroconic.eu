@@ -166,6 +166,14 @@ class UIPluginAttachRequest(BaseModel):
     sensitive_data_ack: bool = False
 
 
+class UIGitSaveRequest(BaseModel):
+    repository_path: str
+    relative_output_path: str | None = None
+    commit: bool = False
+    commit_message: str | None = None
+    liability_ack: bool = False
+
+
 def _detect_task_type(prompt: str, context: dict[str, Any] | None = None) -> str:
     context = context or {}
     combined = f"{prompt} {json.dumps(context, ensure_ascii=False)}".lower()
@@ -480,6 +488,49 @@ async def save_ui_panel(profile_id: str, req: UIPanelSaveRequest):
         "success": True,
         "profile_id": profile_id,
         "storage": save_meta,
+        "timestamp": time.time(),
+    }
+
+
+@app.post("/api/ui/panels/{profile_id}/git-save")
+async def save_ui_panel_to_git(profile_id: str, req: UIGitSaveRequest):
+    if not req.liability_ack:
+        return {
+            "success": False,
+            "profile_id": profile_id,
+            "error": "liability_ack must be true",
+            "notice": "Neurosonic is not responsible for third-party subscriptions, billing, repository access, or provider contracts.",
+            "service_role": "api-support-only",
+            "dna_immutable": True,
+            "timestamp": time.time(),
+        }
+
+    try:
+        export_meta = personal_node_store.export_profile_to_git(
+            profile_id=profile_id,
+            repository_path=req.repository_path,
+            relative_output_path=req.relative_output_path,
+            commit=req.commit,
+            commit_message=req.commit_message,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        return {
+            "success": False,
+            "profile_id": profile_id,
+            "error": str(exc),
+            "notice": "User remains responsible for third-party subscriptions, contracts, permissions, and git account configuration.",
+            "service_role": "api-support-only",
+            "dna_immutable": True,
+            "timestamp": time.time(),
+        }
+
+    return {
+        "success": True,
+        "profile_id": profile_id,
+        "git_export": export_meta,
+        "notice": "Profile saved to user-owned repository. Neurosonic provides API support only.",
+        "service_role": "api-support-only",
+        "dna_immutable": True,
         "timestamp": time.time(),
     }
 

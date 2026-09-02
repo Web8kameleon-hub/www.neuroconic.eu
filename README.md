@@ -10,6 +10,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu/issues)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](docs/deployment/RELEASE_CHECKLIST.md)
+[![Guardrails CI](https://img.shields.io/badge/guardrails-CI%20enforced-0ea5e9?style=flat-square)](https://github.com/Web8kameleon-hub/www.neuroconic.eu/actions/workflows/ci.yml)
 [![Sovereign AI](https://img.shields.io/badge/Sovereign-AI-8b5cf6?style=flat-square)](docs/Constitution.md)
 
 ---
@@ -38,7 +39,9 @@ Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar 
   - [⚖️ Kushtetuta (5 Shtyllat)](#️-kushtetuta-5-shtyllat)
   - [🌐 Production Hosting](#-production-hosting)
   - [📦 Public Installation Packs](#-public-installation-packs)
+  - [⚡ First Benchmark (baseline + tuning + edge cases)](#-first-benchmark-baseline--tuning--edge-cases)
   - [📦 Publishing (PyPI + npm + crates)](#-publishing-pypi--npm--crates)
+  - [🧭 OS-CLX Policy (lightweight) + Cross-Repo Acceleration](#-os-clx-policy-lightweight--cross-repo-acceleration)
   - [🔬 Testet](#-testet)
   - [🚓 NO FAKE Police](#-no-fake-police)
   - [🤝 Kontribuimi](#-kontribuimi)

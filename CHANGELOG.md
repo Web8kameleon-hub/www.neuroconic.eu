@@ -2,6 +2,44 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.12 - 2026-09-02
+
+Guardrails and release-governance upgrade focused on lightweight OS-CLX policy enforcement, repository integrity checks, route-history drift detection, and immutable release metadata.
+
+### Added (v1.0.12)
+
+- Add first benchmark harness `scripts/benchmark_first.py` with tuning profiles (`quick`, `standard`, `stress`) and edge-case scenarios for `/api/shell/think` and `/api/ui/plugins/{profile_id}`.
+- Add lightweight OS-CLX policy guard `scripts/os_clx_policy_guard.py` with profile manifest `docs/governance/OS_CLX_POLICY_PROFILE.json`.
+- Add new guardrails:
+  - `scripts/guardrails/repo_integrity_guard.py`
+  - `scripts/guardrails/routes_history_guard.py`
+  - `scripts/guardrails/compose.services.txt`
+- Add immutable release workflow `.github/workflows/release-immutable.yml` for tag/manual release manifest artifacts.
+- Add governance/acceleration guide `docs/guides/OS_CLX_CROSS_REPO_ACCELERATION.md`.
+
+### Changed (v1.0.12)
+
+- Update CI workflow `.github/workflows/ci.yml` to enforce:
+  - `python neurosonic_no_fake_police.py --ci`
+  - `python scripts/os_clx_policy_guard.py --strict`
+  - `python scripts/guardrails/repo_integrity_guard.py`
+  - `python scripts/guardrails/routes_history_guard.py`
+- Extend `README.md` with benchmark usage, OS-CLX policy guard usage, guardrails commands, and immutable release trigger flow.
+- Update `.gitignore` to ignore generated benchmark outputs under `logs/benchmarks/*.json`.
+
+### Validation (v1.0.12)
+
+- `python scripts/os_clx_policy_guard.py --strict` → `PASS`.
+- `python scripts/guardrails/repo_integrity_guard.py` → `PASS`.
+- `python scripts/guardrails/routes_history_guard.py` → `PASS`.
+- `pytest -q tests/test_shell_think_anti_echo.py tests/test_ui_api_security.py tests/test_ui_designer.py` → `15 passed`.
+
+### Release Sync (v1.0.12)
+
+- Git tag: `v1.0.12`
+- Commit: `889932f`
+- Tag URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/tree/v1.0.12>
+
 ## v1.0.11 - 2026-09-02
 
 Runtime sync release that finalizes remaining local updates and fixes DNA UI chat payload handling.

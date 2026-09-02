@@ -6,14 +6,17 @@ Ekspozon modulet Neurosonic si REST API per frontend-in.
 """
 
 import hashlib
+import ipaddress
 import json
 import os
+import re
 import sys
 import time
 import uuid
+from urllib.parse import urlparse
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -173,6 +176,91 @@ class UIGitSaveRequest(BaseModel):
     commit: bool = False
     commit_message: str | None = None
     liability_ack: bool = False
+
+
+_OWNER_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+_SENSITIVE_METADATA_KEY_PATTERN = re.compile(
+    r"(password|passwd|pwd|secret|token|api[_-]?key|private[_-]?key|auth)",
+    re.IGNORECASE,
+)
+_BLOCKED_HOSTNAMES = {
+    "localhost",
+    "metadata.google.internal",
+    "169.254.169.254",
+    "169.254.170.2",
+    "100.100.100.200",
+}
+
+
+def _resolve_trusted_owner_id(request: Request) -> str:
+    header_owner = (request.headers.get("x-neurosonic-owner-id") or "").strip()
+    env_owner = (os.environ.get("NEUROSONIC_OWNER_ID") or "").strip()
+    candidate = header_owner or env_owner or "local-user"
+    if _OWNER_ID_PATTERN.match(candidate):
+        return candidate
+    return "local-user"
+
+
+def _is_private_or_local_host(hostname: str) -> bool:
+    lowered = hostname.strip().lower().rstrip(".")
+    if not lowered:
+        return True
+    if lowered in _BLOCKED_HOSTNAMES:
+        return True
+    if lowered.endswith((".localhost", ".local")):
+        return True
+
+    try:
+        ip_value = ipaddress.ip_address(lowered)
+    except ValueError:
+        return False
+
+    return (
+        ip_value.is_private
+        or ip_value.is_loopback
+        or ip_value.is_link_local
+        or ip_value.is_multicast
+        or ip_value.is_reserved
+        or ip_value.is_unspecified
+    )
+
+
+def _validate_plugin_metadata(metadata: dict[str, Any]) -> None:
+    for key in metadata:
+        if _SENSITIVE_METADATA_KEY_PATTERN.search(str(key)):
+            raise ValueError("metadata contains sensitive key names and is not allowed")
+
+
+def _validate_plugin_address(address: str) -> None:
+    raw = (address or "").strip()
+    if not raw:
+        raise ValueError("address is required")
+    if len(raw) > 2048:
+        raise ValueError("address is too long")
+    if any(ord(ch) < 32 for ch in raw):
+        raise ValueError("address contains control characters")
+
+    if raw.startswith("/"):
+        raise ValueError("internal paths are not allowed for plugin address")
+
+    parsed = urlparse(raw)
+    scheme = (parsed.scheme or "").lower()
+
+    if "@" in raw and "://" not in raw:
+        return
+
+    if not scheme:
+        raise ValueError("address must be an email or an absolute URL with scheme")
+
+    if scheme not in {"https", "http", "bank", "swift", "iban", "office365"}:
+        raise ValueError("address scheme is not allowed")
+
+    hostname = (parsed.hostname or "").strip()
+    if hostname and _is_private_or_local_host(hostname):
+        raise ValueError("plugin address points to private or local network")
+
+    if scheme in {"https", "http"} and not hostname:
+        raise ValueError("http/https address must include a hostname")
 
 
 def _detect_task_type(prompt: str, context: dict[str, Any] | None = None) -> str:
@@ -444,11 +532,12 @@ async def get_proposals():
 
 
 @app.post("/api/ui/design")
-async def create_ui_design(req: UIDesignRequest):
+async def create_ui_design(req: UIDesignRequest, request: Request):
+    owner_id = _resolve_trusted_owner_id(request)
     schema = ui_designer.generate_schema(
         prompt=req.prompt,
         preferences=req.preferences,
-        owner_id=req.owner_id,
+        owner_id=owner_id,
     )
     save_meta = None
     if req.save:
@@ -571,7 +660,7 @@ async def list_ui_plugins(profile_id: str):
 
 
 @app.post("/api/ui/plugins/{profile_id}")
-async def attach_ui_plugin(profile_id: str, req: UIPluginAttachRequest):
+async def attach_ui_plugin(profile_id: str, req: UIPluginAttachRequest, request: Request):
     if not req.liability_ack:
         return {
             "success": False,
@@ -593,12 +682,26 @@ async def attach_ui_plugin(profile_id: str, req: UIPluginAttachRequest):
             "timestamp": time.time(),
         }
 
+    try:
+        _validate_plugin_address(req.address)
+        _validate_plugin_metadata(req.metadata)
+    except ValueError as exc:
+        return {
+            "success": False,
+            "profile_id": profile_id,
+            "error": str(exc),
+            "notice": "Plugin address rejected by security policy.",
+            "dna_immutable": True,
+            "timestamp": time.time(),
+        }
+
     profile = personal_node_store.load_profile(profile_id)
     if profile is None:
+        owner_id = _resolve_trusted_owner_id(request)
         schema = ui_designer.generate_schema(
             prompt="Personal UI panel",
             preferences={},
-            owner_id="local-user",
+            owner_id=owner_id,
         )
         profile = {
             "profile_id": profile_id,

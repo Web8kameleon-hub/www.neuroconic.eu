@@ -114,3 +114,43 @@ def test_export_profile_to_git_stages_file(tmp_path) -> None:
         text=True,
     )
     assert "exports/demo.json" in status.stdout
+
+
+def test_export_profile_to_git_rejects_parent_traversal(tmp_path) -> None:
+    if shutil.which("git") is None:
+        pytest.skip("git executable not available")
+
+    store = PersonalNodeStore(root_dir=str(tmp_path / "profiles"))
+    store.save_profile("demo", {"schema_version": "1.0", "widgets": []})
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(repo_path), check=True, capture_output=True)
+
+    with pytest.raises(ValueError, match="escapes repository root"):
+        store.export_profile_to_git(
+            profile_id="demo",
+            repository_path=str(repo_path),
+            relative_output_path="../escape.json",
+            commit=False,
+        )
+
+
+def test_export_profile_to_git_rejects_git_dir_targets(tmp_path) -> None:
+    if shutil.which("git") is None:
+        pytest.skip("git executable not available")
+
+    store = PersonalNodeStore(root_dir=str(tmp_path / "profiles"))
+    store.save_profile("demo", {"schema_version": "1.0", "widgets": []})
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(repo_path), check=True, capture_output=True)
+
+    with pytest.raises(ValueError, match=r"inside \.git"):
+        store.export_profile_to_git(
+            profile_id="demo",
+            repository_path=str(repo_path),
+            relative_output_path=".git/config",
+            commit=False,
+        )

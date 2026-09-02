@@ -103,6 +103,7 @@ class PersonalNodeStore:
             raise ValueError("repository_path is required")
 
         repo_abs = os.path.abspath(repository_path.strip())
+        repo_real = os.path.realpath(repo_abs)
         if not os.path.isdir(repo_abs):
             raise ValueError("repository_path does not exist")
         if not os.path.isdir(os.path.join(repo_abs, ".git")):
@@ -114,21 +115,32 @@ class PersonalNodeStore:
 
         default_rel = os.path.join("personal_node", "profiles", f"{profile_id}.json")
         rel_output = (relative_output_path or default_rel).strip()
+        if not rel_output:
+            raise ValueError("relative_output_path must not be empty")
+
         normalized_rel = os.path.normpath(rel_output)
 
         if os.path.isabs(normalized_rel):
             raise ValueError("relative_output_path must be relative")
+        if os.path.splitdrive(normalized_rel)[0]:
+            raise ValueError("relative_output_path must not contain a drive prefix")
+        if normalized_rel in {".", ".."} or normalized_rel.startswith(f"..{os.sep}"):
+            raise ValueError("relative_output_path escapes repository root")
+        normalized_rel_unix = normalized_rel.replace("\\", "/")
+        if normalized_rel_unix == ".git" or normalized_rel_unix.startswith(".git/"):
+            raise ValueError("writing inside .git directory is not allowed")
 
         target_abs = os.path.abspath(os.path.join(repo_abs, normalized_rel))
-        repo_prefix = repo_abs + os.sep
-        if target_abs != repo_abs and not target_abs.startswith(repo_prefix):
+        target_real = os.path.realpath(target_abs)
+        repo_prefix = repo_real + os.sep
+        if target_real != repo_real and not target_real.startswith(repo_prefix):
             raise ValueError("relative_output_path escapes repository root")
 
         os.makedirs(os.path.dirname(target_abs), exist_ok=True)
         with open(target_abs, "w", encoding="utf-8") as file:
             json.dump(profile, file, ensure_ascii=False, indent=2)
 
-        git_rel = os.path.relpath(target_abs, repo_abs).replace("\\", "/")
+        git_rel = os.path.relpath(target_real, repo_real).replace("\\", "/")
         self._run_git_command(["git", "add", "--", git_rel], cwd=repo_abs)
 
         commit_attempted = bool(commit)
@@ -154,8 +166,8 @@ class PersonalNodeStore:
 
         return {
             "profile_id": profile_id,
-            "repository_path": repo_abs,
-            "file_path": target_abs,
+            "repository_path": repo_real,
+            "file_path": target_real,
             "relative_path": git_rel,
             "commit_attempted": commit_attempted,
             "commit_created": commit_created,
@@ -171,9 +183,19 @@ class PersonalNodeStore:
         cwd: str,
         check: bool = True,
     ) -> subprocess.CompletedProcess[str]:
+        command_to_run = list(command)
+        if command_to_run and command_to_run[0] == "git":
+            null_hooks_path = "NUL" if os.name == "nt" else "/dev/null"
+            command_to_run = [
+                "git",
+                "-c",
+                f"core.hooksPath={null_hooks_path}",
+                *command_to_run[1:],
+            ]
+
         try:
             result = subprocess.run(
-                command,
+                command_to_run,
                 cwd=cwd,
                 text=True,
                 capture_output=True,

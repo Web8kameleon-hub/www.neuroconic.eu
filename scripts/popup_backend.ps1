@@ -34,6 +34,9 @@ if ($LASTEXITCODE -ne 0) {
 # Nise backend-in
 Write-Host "🚀 Duke nisur Neurosonic Backend API..." -ForegroundColor Green
 $env:PYTHONUTF8 = "1"
+if (-not $env:CORS_ORIGINS -or [string]::IsNullOrWhiteSpace($env:CORS_ORIGINS)) {
+    $env:CORS_ORIGINS = "http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000,https://neurosonic.eu,https://www.neurosonic.eu"
+}
 & $PythonExe backend/main.py
 
 if ($LASTEXITCODE -ne 0) {

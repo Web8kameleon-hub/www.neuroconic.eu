@@ -1,16 +1,16 @@
 # 🧠 NEUROSONIC / CLISONIX TRINITY+ASI
 
-**Zero Dependencies • Zero Fake • Zero Noise • Absolute Independence**
+> Zero Dependencies • Zero Fake • Zero Noise • Absolute Independence
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Neurosonic-green?style=flat-square)](LICENSE)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success?style=flat-square)]()
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success?style=flat-square)](PUBLIC_USAGE.md)
 [![No Fake](https://img.shields.io/badge/NO%20FAKE-PASSING-ff69b4?style=flat-square)](NO_FAKE_POLICY.md)
 [![GitHub Stars](https://img.shields.io/github/stars/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu)
 [![GitHub Issues](https://img.shields.io/github/issues/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu/issues)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)]()
-[![Sovereign AI](https://img.shields.io/badge/Sovereign-AI-8b5cf6?style=flat-square)]()
+[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](docs/deployment/RELEASE_CHECKLIST.md)
+[![Sovereign AI](https://img.shields.io/badge/Sovereign-AI-8b5cf6?style=flat-square)](docs/Constitution.md)
 
 ---
 
@@ -45,7 +45,7 @@ Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar 
 ## 🧩 Komponentët Kryesorë
 
 | Komponenti | Përshkrimi |
-|-----------|------------|
+| ---------- | ---------- |
 | 🧠 **CLX Kernel** | Runtime kryesor, scheduler i burimeve |
 | 🧬 **HVO Memory** | 6 lloje memorie (H, V, O, R, F, S) |
 | 🔐 **Internal Auth** | Autentifikim i brendshëm pa OAuth |
@@ -77,7 +77,7 @@ python neurosonic.py
 
 ## 📁 Struktura e Projektit
 
-```
+```text
 neurosonic.eu/
 ├── docs/                    # Dokumentacioni
 │   ├── Constitution.md      # Kushtetuta (5 shtyllat)
@@ -114,7 +114,7 @@ neurosonic.eu/
 ## ⚖️ Kushtetuta (5 Shtyllat)
 
 | Shtylla | Parimet |
-|---------|---------|
+| ------- | ------- |
 | 🏛️ **SOVRANITETI** | Zero vendor lock-in, offline capable, internal auth |
 | 🔍 **E VËRTETA** | Zero fake, hallucination, çdo gjë e verifikueshme |
 | 🔒 **PRIVATËSIA** | User data = pronë e përdoruesit, encrypted |
@@ -140,6 +140,63 @@ Read the [hosting guide](docs/deployment/HOSTING.md),
 [hosting security guide](docs/deployment/SECURITY.md), and
 [release checklist](docs/deployment/RELEASE_CHECKLIST.md).
 
+## 📦 Public Installation Packs
+
+For large/public usage scenarios, use one of these profiles:
+
+```bash
+# Core project (zero extra deps)
+python neurosonic.py
+
+# Backend/API runtime deps
+pip install -r requirements.txt
+
+# Dev + tests
+pip install -r requirements-dev.txt
+
+# Or extras via pyproject
+pip install .[backend]
+pip install .[dev]
+pip install .[public]
+```
+
+Public resources added for quick onboarding:
+
+- `examples/basic_usage.py`
+- `examples/lightning_bridge_sample.py`
+- `samples/module_config_valid.json`
+- `samples/module_config_invalid.json`
+- `tests/test_public_samples.py`
+- `tests/test_examples_smoke.py`
+
+Run the public smoke suite:
+
+```bash
+pytest -q tests/test_public_samples.py tests/test_examples_smoke.py
+```
+
+Kontrata për shell + NodeDB Fluid (anti-konflikt cross-language):
+
+- `docs/governance/NODEDB_FLUID_SHELL_CONTRACT.md`
+
+## 📦 Publishing (PyPI + npm + crates)
+
+Multi-ecosystem publishing is now prepared:
+
+- PyPI package and CLI entrypoint `neurosonic-shell`
+- npm package `packages/npm/neurosonic-shell`
+- Rust crate `packages/crates/neurosonic-shell`
+
+Full commands and release flow are documented in:
+
+- `docs/deployment/PUBLISHING.md`
+
+To sync/link all repositories under `Web8kameleon-hub` for `neurosonic.eu`:
+
+```powershell
+pwsh -File scripts/sync_web8kameleon_repos.ps1
+```
+
 ## 🔬 Testet
 
 ```bash
@@ -147,6 +204,7 @@ python test_architecture.py
 ```
 
 Sistemi përfshin 13+ teste automatike që verifikojnë:
+
 - ✅ Kushtetutën (DNA)
 - ✅ HVO Memory (6 lloje)
 - ✅ Internal Auth
@@ -177,6 +235,7 @@ python neurosonic_no_fake_police.py --cd
 ```
 
 Zbulon:
+
 - ❌ Mock libraries (unittest.mock, MagicMock)
 - ❌ Simulation functions (def simulate, def _fake_)
 - ❌ Placeholders (NotImplementedError)
@@ -207,8 +266,8 @@ Neurosonic License - Shih [LICENSE](LICENSE) për detaje.
 
 ---
 
-**NEUROSONIC / CLISONIX TRINITY+ASI v1.0**
+## NEUROSONIC / CLISONIX TRINITY+ASI v1.0
 
-*"Jo një AI i vetëm. Por një ekosistem i shpërndarë, ku çdo pajisje bëhet një qendër mendimi."*
+> "Jo një AI i vetëm. Por një ekosistem i shpërndarë, ku çdo pajisje bëhet një qendër mendimi."
 
-*"Kodi që nuk është real, nuk ekzekutohet."*
+> "Kodi që nuk është real, nuk ekzekutohet."

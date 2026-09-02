@@ -1,0 +1,25 @@
+[package]
+name = "neurosonic-shell"
+version = "1.0.0"
+edition = "2021"
+description = "Real-service Neurosonic shell and API client (no mock)."
+homepage = "https://neurosonic.eu"
+repository = "https://github.com/Web8kameleon-hub/www.neurosonic.eu"
+readme = "README.md"
+license-file = "LICENSE"
+keywords = ["neurosonic", "ai", "shell", "api", "no-mock"]
+categories = ["command-line-utilities", "api-bindings"]
+
+[lib]
+name = "neurosonic_shell"
+path = "src/lib.rs"
+
+[[bin]]
+name = "neurosonic-shell"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
+serde_json = "1.0"

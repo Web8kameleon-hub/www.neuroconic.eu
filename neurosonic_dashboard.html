@@ -251,13 +251,16 @@
     </div>
     <script>
                 let API_BASE = typeof window.NEUROSONIC_API_BASE === 'string' ? window.NEUROSONIC_API_BASE : '';
+                    if (!API_BASE && (window.location.port === '5500' || window.location.port === '5501')) {
+                        API_BASE = 'http://127.0.0.1:8000';
+                    }
                 function getApiCandidates() {
                     const candidates = [];
                     const add = (v) => { if (typeof v === 'string' && !candidates.includes(v)) candidates.push(v); };
                     add(API_BASE);
-                    add('');
                     add('http://127.0.0.1:8000');
                     add('http://localhost:8000');
+                    add('');
                     return candidates;
                 }
                 async function apiRequest(endpoint, options) {

@@ -1,0 +1,7 @@
+{
+  "name": "Public Invalid Module",
+  "memory_type": "UNKNOWN",
+  "zero_trust": false,
+  "dependencies": ["MISSING-PACKAGE-9999"],
+  "constitution_compatibility": []
+}

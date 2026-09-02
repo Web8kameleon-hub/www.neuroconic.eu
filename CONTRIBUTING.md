@@ -1,6 +1,6 @@
 # 🤝 Contributing to Neurosonic / Clisonix Trinity+ASI
 
-First off, thank you for considering contributing to Neurosonic! 
+First off, thank you for considering contributing to Neurosonic!
 
 ## 📜 Neurosonic Constitution
 
@@ -15,11 +15,16 @@ By contributing, you agree to abide by the [Neurosonic Constitution](docs/Consti
 ## 🚫 NO FAKE Policy
 
 All code must pass [NO FAKE POLICE](NO_FAKE_POLICY.md):
+
 - Zero mock libraries (unittest.mock, MagicMock, Mockito, sinon, jest.fn)
 - Zero simulation functions (def simulate, def _fake_, def _stub)
 - Zero placeholders (NotImplementedError as placeholder)
 - Zero hardcoded values in real code
 - CD is BLOCKED if violations exist
+
+R&D zhvillim lejohet vetëm për koncepte/drafte/protokolle/formula të reja në
+`docs/`, `samples/`, `examples/`, me etiketë të qartë `EXPERIMENTAL` ose
+`DRAFT`. Këto nuk duhet të futen si runtime production në `src/` ose `backend/`.
 
 ## 🔧 Development Setup
 
@@ -44,7 +49,7 @@ python neurosonic_no_fake_police.py --ci
 
 ## 📁 Project Structure
 
-```
+```text
 neurosonic.eu/
 ├── docs/           - Constitution, CUDM, Architecture
 ├── neurosonic.py   - Main entry
@@ -89,4 +94,4 @@ Open a [GitHub Discussion](https://github.com/LedjanAhmati/www.neurosonic.eu/dis
 ---
 
 **Neurosonic / Clisonix Trinity+ASI v1.0**
-*Kodi që nuk është real, nuk ekzekutohet.*
+_Kodi që nuk është real, nuk ekzekutohet._

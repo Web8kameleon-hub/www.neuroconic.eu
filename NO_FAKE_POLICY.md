@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD022 MD026 MD031 MD040 MD060 -->
+
 # NEUROSONIC NO FAKE POLICE v1.0
 ## Politika e Zbatimit - Zero Fake, Zero Mock, Zero Simulation, Zero Placeholder
 
@@ -361,9 +363,29 @@ if __name__ == "__main__":
 
 ## 8. PËRJASHTIMET E VETME
 
-**Nuk ka përjashtime.** Asnjë rresht fake nuk lejohet në asnjë rrethanë.
+**Nuk ka përjashtime për shërbimet reale (runtime/production).**
+
+Lejohet vetëm një kategori e kontrolluar për zhvillim:
+
+### 8.1 R&D / KONCEPTE NË ZHVILLIM (LEJOHET ME KUSHTE)
+
+Kjo kategori vlen për:
+
+- koncepte teknologjike të reja,
+- dokumente draft,
+- protokolle të reja,
+- formula dhe modele teorike në zhvillim.
+
+KUSHTET:
+
+1. Duhet të jenë të shënuara qartë me `EXPERIMENTAL` ose `DRAFT`.
+2. Duhet të qëndrojnë vetëm në dokumentim ose shembuj (`docs/`, `samples/`, `examples/`).
+3. Nuk lejohen të injektohen në `src/`, `backend/` ose rrugë runtime të API-së si të dhëna "reale".
+4. Nuk lejohen të raportohen si metrika reale SLI/SLO.
+5. Para kalimit në prodhim, kërkohet verifikim me burime reale dhe audit.
 
 Nëse një shërbim i jashtëm nuk është i disponueshëm:
+
 1. Sistemi duhet të raportojë "Service unavailable"
 2. Sistemi duhet të presë derisa shërbimi të jetë online
 3. Sistemi NUK duhet të përdorë të dhëna të simuluara
@@ -390,7 +412,7 @@ grep -r "_simulate\|mock\|fake\|placeholder" --include="*bridge*.py" .
 
 ## 10. FIRMA
 
-```
+```text
 NEUROSONIC NO FAKE POLICE v1.0
 CI/CD/SLI/SLO/CLI/CLO - Zero Fake, Zero Mock, Zero Simulation
 

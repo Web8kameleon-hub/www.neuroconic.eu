@@ -1,0 +1,49 @@
+{
+  "name": "@web8kameleon-hub/neurosonic-shell",
+  "version": "1.0.0",
+  "description": "Real-service Neurosonic shell and API client (no mock).",
+  "type": "module",
+  "bin": {
+    "neurosonic-shell": "bin/neurosonic-shell.js"
+  },
+  "main": "lib/client.js",
+  "exports": {
+    ".": "./lib/client.js",
+    "./shell": "./lib/shell.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node ./bin/neurosonic-shell.js",
+    "smoke": "node ./bin/neurosonic-shell.js --health"
+  },
+  "keywords": [
+    "neurosonic",
+    "shell",
+    "ai",
+    "asi",
+    "api",
+    "no-mock"
+  ],
+  "homepage": "https://neurosonic.eu",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Web8kameleon-hub/www.neuroconic.eu.git",
+    "directory": "packages/npm/neurosonic-shell"
+  },
+  "bugs": {
+    "url": "https://github.com/Web8kameleon-hub/www.neuroconic.eu/issues"
+  },
+  "author": "Web8kameleon-hub",
+  "license": "SEE LICENSE IN LICENSE",
+  "publishConfig": {
+    "access": "public"
+  }
+}

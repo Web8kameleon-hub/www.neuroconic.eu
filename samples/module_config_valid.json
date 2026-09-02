@@ -1,0 +1,17 @@
+{
+  "name": "Public Valid Module",
+  "api_version": "v1",
+  "api_path": "/api/public-module",
+  "memory_type": "HVO",
+  "encryption": "AES256",
+  "zero_trust": true,
+  "sse_support": true,
+  "tide_compatible": true,
+  "cudm_compatible": true,
+  "license": "Neurosonic",
+  "dependencies": ["NGI-CORE-0001"],
+  "constitution_compatibility": ["G001", "G002", "G003", "G004", "G005", "G006", "G007", "G008", "G009", "G010"],
+  "security_compatibility": ["SR001", "SR002", "SR003", "SR004", "SR005", "SR006", "SR007", "SR008"],
+  "data_compatibility": ["DR001", "DR002", "DR003", "DR004", "DR005"],
+  "api_compatibility": ["AR001", "AR002", "AR003", "AR004"]
+}

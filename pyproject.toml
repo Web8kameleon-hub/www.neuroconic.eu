@@ -32,17 +32,35 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://neurosonic.eu"
-"Repository" = "https://github.com/LedjanAhmati/www.neuroconic.eu"
-"Documentation" = "https://github.com/LedjanAhmati/www.neuroconic.eu/tree/main/docs"
+"Repository" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu"
+"Documentation" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/tree/main/docs"
 "Funding" = "https://www.paypal.com/paypalme/ahmatibau"
-"Bug Reports" = "https://github.com/LedjanAhmati/www.neuroconic.eu/issues"
-"Changelog" = "https://github.com/LedjanAhmati/www.neuroconic.eu/blob/main/CHANGELOG.md"
+"Bug Reports" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/issues"
+"Changelog" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/blob/main/CHANGELOG.md"
 "Sitemap" = "https://neurosonic.eu/sitemap.xml"
 
 [project.scripts]
 neurosonic = "neurosonic:main"
 neurosonic-dna = "neurosonic_core:main"
 neurosonic-no-fake-police = "neurosonic_no_fake_police:main"
+neurosonic-shell = "neurosonic_shell:main"
+
+[project.optional-dependencies]
+backend = [
+    "fastapi==0.139.2",
+    "uvicorn==0.51.0",
+    "pydantic==2.13.4",
+]
+dev = [
+    "pytest==8.4.1",
+    "ruff==0.12.10",
+]
+public = [
+    "fastapi==0.139.2",
+    "uvicorn==0.51.0",
+    "pydantic==2.13.4",
+    "pytest==8.4.1",
+]
 
 [tool.setuptools.packages.find]
 include = ["neurosonic*"]

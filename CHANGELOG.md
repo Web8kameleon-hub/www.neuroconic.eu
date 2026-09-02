@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.9 - 2026-09-02
+
+Warning cleanup and diagnostics hardening release focused on SEO script hygiene, Lightning bridge typing/exception cleanup, Markdown quality, and UI composer style compliance.
+
+### Changed (v1.0.9)
+
+- Clean `neurosonic_seo.py`: remove redundant UTF-8 declaration, sort imports, and use timezone-aware date handling.
+- Modernize `neurosonic_lightning_bridge.py`: remove deprecated typing patterns, simplify imports, replace broad exception catches in health/request paths, and remove non-interpolated f-string.
+- Fix Markdown lint findings in `README.sq.md` (heading semantics, non-empty badge links, table style, final quote block).
+- Replace inline CSS in `personal_node/ui_composer.html` with class-based styling.
+
+### Validation (v1.0.9)
+
+- `pytest -q` completed successfully: `18 passed, 1 warning`.
+- Workspace diagnostics reduced from previously reported `36` to a single remaining analyzer warning in `scripts/rolling_update_backends.ps1`.
+
+### Release Sync (v1.0.9)
+
+- Git tag: `v1.0.9`
+- Commit: `e5ac84f`
+- Tag URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/tree/v1.0.9>
+
 ## v1.0.7 - 2026-09-02
 
 CI stabilization patch focused on Zero Fake enforcement compatibility and architecture test execution reliability.

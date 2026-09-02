@@ -1,17 +1,33 @@
-﻿## Fix: Fixed syntax errors in scripts/popup_backend.ps1
+﻿## Release: v1.0.9 - Warning Cleanup & Diagnostics Hardening
 
-The file was corrupted with:
-- Duplicate script content (89 lines total)
-- 3 stray } braces causing parser errors
-- XML/garbage markup from editor artifacts
+This release improves code quality and lint hygiene across core runtime and docs-facing files without changing public API contracts.
 
-### Changes
-- Rewrote the file from scratch with clean, valid PowerShell
-- Added logging to logs/backend_output.log via Tee-Object
-- Added auto-creation of logs/ directory
-- Added proper Read-Host at end to keep window open on failure
-- Balanced braces: 3 { / 3 }
+### What changed
 
-### Testing
-- Verified no parser errors
-- File is 42 clean lines (was 89 corrupted lines)
+- `neurosonic_seo.py`
+	- Removed redundant UTF-8 encoding declaration
+	- Sorted imports
+	- Replaced naive date/time usage with timezone-aware UTC calls
+
+- `neurosonic_lightning_bridge.py`
+	- Removed deprecated typing usage in key signatures (`dict`/`list`, `X | None`)
+	- Cleaned import block and removed unused imports
+	- Replaced broad `except Exception` handlers with narrower exception groups in health/request code paths
+	- Removed non-interpolated f-string
+
+- `README.sq.md`
+	- Fixed markdownlint issues (heading semantics, non-empty badge links, table spacing style, final quote formatting)
+
+- `personal_node/ui_composer.html`
+	- Replaced inline style with CSS class (`.actions-row`)
+
+### Validation
+
+- `pytest -q`: `18 passed, 1 warning`
+- Diagnostics significantly reduced; one analyzer warning remains for `scripts/rolling_update_backends.ps1` and appears tool/analyzer-specific in current environment.
+
+### Release metadata
+
+- Tag: `v1.0.9`
+- Commit: `e5ac84f`
+- Tag URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/tree/v1.0.9>

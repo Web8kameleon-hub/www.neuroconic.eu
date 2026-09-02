@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: I001
 """
 NEUROSONIC BACKEND API - FastAPI
 Ekspozon modulet Neurosonic si REST API per frontend-in.
@@ -22,6 +23,11 @@ sys.path.insert(0, _project_root)
 os.chdir(_project_root)
 
 from neurosonic_compatibility import NeurosonicCompatibilityMatrix
+from neurosonic_data_intelligence import (
+    PlirisDatenFilter,
+    SeltenDatenAnalyzer,
+    SelfLearningCycleManager,
+)
 from neurosonic_dna import NeurosonicDNA
 from neurosonic_evolution import NeurosonicEvolutionEngine
 from neurosonic_genome import NeurosonicGenome
@@ -57,6 +63,9 @@ genome = NeurosonicGenome()
 matrix = NeurosonicCompatibilityMatrix(dna, genome)
 evolution = NeurosonicEvolutionEngine(dna, genome)
 bridge = NeurosonicLightningBridge(dna=dna, genome=genome)
+selten_analyzer = SeltenDatenAnalyzer()
+pliris_filter = PlirisDatenFilter()
+self_learning = SelfLearningCycleManager()
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
@@ -110,6 +119,24 @@ class BatchRequest(BaseModel):
 class ShellThinkRequest(BaseModel):
     prompt: str
     engine: ProcessingEngine = ProcessingEngine.HYBRID
+
+
+class SeltenDatenRequest(BaseModel):
+    records: list[dict[str, Any]]
+    key_fields: list[str] | None = None
+    rarity_threshold: float = 0.1
+    min_occurrences: int = 1
+
+
+class PlirisDatenRequest(BaseModel):
+    records: list[dict[str, Any]]
+
+
+class SelfLearningCycleRequest(BaseModel):
+    goal: str
+    context: dict[str, Any] = {}
+    engine: ProcessingEngine = ProcessingEngine.HYBRID
+    ai_enhance: bool = True
 
 
 # ========================================================================
@@ -372,6 +399,66 @@ async def lightning_stats():
 @app.get("/api/lightning/profile")
 async def lightning_profile():
     return bridge.get_profile()
+
+
+@app.post("/api/data/selten/discover")
+async def selten_daten_discover(req: SeltenDatenRequest):
+    return selten_analyzer.detect_rare(
+        records=req.records,
+        key_fields=req.key_fields,
+        rarity_threshold=req.rarity_threshold,
+        min_occurrences=req.min_occurrences,
+    )
+
+
+@app.post("/api/data/pliris/filter")
+async def pliris_daten_filter(req: PlirisDatenRequest):
+    return pliris_filter.filter_protocol_free(req.records)
+
+
+@app.post("/api/self-learning/cycle")
+async def self_learning_cycle(req: SelfLearningCycleRequest):
+    def _engine_callback(prompt: str, engine_name: str) -> dict[str, Any]:
+        engine = ProcessingEngine(engine_name)
+        result = bridge.process(prompt, engine, req.ai_enhance)
+        if result.error or result.status == "error":
+            return {
+                "success": False,
+                "status": "service_unavailable",
+                "error": result.error or "Processing failed",
+                "engine": engine.value,
+                "timestamp": time.time(),
+            }
+
+        response_text = ""
+        if isinstance(result.data, (dict, list)):
+            response_text = json.dumps(result.data, ensure_ascii=False)
+        elif result.data is None:
+            response_text = ""
+        else:
+            response_text = str(result.data)
+
+        return {
+            "success": True,
+            "status": result.status,
+            "response": response_text,
+            "hash": result.hash,
+            "confidence": result.confidence,
+            "engine": engine.value,
+            "timestamp": time.time(),
+        }
+
+    return self_learning.create_cycle(
+        goal=req.goal,
+        context=req.context,
+        llm_engine=req.engine.value,
+        engine_callback=_engine_callback,
+    )
+
+
+@app.get("/api/self-learning/cycles")
+async def self_learning_cycles(limit: int = 20):
+    return self_learning.get_cycles(limit=limit)
 
 
 @app.post("/api/shell/think")

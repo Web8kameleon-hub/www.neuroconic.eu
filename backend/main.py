@@ -118,7 +118,8 @@ class BatchRequest(BaseModel):
 
 class ShellThinkRequest(BaseModel):
     prompt: str
-    engine: ProcessingEngine = ProcessingEngine.HYBRID
+    engine: ProcessingEngine | None = None
+    task_type: str = "auto"
 
 
 class SeltenDatenRequest(BaseModel):
@@ -135,8 +136,58 @@ class PlirisDatenRequest(BaseModel):
 class SelfLearningCycleRequest(BaseModel):
     goal: str
     context: dict[str, Any] = {}
-    engine: ProcessingEngine = ProcessingEngine.HYBRID
+    engine: ProcessingEngine | None = None
+    task_type: str = "auto"
     ai_enhance: bool = True
+
+
+def _detect_task_type(prompt: str, context: dict[str, Any] | None = None) -> str:
+    context = context or {}
+    combined = f"{prompt} {json.dumps(context, ensure_ascii=False)}".lower()
+
+    vision_markers = ["vision", "image", "foto", "ocr", "video", "document", "scan"]
+    reasoning_markers = [
+        "reasoning",
+        "analysis",
+        "logic",
+        "plan",
+        "governance",
+        "policy",
+        "compliance",
+        "audit",
+    ]
+    code_markers = ["code", "python", "api", "debug", "refactor", "test"]
+
+    if any(marker in combined for marker in vision_markers):
+        return "vision"
+    if any(marker in combined for marker in reasoning_markers):
+        return "reasoning"
+    if any(marker in combined for marker in code_markers):
+        return "code"
+    return "text"
+
+
+def _resolve_processing_engine(
+    explicit_engine: ProcessingEngine | None,
+    task_type: str,
+    prompt: str,
+    context: dict[str, Any] | None = None,
+) -> ProcessingEngine:
+    if explicit_engine is not None:
+        return explicit_engine
+
+    normalized = (task_type or "auto").strip().lower()
+    if normalized == "auto":
+        normalized = _detect_task_type(prompt, context)
+
+    routing = {
+        "vision": ProcessingEngine.CLI_I,
+        "reasoning": ProcessingEngine.CLX,
+        "code": ProcessingEngine.XCL,
+        "text": ProcessingEngine.HYBRID,
+        "general": ProcessingEngine.HYBRID,
+    }
+    return routing.get(normalized, ProcessingEngine.HYBRID)
 
 
 # ========================================================================
@@ -418,6 +469,13 @@ async def pliris_daten_filter(req: PlirisDatenRequest):
 
 @app.post("/api/self-learning/cycle")
 async def self_learning_cycle(req: SelfLearningCycleRequest):
+    selected_engine = _resolve_processing_engine(
+        explicit_engine=req.engine,
+        task_type=req.task_type,
+        prompt=req.goal,
+        context=req.context,
+    )
+
     def _engine_callback(prompt: str, engine_name: str) -> dict[str, Any]:
         engine = ProcessingEngine(engine_name)
         result = bridge.process(prompt, engine, req.ai_enhance)
@@ -451,7 +509,7 @@ async def self_learning_cycle(req: SelfLearningCycleRequest):
     return self_learning.create_cycle(
         goal=req.goal,
         context=req.context,
-        llm_engine=req.engine.value,
+        llm_engine=selected_engine.value,
         engine_callback=_engine_callback,
     )
 
@@ -465,6 +523,13 @@ async def self_learning_cycles(limit: int = 20):
 async def shell_think(req: ShellThinkRequest):
     started_at = time.time()
     prompt = req.prompt.strip()
+    selected_engine = _resolve_processing_engine(
+        explicit_engine=req.engine,
+        task_type=req.task_type,
+        prompt=prompt,
+        context=None,
+    )
+
     if not prompt:
         return {
             "success": False,
@@ -473,7 +538,7 @@ async def shell_think(req: ShellThinkRequest):
             "timestamp": time.time(),
         }
 
-    result = bridge.process(prompt, req.engine, True)
+    result = bridge.process(prompt, selected_engine, True)
     elapsed_ms = (time.time() - started_at) * 1000
 
     if result.error or result.status == "error":
@@ -481,7 +546,7 @@ async def shell_think(req: ShellThinkRequest):
             "success": False,
             "status": "service_unavailable",
             "error": result.error or "Processing failed",
-            "engine": req.engine.value,
+            "engine": selected_engine.value,
             "latency_ms": elapsed_ms,
             "timestamp": time.time(),
             "verified": False,
@@ -507,7 +572,7 @@ async def shell_think(req: ShellThinkRequest):
         "response": output_text,
         "hash": result.hash,
         "confidence": result.confidence,
-        "engine": req.engine.value,
+        "engine": selected_engine.value,
         "latency_ms": elapsed_ms,
         "timestamp": time.time(),
         "verified": True,

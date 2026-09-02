@@ -247,6 +247,65 @@
                 <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">📊</span> Lightning Statistics</h2><span class="toggle-icon">▼</span></div>
                 <div class="card-body"><button class="btn btn-primary btn-sm" onclick="loadLightningStats()">📊 Load Stats</button><div class="result-box" id="statsResult"></div></div>
             </div>
+            <div class="card">
+                <div class="card-header" onclick="toggleCard(this)">
+                    <h2><span class="icon">🧠</span> AI Routing (Task Type)</h2><span class="toggle-icon">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab(this,'aiShellThink')">Shell Think</div>
+                        <div class="tab" onclick="switchTab(this,'aiSelfLearning')">Self Learning</div>
+                    </div>
+                    <div id="aiShellThink" class="tab-content active">
+                        <div class="form-group"><label for="shellPrompt">Prompt</label><textarea id="shellPrompt"
+                                rows="3">Analyze governance policy conflicts</textarea></div>
+                        <div class="form-group"><label for="shellTaskType">Task Type</label><select id="shellTaskType">
+                                <option value="auto" selected>Auto</option>
+                                <option value="text">Text</option>
+                                <option value="reasoning">Reasoning</option>
+                                <option value="vision">Vision</option>
+                                <option value="code">Code</option>
+                                <option value="general">General</option>
+                            </select></div>
+                        <div class="form-group"><label for="shellEngineOverride">Engine Override (optional)</label><select
+                                id="shellEngineOverride">
+                                <option value="">Auto Route</option>
+                                <option value="hybrid">Hybrid</option>
+                                <option value="clx">CLX</option>
+                                <option value="cli_i">CLX.I</option>
+                                <option value="xcl">XCL</option>
+                                <option value="clisonic">Clisonic</option>
+                            </select></div>
+                        <button class="btn btn-primary btn-sm" onclick="runShellThink()">💭 Think</button>
+                        <div class="result-box" id="shellThinkResult"></div>
+                    </div>
+                    <div id="aiSelfLearning" class="tab-content">
+                        <div class="form-group"><label for="learnGoal">Goal</label><input type="text" id="learnGoal"
+                                value="Extract entities from document image"></div>
+                        <div class="form-group"><label for="learnContext">Context (JSON)</label><textarea id="learnContext"
+                                rows="3">{"source":"scan"}</textarea></div>
+                        <div class="form-group"><label for="learnTaskType">Task Type</label><select id="learnTaskType">
+                                <option value="auto" selected>Auto</option>
+                                <option value="text">Text</option>
+                                <option value="reasoning">Reasoning</option>
+                                <option value="vision">Vision</option>
+                                <option value="code">Code</option>
+                                <option value="general">General</option>
+                            </select></div>
+                        <div class="form-group"><label for="learnEngineOverride">Engine Override (optional)</label><select
+                                id="learnEngineOverride">
+                                <option value="">Auto Route</option>
+                                <option value="hybrid">Hybrid</option>
+                                <option value="clx">CLX</option>
+                                <option value="cli_i">CLX.I</option>
+                                <option value="xcl">XCL</option>
+                                <option value="clisonic">Clisonic</option>
+                            </select></div>
+                        <button class="btn btn-primary btn-sm" onclick="runSelfLearningCycle()">🧬 Run Cycle</button>
+                        <div class="result-box" id="selfLearningResult"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script>
@@ -369,6 +428,27 @@
             try{const d=await apiGet('/api/lightning/stats');
             r.innerHTML=`<div class="success">Service: ${d.service_available?'✅ Online':'⭕ Offline'}</div><div>Scans: ${d.total_scans}</div><div>Processes: ${d.total_processes}</div><div>Prints: ${d.total_prints}</div><div>Pipelines: ${d.total_pipelines}</div><div>Avg Scan: ${d.average_scan_time_ms.toFixed(1)}ms</div><div>Avg Process: ${d.average_process_time_ms.toFixed(1)}ms</div><div>Errors: ${d.errors}</div>`;}
             catch(e){r.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`;}}
+            async function runShellThink() {
+                const r = document.getElementById('shellThinkResult'); r.innerHTML = '<span class="loading"></span> Thinking...';
+                try {
+                    const p = { prompt: document.getElementById('shellPrompt').value, task_type: document.getElementById('shellTaskType').value };
+                    const eng = document.getElementById('shellEngineOverride').value; if (eng) p.engine = eng;
+                    const d = await apiPost('/api/shell/think', p);
+                    r.innerHTML = `<div class="${d.success ? 'success' : 'warning'}">Status: ${d.status}</div><div>Engine: ${d.engine || '-'}</div><div>Latency: ${(d.latency_ms || 0).toFixed ? d.latency_ms.toFixed(1) : d.latency_ms}ms</div><div>Response: ${d.response || d.error || ''}</div>`;
+                } catch (e) { r.innerHTML = `<span class="error">❌ Error: ${e.message}</span>`; }
+            }
+            async function runSelfLearningCycle() {
+                const r = document.getElementById('selfLearningResult'); r.innerHTML = '<span class="loading"></span> Running cycle...';
+                try {
+                    let ctx = {};
+                    try { ctx = JSON.parse(document.getElementById('learnContext').value || '{}'); } catch { ctx = { raw_context: document.getElementById('learnContext').value }; }
+                    const p = { goal: document.getElementById('learnGoal').value, context: ctx, task_type: document.getElementById('learnTaskType').value };
+                    const eng = document.getElementById('learnEngineOverride').value; if (eng) p.engine = eng;
+                    const d = await apiPost('/api/self-learning/cycle', p);
+                    const e = (d.cycle && d.cycle.engine) ? d.cycle.engine : (d.engine || '-');
+                    r.innerHTML = `<div class="${d.success ? 'success' : 'warning'}">Status: ${d.status}</div><div>Engine: ${e}</div><div>Cycle ID: ${d.cycle && d.cycle.id ? d.cycle.id : '-'}</div><div>Total Cycles: ${d.total_cycles ?? '-'}</div>`;
+                } catch (e) { r.innerHTML = `<span class="error">❌ Error: ${e.message}</span>`; }
+            }
         async function init(){await checkHealth();loadDNA();loadGenome();setInterval(checkHealth,10000);}
         init();
     </script>

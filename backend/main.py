@@ -156,6 +156,14 @@ class UIPanelSaveRequest(BaseModel):
     panel: dict[str, Any]
 
 
+class UIPluginAttachRequest(BaseModel):
+    address: str
+    name: str | None = None
+    plugin_type: str = "auto"
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    liability_ack: bool = False
+
+
 def _detect_task_type(prompt: str, context: dict[str, Any] | None = None) -> str:
     context = context or {}
     combined = f"{prompt} {json.dumps(context, ensure_ascii=False)}".lower()
@@ -275,7 +283,9 @@ async def dna_dashboard_alias():
 @app.get("/ui-composer", include_in_schema=False)
 async def ui_composer():
     """UI Composer lokal për krijimin e paneleve personale."""
-    return FileResponse(os.path.join(_project_root, "personal_node", "ui_composer.html"))
+    return FileResponse(
+        os.path.join(_project_root, "personal_node", "ui_composer_dynamic.html")
+    )
 
 
 @app.get("/api/health")
@@ -468,6 +478,83 @@ async def save_ui_panel(profile_id: str, req: UIPanelSaveRequest):
         "success": True,
         "profile_id": profile_id,
         "storage": save_meta,
+        "timestamp": time.time(),
+    }
+
+
+@app.get("/api/ui/plugins/{profile_id}")
+async def list_ui_plugins(profile_id: str):
+    data = personal_node_store.load_profile(profile_id)
+    if data is None:
+        return {
+            "success": False,
+            "profile_id": profile_id,
+            "plugins": [],
+            "error": "Profile not found",
+            "dna_immutable": True,
+            "timestamp": time.time(),
+        }
+
+    schema = data.get("schema", {}) if isinstance(data, dict) else {}
+    plugins = ui_designer.extract_plugins(schema)
+    return {
+        "success": True,
+        "profile_id": profile_id,
+        "plugins": plugins,
+        "total": len(plugins),
+        "dna_immutable": True,
+        "timestamp": time.time(),
+    }
+
+
+@app.post("/api/ui/plugins/{profile_id}")
+async def attach_ui_plugin(profile_id: str, req: UIPluginAttachRequest):
+    if not req.liability_ack:
+        return {
+            "success": False,
+            "profile_id": profile_id,
+            "error": "liability_ack must be true",
+            "notice": "Third-party service billing and contracts remain user responsibility.",
+            "dna_immutable": True,
+            "timestamp": time.time(),
+        }
+
+    profile = personal_node_store.load_profile(profile_id)
+    if profile is None:
+        schema = ui_designer.generate_schema(
+            prompt="Personal UI panel",
+            preferences={},
+            owner_id="local-user",
+        )
+        profile = {
+            "profile_id": profile_id,
+            "schema": schema,
+            "updated_at": time.time(),
+        }
+
+    schema = profile.get("schema", {}) if isinstance(profile, dict) else {}
+    plugin = ui_designer.normalize_plugin(
+        address=req.address,
+        name=req.name,
+        plugin_type=req.plugin_type,
+        metadata=req.metadata,
+    )
+    updated_schema = ui_designer.attach_plugin_to_schema(schema, plugin)
+    save_meta = personal_node_store.upsert_profile_payload(
+        profile_id,
+        {
+            "profile_id": profile_id,
+            "schema": updated_schema,
+        },
+    )
+
+    return {
+        "success": True,
+        "profile_id": profile_id,
+        "plugin": plugin,
+        "storage": save_meta,
+        "notice": "Plugin attached to local personal node. DNA/backend core remains immutable.",
+        "dna_immutable": True,
         "timestamp": time.time(),
     }
 

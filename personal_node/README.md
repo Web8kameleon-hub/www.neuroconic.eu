@@ -4,7 +4,7 @@ This folder contains local-first assets for user-created personal dashboards.
 
 ## What it provides
 
-- `ui_composer.html`: local UI builder page for creating personal panel schemas.
+- `ui_composer_dynamic.html`: local UI builder page for creating personal panel schemas.
 - `profiles/*.json`: generated panel profiles saved on the user's machine.
 
 ## Backend endpoints
@@ -13,6 +13,8 @@ This folder contains local-first assets for user-created personal dashboards.
 - `GET /api/ui/panels` list saved profiles.
 - `GET /api/ui/panels/{profile_id}` load one profile.
 - `POST /api/ui/panels/{profile_id}` save a panel payload manually.
+- `GET /api/ui/plugins/{profile_id}` list dynamic plugins for a user profile.
+- `POST /api/ui/plugins/{profile_id}` attach plugin by any address (website/email/app/internal/local) with liability acknowledgment.
 
 ## Open locally
 

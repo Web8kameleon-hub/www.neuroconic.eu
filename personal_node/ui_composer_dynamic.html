@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neurosonic Personal UI Composer</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; background: #0b1020; color: #e8ecff; margin: 0; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .card { background: #121933; border: 1px solid #24305f; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    h1 { margin: 0 0 8px 0; color: #7dd3fc; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; font-size: 12px; color: #9fb0e6; margin-bottom: 4px; }
+    input, textarea, select { width: 100%; box-sizing: border-box; background: #0d1430; color: #e8ecff; border: 1px solid #2b3b77; border-radius: 8px; padding: 10px; }
+    textarea { min-height: 90px; }
+    button { border: 0; border-radius: 10px; padding: 10px 14px; background: linear-gradient(135deg,#22d3ee,#6366f1); color: white; font-weight: 700; cursor: pointer; }
+    .muted { color: #93a3d8; font-size: 13px; }
+    .result { white-space: pre-wrap; background: #0a122a; border: 1px solid #253569; border-radius: 10px; padding: 12px; max-height: 320px; overflow: auto; }
+    .widgets { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 10px; margin-top: 10px; }
+    .widget { background: #0b1430; border: 1px solid #2a3e80; border-radius: 10px; padding: 10px; }
+    .row-actions { margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .row-ack { margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .checkbox-auto { width: auto; }
+    .label-inline { margin: 0; }
+    .top-gap-sm { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🧠 Personal UI Composer</h1>
+    <p class="muted">Everything is dynamic for user UI. Backend DNA remains immutable.</p>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label for="prompt">Design Prompt</label>
+          <textarea id="prompt" title="Panel design prompt" placeholder="Describe the panel you want">Create a governance panel with health, audit, and quick actions.</textarea>
+        </div>
+        <div>
+          <label for="preferences">Preferences (JSON)</label>
+          <textarea id="preferences" title="Panel preferences JSON" placeholder="Add JSON preferences">title=My Personal Node, palette=neon-night, columns=12</textarea>
+        </div>
+        <div>
+          <label for="profile">Profile ID</label>
+          <input id="profile" title="Profile identifier" placeholder="default" value="default" />
+        </div>
+        <div>
+          <label for="owner">Owner ID</label>
+          <input id="owner" title="Owner identifier" placeholder="local-user" value="local-user" />
+        </div>
+      </div>
+      <div class="row-actions">
+        <button onclick="generatePanel()">Generate & Save</button>
+        <button onclick="listProfiles()">List Profiles</button>
+        <span class="muted" id="status">Ready</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Generated Schema</h3>
+      <div id="schema" class="result">No schema yet.</div>
+    </div>
+
+    <div class="card">
+      <h3>Widgets Preview</h3>
+      <div id="widgets" class="widgets"></div>
+    </div>
+
+    <div class="card">
+      <h3>Profiles</h3>
+      <div id="profiles" class="result">No profiles loaded.</div>
+    </div>
+
+    <div class="card">
+      <h3>Dynamic Plugins (Any Address)</h3>
+      <p class="muted">Use email, app endpoint, website, internal API, or local service. Third-party billing/contracts remain user responsibility.</p>
+      <div class="grid">
+        <div>
+          <label for="pluginAddress">Plugin Address</label>
+          <input id="pluginAddress" title="Plugin endpoint address" placeholder="https://example.com/api or mail@domain.com" value="https://example.com/api" />
+        </div>
+        <div>
+          <label for="pluginName">Plugin Name</label>
+          <input id="pluginName" title="Plugin display name" placeholder="External Connector" value="External Connector" />
+        </div>
+        <div>
+          <label for="pluginType">Plugin Type</label>
+          <select id="pluginType" title="Plugin address type">
+            <option value="auto" selected>Auto</option>
+            <option value="email">Email</option>
+            <option value="website">Website</option>
+            <option value="app-endpoint">App Endpoint</option>
+            <option value="internal-api">Internal API</option>
+            <option value="local-service">Local Service</option>
+            <option value="generic-endpoint">Generic Endpoint</option>
+          </select>
+        </div>
+        <div>
+          <label for="pluginMeta">Metadata (JSON)</label>
+          <textarea id="pluginMeta" title="Plugin metadata JSON" placeholder="metadata for runtime">runtime=llama-local, transport=tide</textarea>
+        </div>
+      </div>
+      <div class="row-ack">
+        <input id="liabilityAck" type="checkbox" class="checkbox-auto" />
+        <label for="liabilityAck" class="label-inline">I confirm third-party billing/contracts are my responsibility.</label>
+      </div>
+      <div class="row-actions">
+        <button onclick="attachPlugin()">Attach Plugin</button>
+        <button onclick="listPlugins()">List Plugins</button>
+      </div>
+      <div id="pluginsResult" class="result top-gap-sm">No plugins attached yet.</div>
+    </div>
+  </div>
+
+  <script>
+    let API_BASE = "";
+    if (window.location.port === "5500" || window.location.port === "5501") {
+      API_BASE = "http://127.0.0.1:8000";
+    }
+
+    async function postJson(endpoint, body) {
+      const resp = await fetch(API_BASE + endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      return await resp.json();
+    }
+
+    async function getJson(endpoint) {
+      const resp = await fetch(API_BASE + endpoint);
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      return await resp.json();
+    }
+
+    function renderWidgets(schema) {
+      const container = document.getElementById("widgets");
+      container.innerHTML = "";
+      const widgets = (schema && schema.widgets) || [];
+      for (const widget of widgets) {
+        const el = document.createElement("div");
+        el.className = "widget";
+        el.innerHTML = `<strong>${widget.title || widget.type}</strong><div class="muted">type: ${widget.type}</div><div class="muted">id: ${widget.id}</div>`;
+        container.appendChild(el);
+      }
+    }
+
+    async function generatePanel() {
+      const status = document.getElementById("status");
+      status.textContent = "Generating...";
+      try {
+        let preferences = {};
+        try {
+          preferences = JSON.parse(document.getElementById("preferences").value || "{}");
+        } catch {
+          preferences = { raw_preferences: document.getElementById("preferences").value };
+        }
+        const payload = {
+          prompt: document.getElementById("prompt").value,
+          profile_id: document.getElementById("profile").value,
+          owner_id: document.getElementById("owner").value,
+          preferences,
+          save: true
+        };
+
+        const data = await postJson("/api/ui/design", payload);
+        document.getElementById("schema").textContent = JSON.stringify(data.schema, null, 2);
+        renderWidgets(data.schema);
+        status.textContent = `Saved profile ${data.profile_id}`;
+      } catch (err) {
+        status.textContent = "Error: " + err.message;
+      }
+    }
+
+    async function listProfiles() {
+      try {
+        const data = await getJson("/api/ui/panels");
+        document.getElementById("profiles").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("profiles").textContent = "Error: " + err.message;
+      }
+    }
+
+    async function attachPlugin() {
+      const profileId = document.getElementById("profile").value || "default";
+      let metadata = {};
+      try {
+        metadata = JSON.parse(document.getElementById("pluginMeta").value || "{}");
+      } catch {
+        metadata = { raw_metadata: document.getElementById("pluginMeta").value };
+      }
+
+      const payload = {
+        address: document.getElementById("pluginAddress").value,
+        name: document.getElementById("pluginName").value,
+        plugin_type: document.getElementById("pluginType").value,
+        metadata,
+        liability_ack: !!document.getElementById("liabilityAck").checked
+      };
+
+      try {
+        const data = await postJson(`/api/ui/plugins/${encodeURIComponent(profileId)}`, payload);
+        document.getElementById("pluginsResult").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("pluginsResult").textContent = "Error: " + err.message;
+      }
+    }
+
+    async function listPlugins() {
+      const profileId = document.getElementById("profile").value || "default";
+      try {
+        const data = await getJson(`/api/ui/plugins/${encodeURIComponent(profileId)}`);
+        document.getElementById("pluginsResult").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("pluginsResult").textContent = "Error: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

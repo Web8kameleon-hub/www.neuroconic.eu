@@ -66,6 +66,15 @@ me PID/ProcessName dhe shmang traceback-e të paqarta.
 
 ---
 
+## 🗺️ Wiki, Stepstones & Vlerësime
+
+- Wiki Home: `docs/wiki/Home.md`
+- Stepstones Roadmap: `docs/STEPSTONES.md`
+- Framework i Vlerësimit: `docs/EVALUATIONS.md`
+- Workflow i Release-it: `docs/wiki/Release-Workflow.md`
+
+---
+
 ## ⚖ë Kushtetuta (5 Shtyllat)
 
 1. **SOVRANITETI** - Zero varësi nga shitës, punon offline
@@ -115,6 +124,9 @@ python neurosonic_no_fake_police.py --cd  # CD kontroll (bllokon deploy)
 - 🌐 [neurosonic.eu](https://www.neurosonic.eu)
 - 🐙 [GitHub](https://github.com/LedjanAhmati/www.neurosonic.eu)
 - 📖 [Dokumentacioni](docs/Architecture.md)
+- 🗺️ [Wiki Home](docs/wiki/Home.md)
+- 🧭 [Stepstones](docs/STEPSTONES.md)
+- 📊 [Vlerësime](docs/EVALUATIONS.md)
 
 ---
 

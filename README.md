@@ -33,13 +33,18 @@ Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar 
   - [🧩 Komponentët Kryesorë](#-komponentët-kryesorë)
   - [🚀 Ekzekutimi i Menjëhershëm](#-ekzekutimi-i-menjëhershëm)
   - [🛠️ Startup Recovery (Popup + Auto-clean Ports)](#️-startup-recovery-popup--auto-clean-ports)
+  - [🗺️ Wiki, Stepstones \& Evaluations](#️-wiki-stepstones--evaluations)
   - [📁 Struktura e Projektit](#-struktura-e-projektit)
   - [⚖️ Kushtetuta (5 Shtyllat)](#️-kushtetuta-5-shtyllat)
+  - [🌐 Production Hosting](#-production-hosting)
+  - [📦 Public Installation Packs](#-public-installation-packs)
+  - [📦 Publishing (PyPI + npm + crates)](#-publishing-pypi--npm--crates)
   - [🔬 Testet](#-testet)
   - [🚓 NO FAKE Police](#-no-fake-police)
   - [🤝 Kontribuimi](#-kontribuimi)
   - [📜 Licenca](#-licenca)
   - [🌍 Lidhjet](#-lidhjet)
+  - [NEUROSONIC / CLISONIX TRINITY+ASI v1.0](#neurosonic--clisonix-trinityasi-v10)
 
 ---
 
@@ -91,6 +96,15 @@ pwsh -File .\start_neurosonic.ps1
 
 Nëse `8080` është ende i zënë, `scripts/popup_lightning.ps1` tani jep
 diagnostikë të qartë me PID/ProcessName dhe nuk bie me traceback të paqartë.
+
+---
+
+## 🗺️ Wiki, Stepstones & Evaluations
+
+- Wiki Home: `docs/wiki/Home.md`
+- Stepstones Roadmap: `docs/STEPSTONES.md`
+- Evaluation Framework: `docs/EVALUATIONS.md`
+- Release Workflow (wiki): `docs/wiki/Release-Workflow.md`
 
 ---
 
@@ -282,6 +296,9 @@ Neurosonic License - Shih [LICENSE](LICENSE) për detaje.
 - 🐙 [GitHub](https://github.com/LedjanAhmati/www.neurosonic.eu)
 - 📖 [Dokumentacioni](docs/Architecture.md)
 - 🧬 [Kushtetuta](docs/Constitution.md)
+- 🗺️ [Wiki Home](docs/wiki/Home.md)
+- 🧭 [Stepstones](docs/STEPSTONES.md)
+- 📊 [Evaluations](docs/EVALUATIONS.md)
 
 ---
 

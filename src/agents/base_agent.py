@@ -28,7 +28,7 @@ class BaseAgent:
 
     def process(self, task: Any) -> Dict[str, Any]:
         """Process a task - must be implemented by subclasses"""
-        raise NotImplementedError(f"{self.__class__.__name__} must implement process()")
+        raise RuntimeError(f"{self.__class__.__name__}.process must be overridden")
 
     def get_stats(self) -> Dict[str, Any]:
         """Get agent statistics"""

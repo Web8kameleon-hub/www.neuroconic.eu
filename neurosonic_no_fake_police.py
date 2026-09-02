@@ -117,21 +117,21 @@ class NoFakePolice:
                         for match in re.finditer(pat, content):
                             ln = content[: match.start()].count("\n") + 1
                             if self.is_real_code(lines, ln):
-                                s = lines[ln - 1].strip()
-                                # Allow "raise NotImplementedError" in abstract methods
-                                # This is valid Python pattern for abstract base classes
-                                if s.startswith("raise NotImplemented"):
+                                if os.path.basename(fp) in (
+                                    "neurosonic_no_fake_police.py",
+                                    "test_no_fake.py",
+                                ):
                                     continue
-                                if s.startswith(("class", "def")):
-                                    self.violations.append(
-                                        (
-                                            fp,
-                                            ln,
-                                            "CI-PL",
-                                            f"placeholder '{match.group()}'",
-                                        )
+                                s = lines[ln - 1].strip()
+                                self.violations.append(
+                                    (
+                                        fp,
+                                        ln,
+                                        "CI-PL",
+                                        f"placeholder '{match.group()}' in '{s[:60]}'",
                                     )
-                                    has_violation = True
+                                )
+                                has_violation = True
 
                     if not has_violation:
                         self.clean_files += 1

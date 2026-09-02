@@ -2,6 +2,49 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.13 - 2026-09-02
+
+Observability and evidence maturity release focused on SLO/error-budget formalization, uniform tracing validation, STRIDE threat modeling, and external benchmark evidence mapping.
+
+### Added (v1.0.13)
+
+- Add production evidence generators:
+  - `scripts/production_evidence_pack.py`
+  - `scripts/benchmark_compare.py`
+  - `scripts/observability_slo_snapshot.py`
+  - `scripts/trace_uniform_check.py`
+- Add observability definitions and policy docs:
+  - `docs/production/observability/SLO_DEFINITIONS.json`
+  - `docs/production/observability/SLO_DASHBOARD_GRAFANA.json`
+  - `docs/production/observability/ERROR_BUDGET_POLICY.md`
+  - `docs/production/observability/TRACING_UNIFORM_STANDARD.md`
+- Add formal threat model:
+  - `docs/production/security/THREAT_MODEL_STRIDE.md`
+- Add external benchmark evidence mapping:
+  - `docs/production/evidence/EXTERNAL_BENCHMARK_EVIDENCE.md`
+  - `docs/production/evidence/external_benchmark_evidence.json`
+- Add structure consolidation plan:
+  - `docs/guides/STRUCTURE_CONSOLIDATION_PLAN.md`
+
+### Changed (v1.0.13)
+
+- Update `README.md` to remove overclaims and align project messaging with evidence-first posture and optional runtime dependency profiles.
+- Extend README with direct runbook sections for Production Evidence Pack, Full Observability Pack, Formal Threat Modeling, and External Benchmark Evidence.
+
+### Validation (v1.0.13)
+
+- `python scripts/production_evidence_pack.py --pretty` → generated evidence trends and incident/rollback logs.
+- `python scripts/observability_slo_snapshot.py --pretty` → generated `slo_snapshot_latest.json` and `error_budget_status_latest.md`.
+- `python scripts/benchmark_compare.py --pretty` → generated comparative JSON/Markdown evidence.
+- `python scripts/trace_uniform_check.py` → `PASS` and generated `trace_uniform_check_latest.json`.
+- `python -m py_compile scripts/production_evidence_pack.py scripts/benchmark_compare.py scripts/observability_slo_snapshot.py scripts/trace_uniform_check.py` → `PASS`.
+
+### Release Sync (v1.0.13)
+
+- Git tag: `v1.0.13`
+- Commit: `fd5c236`
+- Tag URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/tree/v1.0.13>
+
 ## v1.0.12 - 2026-09-02
 
 Guardrails and release-governance upgrade focused on lightweight OS-CLX policy enforcement, repository integrity checks, route-history drift detection, and immutable release metadata.

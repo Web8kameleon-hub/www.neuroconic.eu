@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.5 - 2026-09-02
+
+UI runtime integrity release focused on removing static placeholder signals from the DNA UI shell and adding compliance footer controls.
+
+### Added (v1.0.5)
+
+- Add dynamic legal/footer link set in `neurosonic_dna_ui.html`: `Kushtet`, `Privatësia`, `Siguria`, `Statusi`, `Komuniteti`, `Dokumentarë`, `Kontakt`.
+- Add privacy preference actions: `Menaxho cookies` and `Mos ndani informacionin tim personal`.
+- Add runtime contact display with `clisonix@pm.me` in footer.
+
+### Changed (v1.0.5)
+
+- Replace hardcoded status/hash/date/count placeholders in `neurosonic_dna_ui.html` with API-driven values.
+- Bind `Agents`, `Nodes`, `Labs`, and `Marketplace` badges to runtime data.
+- Replace static profile identity fallback with local profile values from `localStorage`.
+
+### Release Sync (v1.0.5)
+
+- Git tag: `v1.0.5`
+- Base feature commit: `2445850`
+- Release URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/releases/tag/v1.0.5>
+
 ## v1.0.4 - 2026-09-02
 
 SEO hardening release focused on reducing homepage warnings and improving dynamic discoverability signals.

@@ -9,8 +9,8 @@ Kërkohet Linux me Docker Engine 26+, Docker Compose v2, 2 CPU, 2 GB RAM, 10 GB
 disk dhe një domain me TLS.
 
 ```bash
-git clone https://github.com/LedjanAhmati/www.neurosonic.eu.git
-cd www.neurosonic.eu
+git clone https://github.com/LedjanAhmati/www.neuroconic.eu.git
+cd www.neuroconic.eu
 cp .env.example .env
 docker compose config
 docker compose build --pull

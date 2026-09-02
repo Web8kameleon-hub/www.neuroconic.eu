@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 NEUROSONIC BACKEND API - FastAPI
 Ekspozon modulet Neurosonic si REST API per frontend-in.
 """
 
-import sys
-import os
-import time
-import json
 import hashlib
-from typing import Dict, List, Any, Optional
-from fastapi import FastAPI, HTTPException
+import json
+import os
+import sys
+import time
+from typing import Any
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -21,15 +21,15 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, _project_root)
 os.chdir(_project_root)
 
-from neurosonic_dna import NeurosonicDNA
-from neurosonic_genome import NeurosonicGenome, GenomePackage
 from neurosonic_compatibility import NeurosonicCompatibilityMatrix
+from neurosonic_dna import NeurosonicDNA
 from neurosonic_evolution import NeurosonicEvolutionEngine
+from neurosonic_genome import NeurosonicGenome
 from neurosonic_lightning_bridge import (
-    NeurosonicLightningBridge,
     LightningMode,
-    ProcessingEngine,
+    NeurosonicLightningBridge,
     PrintQuality,
+    ProcessingEngine,
 )
 
 app = FastAPI(
@@ -71,7 +71,7 @@ print("=" * 60)
 
 class ModuleVerifyRequest(BaseModel):
     module_id: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
 
 
 class EvolutionProposeRequest(BaseModel):
@@ -104,7 +104,7 @@ class PipelineRequest(BaseModel):
 
 
 class BatchRequest(BaseModel):
-    sources: List[str]
+    sources: list[str]
 
 
 # ========================================================================

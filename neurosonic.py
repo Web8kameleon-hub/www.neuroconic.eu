@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# ruff: noqa
 """
 🧬 NEUROSONIC TRINITY+ASI v1.0.0
 Zero Dependencies • Zero Fake • Zero Noise • Absolute Independence
@@ -457,7 +457,7 @@ class InternalAuth:
 class NodeDB:
     """NodeDB Fluid - database që përshtatet me çdo strukturë"""
 
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: Optional[str] = None):
         if db_path is None:
             db_path = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "memory", "nodedb.json"
@@ -528,7 +528,7 @@ class NodeDB:
                     results[key] = value
         return results
 
-    def backup(self, backup_path: str = None) -> str:
+    def backup(self, backup_path: Optional[str] = None) -> str:
         """Krijon një backup të database"""
         if backup_path is None:
             backup_path = f"memory/nodedb_backup_{int(time.time())}.json"
@@ -657,7 +657,7 @@ class SSEStream:
         self.streams: Dict[str, Dict] = {}
         self.buffers: Dict[str, queue.Queue] = {}
 
-    def create_stream(self, stream_id: str = None) -> str:
+    def create_stream(self, stream_id: Optional[str] = None) -> str:
         """Krijon një stream të ri"""
         if stream_id is None:
             stream_id = hashlib.sha256(
@@ -854,7 +854,7 @@ class SecurityEngine:
 class AuditLogger:
     """Regjistrues i auditimit - ruan çdo veprim të sistemit"""
 
-    def __init__(self, log_path: str = None):
+    def __init__(self, log_path: Optional[str] = None):
         if log_path is None:
             log_path = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "logs", "audit.log"
@@ -897,7 +897,7 @@ class AuditLogger:
         if len(self.logs) > 10000:
             self.logs = self.logs[-10000:]
 
-    def get_logs(self, count: int = 50, module: str = None) -> List[Dict]:
+    def get_logs(self, count: int = 50, module: Optional[str] = None) -> List[Dict]:
         """Kthen logjet e fundit"""
         result = self.logs[-count:]
         if module:
@@ -919,7 +919,7 @@ class AuditLogger:
                 return False
         return True
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> Dict[str, Any]:
         """Statistika të logjeve"""
         return {
             "total_logs": len(self.logs),
@@ -975,7 +975,7 @@ class NeurosonicKernel:
 class BaseAgent:
     """Agjent bazë - çdo agjent trashëgon nga kjo klasë"""
 
-    def __init__(self, name: str, role: str, kernel: NeurosonicKernel = None):
+    def __init__(self, name: str, role: str, kernel: Optional[NeurosonicKernel] = None):
         self.name = name
         self.role = role
         self.kernel = kernel
@@ -1037,7 +1037,7 @@ class BaseAgent:
 class ResearchAgent(BaseAgent):
     """Agjent kërkim - lexon dhe verifikon informacion nga interneti"""
 
-    def __init__(self, kernel: NeurosonicKernel = None):
+    def __init__(self, kernel: Optional[NeurosonicKernel] = None):
         super().__init__("ResearchAgent", "Kërkim", kernel)
         self.verified_sources = 0
 
@@ -1092,7 +1092,7 @@ class CountryAgent(BaseAgent):
     """Agjent për një shtet specifik - lidhet me open data"""
 
     def __init__(
-        self, country: str, country_code: str, kernel: NeurosonicKernel = None
+        self, country: str, country_code: str, kernel: Optional[NeurosonicKernel] = None
     ):
         super().__init__(f"{country}Agent", f"Shteti: {country}", kernel)
         self.country = country
@@ -1139,7 +1139,7 @@ class CountryAgent(BaseAgent):
 class SecurityAgent(BaseAgent):
     """Agjent sigurie - zbulon anomali dhe kërcënime"""
 
-    def __init__(self, kernel: NeurosonicKernel = None):
+    def __init__(self, kernel: Optional[NeurosonicKernel] = None):
         super().__init__("SecurityAgent", "Siguri", kernel)
         self.anomalies_detected = 0
 
@@ -1204,7 +1204,7 @@ class ThinkingPipeline:
         self.memory = memory
         self.step_count = 0
 
-    def think(self, input_data: str, context: Dict = None) -> Dict[str, Any]:
+    def think(self, input_data: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """Procesi i plotë i mendimit"""
         if context is None:
             context = {}
@@ -1364,7 +1364,7 @@ class InternalAPI:
                 params.get("key"), params.get("value"), params.get("type", "working")
             ),
         )
-        self.register("memory.stats", lambda params: self.kernel.memory.stats())
+        self.register("memory.stats", lambda params: self.kernel.memory.get_stats())
         self.register(
             "auth.login",
             lambda params: self.kernel.auth.login(
@@ -1394,7 +1394,7 @@ class InternalAPI:
         """Regjistron një rrugë të re"""
         self.routes[path] = handler
 
-    def call(self, path: str, params: Dict = None) -> Any:
+    def call(self, path: str, params: Optional[Dict] = None) -> Any:
         """Thërret një rrugë të API-së"""
         if params is None:
             params = {}
@@ -1822,18 +1822,13 @@ def main():
         kernel.memory.store("test_hvo", "Horizontal lidhje", "horizontal")
         kernel.memory.store("test_hvo", "Vertikal hierarki", "vertical")
         kernel.memory.store("test_hvo", "Orbital 360°", "orbital")
-        assert kernel.memory.recall("test_hvo", "working")["value"] == "Neurosonic AI"
-        assert (
-            kernel.memory.recall("test_hvo", "horizontal")["value"]
-            == "Horizontal lidhje"
-        )
-        assert (
-            kernel.memory.recall("test_hvo", "vertical")["value"] == "Vertikal hierarki"
-        )
-        assert kernel.memory.recall("test_hvo", "orbital")["value"] == "Orbital 360°"
-        stats = kernel.memory.stats()
+        assert kernel.memory.recall("test_hvo", "working") == "Neurosonic AI"
+        assert kernel.memory.recall("test_hvo", "horizontal") == "Horizontal lidhje"
+        assert kernel.memory.recall("test_hvo", "vertical") == "Vertikal hierarki"
+        assert kernel.memory.recall("test_hvo", "orbital") == "Orbital 360°"
+        stats = kernel.memory.get_stats()
         print(f"  ✅ 6 lloje memorie funksionojnë")
-        print(f"  📊 Total entries: {stats['total']}")
+        print(f"  📊 Total entries: {stats['total_entries']}")
         tests_passed += 1
     except AssertionError as e:
         print(f"  ❌ HVO Memory: {e}")
@@ -1887,6 +1882,7 @@ def main():
     print("\n🤖 Test 6: Agent Society")
     try:
         research = kernel.agents.get("ResearchAgent")
+        assert research is not None
         research.assign("neurosonic architecture")
         result = research.get_result()
         # Prisni derisa agjenti të përpunojë
@@ -1901,4 +1897,4 @@ def main():
         tests_passed += 1
     except Exception as e:
         print(f"  ❌ Agents: {e}")
-        tests_failed
+        tests_failed += 1

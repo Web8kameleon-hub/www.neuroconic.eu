@@ -167,8 +167,10 @@
             <div class="card">
                 <div class="card-header" onclick="toggleCard(this)"><h2><span class="icon">✅</span> Compatibility Matrix</h2><span class="toggle-icon">▼</span></div>
                 <div class="card-body">
-                    <div class="form-group"><label>Module ID</label><input type="text" id="modId" value="MOD-NEW-001"></div>
-                    <div class="form-group"><label>Module Config (JSON)</label><textarea id="modConfig" rows="6">{"name":"New Module","api_version":"1.0","memory_type":"HVO","encryption":"AES256","zero_trust":true,"sse_support":true,"tide_compatible":true,"license":"Neurosonic","cudm_compatible":true,"user_data_ownership":true,"dependencies":["NGI-CORE-0001"],"constitution_compatibility":["G001","G002","G003","G004","G005","G006","G007","G008","G009","G010"],"security_compatibility":["SR001","SR002","SR003","SR004","SR005","SR006","SR007","SR008"],"data_compatibility":["DR001","DR002","DR003","DR004","DR005"],"api_compatibility":["AR001","AR002","AR003","AR004"]}</textarea></div>
+                    <div class="form-group"><label for="modId">Module ID</label><input type="text" id="modId" value="MOD-NEW-001"></div>
+                    <div class="form-group"><label for="modConfig">Module Config (JSON)</label><textarea id="modConfig"
+                            rows="6">{"name":"New Module","api_version":"1.0","memory_type":"HVO","encryption":"AES256","zero_trust":true,"sse_support":true,"tide_compatible":true,"license":"Neurosonic","cudm_compatible":true,"user_data_ownership":true,"dependencies":["NGI-CORE-0001"],"constitution_compatibility":["G001","G002","G003","G004","G005","G006","G007","G008","G009","G010"],"security_compatibility":["SR001","SR002","SR003","SR004","SR005","SR006","SR007","SR008"],"data_compatibility":["DR001","DR002","DR003","DR004","DR005"],"api_compatibility":["AR001","AR002","AR003","AR004"]}</textarea>
+                    </div>
                     <button class="btn btn-primary" onclick="verifyModule()">🔍 Verify Module</button>
                     <div class="result-box" id="compatResult"></div>
                 </div>
@@ -179,9 +181,20 @@
                     <div class="tabs"><div class="tab active" onclick="switchTab(this,'evolutionAnalyze')">Analysis</div><div class="tab" onclick="switchTab(this,'evolutionPropose')">Propose</div><div class="tab" onclick="switchTab(this,'evolutionProposals')">Proposals</div></div>
                     <div id="evolutionAnalyze" class="tab-content active"><button class="btn btn-primary btn-sm" onclick="analyzeArchitecture()">🔍 Analyze Architecture</button><div class="result-box" id="analysisResult"></div></div>
                     <div id="evolutionPropose" class="tab-content">
-                        <div class="form-group"><label>Description</label><input type="text" id="propDesc" value="Add new governance rule"></div>
-                        <div class="form-group"><label>Category</label><select id="propCat"><option value="governance">Governance</option><option value="security">Security</option><option value="data">Data</option><option value="api">API</option><option value="memory">Memory</option></select></div>
-                        <div class="form-group"><label>Impact Level</label><select id="propImpact"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+                        <div class="form-group"><label for="propDesc">Description</label><input type="text" id="propDesc"
+                                value="Add new governance rule"></div>
+                        <div class="form-group"><label for="propCat">Category</label><select id="propCat">
+                                <option value="governance">Governance</option>
+                                <option value="security">Security</option>
+                                <option value="data">Data</option>
+                                <option value="api">API</option>
+                                <option value="memory">Memory</option>
+                            </select></div>
+                        <div class="form-group"><label for="propImpact">Impact Level</label><select id="propImpact">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select></div>
                         <button class="btn btn-primary btn-sm" onclick="proposeChange()">📝 Propose Change</button><div class="result-box" id="proposeResult"></div>
                     </div>
                     <div id="evolutionProposals" class="tab-content"><button class="btn btn-primary btn-sm" onclick="loadProposals()">📋 Load Proposals</button><div class="result-box" id="proposalsResult"></div></div>
@@ -192,22 +205,40 @@
                 <div class="card-body">
                     <div class="tabs"><div class="tab active" onclick="switchTab(this,'lightningScan')">Scan</div><div class="tab" onclick="switchTab(this,'lightningProcess')">Process</div><div class="tab" onclick="switchTab(this,'lightningPrint')">Print</div><div class="tab" onclick="switchTab(this,'lightningPipeline')">Pipeline</div></div>
                     <div id="lightningScan" class="tab-content active">
-                        <div class="form-group"><label>Source</label><input type="text" id="scanSource" value="" required></div>
-                        <div class="form-group"><label>Mode</label><select id="scanMode"><option value="tidewave">TideWave</option><option value="lightning">Lightning</option><option value="resonance">Resonance</option><option value="nanodecibel">NanoDecibel</option><option value="hybrid">Hybrid</option></select></div>
+                        <div class="form-group"><label for="scanSource">Source</label><input type="text" id="scanSource" value="" required>
+                        </div>
+                        <div class="form-group"><label for="scanMode">Mode</label><select id="scanMode">
+                                <option value="tidewave">TideWave</option>
+                                <option value="lightning">Lightning</option>
+                                <option value="resonance">Resonance</option>
+                                <option value="nanodecibel">NanoDecibel</option>
+                                <option value="hybrid">Hybrid</option>
+                            </select></div>
                         <button class="btn btn-primary btn-sm" onclick="lightningScan()">📡 Scan</button><div class="result-box" id="scanResult"></div>
                     </div>
                     <div id="lightningProcess" class="tab-content">
-                        <div class="form-group"><label>Data</label><textarea id="procData" rows="3" required></textarea></div>
-                        <div class="form-group"><label>Engine</label><select id="procEngine"><option value="hybrid">Hybrid</option><option value="clisonic">Clisonic AI</option><option value="clx">CLX</option><option value="xcl">XCL</option></select></div>
+                        <div class="form-group"><label for="procData">Data</label><textarea id="procData" rows="3" required></textarea></div>
+                        <div class="form-group"><label for="procEngine">Engine</label><select id="procEngine">
+                                <option value="hybrid">Hybrid</option>
+                                <option value="clisonic">Clisonic AI</option>
+                                <option value="clx">CLX</option>
+                                <option value="xcl">XCL</option>
+                            </select></div>
                         <button class="btn btn-primary btn-sm" onclick="lightningProcess()">⚙️ Process</button><div class="result-box" id="processResult"></div>
                     </div>
                     <div id="lightningPrint" class="tab-content">
-                        <div class="form-group"><label>Data</label><textarea id="printData" rows="3" required></textarea></div>
-                        <div class="form-group"><label>Quality</label><select id="printQuality"><option value="stigma">Stigma Premium</option><option value="high">High</option><option value="normal">Normal</option><option value="draft">Draft</option></select></div>
+                        <div class="form-group"><label for="printData">Data</label><textarea id="printData" rows="3" required></textarea></div>
+                        <div class="form-group"><label for="printQuality">Quality</label><select id="printQuality">
+                                <option value="stigma">Stigma Premium</option>
+                                <option value="high">High</option>
+                                <option value="normal">Normal</option>
+                                <option value="draft">Draft</option>
+                            </select></div>
                         <button class="btn btn-primary btn-sm" onclick="lightningPrint()">🖨️ Print</button><div class="result-box" id="printResult"></div>
                     </div>
                     <div id="lightningPipeline" class="tab-content">
-                        <div class="form-group"><label>Source</label><input type="text" id="pipeSource" value="" required></div>
+                        <div class="form-group"><label for="pipeSource">Source</label><input type="text" id="pipeSource" value="" required>
+                        </div>
                         <button class="btn btn-primary btn-sm" onclick="lightningPipeline()">🔗 Execute Pipeline</button><div class="result-box" id="pipelineResult"></div>
                     </div>
                 </div>

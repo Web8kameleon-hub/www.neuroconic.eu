@@ -46,6 +46,24 @@ python neurosonic.py
 
 **Asnjë instalim i jashtëm. Funksionon menjëherë.**
 
+## 🛠️ Rikuperimi i Nisjes (Popup + Auto-clean Ports)
+
+Nëse një instancë e vjetër mban portet (`8080`, `8000`, `5500`),
+launcher-i kryesor i pastron automatikisht para nisjes së popup-ve.
+
+```powershell
+pwsh -File .\start_neurosonic.ps1
+```
+
+Çfarë ndodh automatikisht:
+
+- Lirohen portet `8080` (Lightning SPP), `8000` (Backend), `5500` (Frontend)
+- Hapet nga një dritare `pwsh` për secilin shërbim
+- Hapet dashboard-i në `http://localhost:8000/neurosonic_dashboard.html`
+
+Nëse `8080` mbetet i zënë, `scripts/popup_lightning.ps1` jep diagnostikë të qartë
+me PID/ProcessName dhe shmang traceback-e të paqarta.
+
 ---
 
 ## ⚖ë Kushtetuta (5 Shtyllat)

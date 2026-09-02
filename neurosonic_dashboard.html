@@ -169,7 +169,7 @@
                 <div class="card-body">
                     <div class="form-group"><label for="modId">Module ID</label><input type="text" id="modId" value="MOD-NEW-001"></div>
                     <div class="form-group"><label for="modConfig">Module Config (JSON)</label><textarea id="modConfig"
-                            rows="6">{"name":"New Module","api_version":"1.0","memory_type":"HVO","encryption":"AES256","zero_trust":true,"sse_support":true,"tide_compatible":true,"license":"Neurosonic","cudm_compatible":true,"user_data_ownership":true,"dependencies":["NGI-CORE-0001"],"constitution_compatibility":["G001","G002","G003","G004","G005","G006","G007","G008","G009","G010"],"security_compatibility":["SR001","SR002","SR003","SR004","SR005","SR006","SR007","SR008"],"data_compatibility":["DR001","DR002","DR003","DR004","DR005"],"api_compatibility":["AR001","AR002","AR003","AR004"]}</textarea>
+                            rows="6">{"name":"New Module","api_version":"1.0","api_path":"/api/new-module","memory_type":"HVO","encryption":"AES256","zero_trust":true,"sse_support":true,"tide_compatible":true,"license":"Neurosonic","cudm_compatible":true,"user_data_ownership":true,"dependencies":["NGI-CORE-0001"],"constitution_compatibility":["G001","G002","G003","G004","G005","G006","G007","G008","G009","G010"],"security_compatibility":["SR001","SR002","SR003","SR004","SR005","SR006","SR007","SR008"],"data_compatibility":["DR001","DR002","DR003","DR004","DR005"],"api_compatibility":["AR001","AR002","AR003","AR004"]}</textarea>
                     </div>
                     <button class="btn btn-primary" onclick="verifyModule()">🔍 Verify Module</button>
                     <div class="result-box" id="compatResult"></div>

@@ -299,7 +299,7 @@ class LegacyBaseAgent:
                     "hash":hashlib.sha256(str(result).encode()).hexdigest()[:12]})
             except queue.Empty: continue
             except Exception as e: logger.error(f"Agent {self.name} error: {e}")
-    def process(self, task): raise NotImplementedError
+    def process(self, task) -> Any: raise RuntimeError("LegacyBaseAgent.process must be overridden")
     def submit(self, task): self.tasks.put(task)
 
 class LegacyResearchAgent(LegacyBaseAgent):

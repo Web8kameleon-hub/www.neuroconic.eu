@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.2 - 2026-09-02
+
+Patch release focused on startup stability and popup orchestration hardening.
+
+### Changed (v1.0.2)
+
+- Add automatic pre-start cleanup in `start_neurosonic.ps1` for service ports `8080`, `8000`, and `5500`.
+- Add `8080` preflight check in `scripts/popup_lightning.ps1` with clear PID/process diagnostics when port is occupied.
+- Enable `PYTHONUTF8=1` in Lightning popup startup to avoid Windows code-page output crashes.
+
+### Release Sync (v1.0.2)
+
+- Git tag: `v1.0.2`
+- Commit: `926c76b`
+- Release URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/releases/tag/v1.0.2>
+
 ## v1.0.1 - 2026-09-02
 
 Patch release focused on UI selector cleanup and routing consistency.

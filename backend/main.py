@@ -15,7 +15,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Shto parent directory per import - absolute path
 _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -37,6 +37,7 @@ from neurosonic_lightning_bridge import (
     PrintQuality,
     ProcessingEngine,
 )
+from neurosonic_ui_designer import PersonalNodeStore, UIDesignEngine
 
 app = FastAPI(
     title="Neurosonic Trinity+ASI API",
@@ -66,6 +67,8 @@ bridge = NeurosonicLightningBridge(dna=dna, genome=genome)
 selten_analyzer = SeltenDatenAnalyzer()
 pliris_filter = PlirisDatenFilter()
 self_learning = SelfLearningCycleManager()
+ui_designer = UIDesignEngine()
+personal_node_store = PersonalNodeStore(root_dir=os.path.join(_project_root, "personal_node", "profiles"))
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
@@ -141,6 +144,18 @@ class SelfLearningCycleRequest(BaseModel):
     ai_enhance: bool = True
 
 
+class UIDesignRequest(BaseModel):
+    prompt: str
+    profile_id: str = "default"
+    owner_id: str = "local-user"
+    preferences: dict[str, Any] = Field(default_factory=dict)
+    save: bool = True
+
+
+class UIPanelSaveRequest(BaseModel):
+    panel: dict[str, Any]
+
+
 def _detect_task_type(prompt: str, context: dict[str, Any] | None = None) -> str:
     context = context or {}
     combined = f"{prompt} {json.dumps(context, ensure_ascii=False)}".lower()
@@ -201,12 +216,20 @@ async def root():
         "name": "Neurosonic Trinity+ASI",
         "version": "1.0.0",
         "status": "online",
-        "modules": ["dna", "genome", "compatibility", "evolution", "lightning"],
+        "modules": [
+            "dna",
+            "genome",
+            "compatibility",
+            "evolution",
+            "lightning",
+            "ui_designer",
+        ],
         "ui": {
             "dashboard": "/dashboard",
             "dashboard_file": "/neurosonic_dashboard.html",
             "dna_ui": "/dna-ui",
             "dna_ui_file": "/neurosonic_dna_ui.html",
+            "ui_composer": "/ui-composer",
             "frontend_entry": "/index.html",
         },
         "docs": "/docs",
@@ -247,6 +270,12 @@ async def dna_ui_file():
 async def dna_dashboard_alias():
     """Alias i qartë për dashboard-in DNA UI."""
     return FileResponse(os.path.join(_project_root, "neurosonic_dna_ui.html"))
+
+
+@app.get("/ui-composer", include_in_schema=False)
+async def ui_composer():
+    """UI Composer lokal për krijimin e paneleve personale."""
+    return FileResponse(os.path.join(_project_root, "personal_node", "ui_composer.html"))
 
 
 @app.get("/api/health")
@@ -381,6 +410,65 @@ async def get_proposals():
     return {
         "proposals": evolution.get_proposals_summary(),
         "stats": evolution.get_stats(),
+    }
+
+
+@app.post("/api/ui/design")
+async def create_ui_design(req: UIDesignRequest):
+    schema = ui_designer.generate_schema(
+        prompt=req.prompt,
+        preferences=req.preferences,
+        owner_id=req.owner_id,
+    )
+    save_meta = None
+    if req.save:
+        save_meta = personal_node_store.save_profile(req.profile_id, schema)
+
+    return {
+        "success": True,
+        "profile_id": req.profile_id,
+        "schema": schema,
+        "saved": req.save,
+        "storage": save_meta,
+        "timestamp": time.time(),
+    }
+
+
+@app.get("/api/ui/panels")
+async def list_ui_panels():
+    return {
+        "total": len(personal_node_store.list_profiles()),
+        "profiles": personal_node_store.list_profiles(),
+    }
+
+
+@app.get("/api/ui/panels/{profile_id}")
+async def get_ui_panel(profile_id: str):
+    data = personal_node_store.load_profile(profile_id)
+    if data is None:
+        return {
+            "success": False,
+            "profile_id": profile_id,
+            "error": "Profile not found",
+            "timestamp": time.time(),
+        }
+
+    return {
+        "success": True,
+        "profile_id": profile_id,
+        "panel": data,
+        "timestamp": time.time(),
+    }
+
+
+@app.post("/api/ui/panels/{profile_id}")
+async def save_ui_panel(profile_id: str, req: UIPanelSaveRequest):
+    save_meta = personal_node_store.save_profile(profile_id, req.panel)
+    return {
+        "success": True,
+        "profile_id": profile_id,
+        "storage": save_meta,
+        "timestamp": time.time(),
     }
 
 

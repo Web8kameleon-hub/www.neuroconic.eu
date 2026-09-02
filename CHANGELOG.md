@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.3 - 2026-09-02
+
+Feature release focused on user-owned Git export flow for Personal Node profiles with explicit third-party liability boundaries.
+
+### Added (v1.0.3)
+
+- Add profile export to user-owned Git repositories with optional commit flow (`/api/ui/panels/{profile_id}/git-save`).
+- Add secure repository/path validation to prevent writing outside repository root.
+- Add UI controls in `personal_node/ui_composer_dynamic.html` for repository path, relative output path, commit toggle, and commit message.
+
+### Changed (v1.0.3)
+
+- Strengthen non-liability messaging: Neurosonic remains `api-support-only`; third-party subscriptions, billing, contracts, and credentials are user responsibility.
+- Extend focused tests for Git export behavior in `tests/test_ui_designer.py`.
+
+### Release Sync (v1.0.3)
+
+- Git tag: `v1.0.3`
+- Commit: `71be6fd`
+- Release URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/releases/tag/v1.0.3>
+
 ## v1.0.2 - 2026-09-02
 
 Patch release focused on startup stability and popup orchestration hardening.

@@ -87,6 +87,7 @@
           <label for="pluginType">Plugin Type</label>
           <select id="pluginType" title="Plugin address type">
             <option value="auto" selected>Auto</option>
+            <option value="banking">Banking</option>
             <option value="email">Email</option>
             <option value="website">Website</option>
             <option value="app-endpoint">App Endpoint</option>
@@ -94,6 +95,17 @@
             <option value="local-service">Local Service</option>
             <option value="generic-endpoint">Generic Endpoint</option>
           </select>
+        </div>
+        <div>
+        <label for="connectorScope">Connector Scope</label>
+        <select id="connectorScope" title="Plugin connector scope">
+            <option value="general" selected>General</option>
+            <option value="banking">Banking</option>
+            <option value="finance">Finance</option>
+            <option value="iot">IoT</option>
+            <option value="mesh">Mesh</option>
+            <option value="kloud">Kloud Signal</option>
+        </select>
         </div>
         <div>
           <label for="pluginMeta">Metadata (JSON)</label>
@@ -104,6 +116,11 @@
         <input id="liabilityAck" type="checkbox" class="checkbox-auto" />
         <label for="liabilityAck" class="label-inline">I confirm third-party billing/contracts are my responsibility.</label>
       </div>
+    <div class="row-ack">
+        <input id="sensitiveDataAck" type="checkbox" class="checkbox-auto" />
+        <label for="sensitiveDataAck" class="label-inline">I confirm I authorize sensitive/financial data processing on my
+            personal node.</label>
+    </div>
       <div class="row-actions">
         <button onclick="attachPlugin()">Attach Plugin</button>
         <button onclick="listPlugins()">List Plugins</button>
@@ -195,8 +212,10 @@
         address: document.getElementById("pluginAddress").value,
         name: document.getElementById("pluginName").value,
         plugin_type: document.getElementById("pluginType").value,
+          connector_scope: document.getElementById("connectorScope").value,
         metadata,
-        liability_ack: !!document.getElementById("liabilityAck").checked
+          liability_ack: !!document.getElementById("liabilityAck").checked,
+          sensitive_data_ack: !!document.getElementById("sensitiveDataAck").checked
       };
 
       try {

@@ -38,11 +38,13 @@ def test_plugin_address_auto_classification() -> None:
     web_plugin = engine.normalize_plugin("https://example.com/api")
     app_plugin = engine.normalize_plugin("office365://mailbox")
     local_plugin = engine.normalize_plugin("/api/internal/pulse")
+    bank_plugin = engine.normalize_plugin("bank://my-bank-account")
 
     assert email_plugin["address_type"] == "email"
     assert web_plugin["address_type"] == "website"
     assert app_plugin["address_type"] == "app-endpoint"
     assert local_plugin["address_type"] == "internal-api"
+    assert bank_plugin["address_type"] == "banking"
 
 
 def test_attach_plugin_to_schema_updates_integrations() -> None:
@@ -51,6 +53,7 @@ def test_attach_plugin_to_schema_updates_integrations() -> None:
     plugin = engine.normalize_plugin(
         address="https://plugins.neurosonic.eu/office",
         name="Office Connector",
+        connector_scope="iot",
         metadata={"transport": "tide", "llm": "llama-local"},
     )
 
@@ -59,4 +62,6 @@ def test_attach_plugin_to_schema_updates_integrations() -> None:
 
     assert len(plugins) == 1
     assert plugins[0]["name"] == "Office Connector"
+    assert plugins[0]["connector_scope"] == "iot"
+    assert plugins[0]["service_role"] == "api-support-only"
     assert updated["dna_contract"]["immutable"] is True

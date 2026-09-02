@@ -141,6 +141,7 @@ class UIDesignEngine:
             "compliance_notice": {
                 "third_party_billing_responsibility": "user",
                 "provider_contract_responsibility": "user",
+                "service_role": "neurosonic-provides-api-support-only",
             },
             "actions": [
                 {"id": "refresh", "label": "Refresh", "type": "api_call"},
@@ -154,6 +155,7 @@ class UIDesignEngine:
         address: str,
         name: str | None = None,
         plugin_type: str = "auto",
+        connector_scope: str = "general",
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         raw_address = (address or "").strip()
@@ -161,13 +163,17 @@ class UIDesignEngine:
         plugin_name = name.strip() if isinstance(name, str) and name.strip() else raw_address
         plugin_id = f"plugin_{uuid.uuid4().hex[:10]}"
         now = time.time()
+        normalized_scope = (connector_scope or "general").strip().lower()
 
         return {
             "id": plugin_id,
             "name": plugin_name,
             "address": raw_address,
             "address_type": resolved_type,
+            "connector_scope": normalized_scope,
             "status": "active",
+            "service_role": "api-support-only",
+            "liability_model": "user-responsible-third-party-contracts",
             "metadata": metadata or {},
             "created_at": now,
             "updated_at": now,
@@ -228,6 +234,10 @@ class UIDesignEngine:
             return "unknown"
         if "@" in text and "://" not in text:
             return "email"
+        if text.startswith(("bank://", "swift://", "iban://")):
+            return "banking"
+        if any(token in text for token in ["bank", "iban", "swift", "bic"]):
+            return "banking"
         if text.startswith(("http://", "https://")):
             return "website"
         if text.startswith(("localhost", "127.0.0.1")):

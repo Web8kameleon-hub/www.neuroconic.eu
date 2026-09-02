@@ -160,8 +160,10 @@ class UIPluginAttachRequest(BaseModel):
     address: str
     name: str | None = None
     plugin_type: str = "auto"
+    connector_scope: str = "general"
     metadata: dict[str, Any] = Field(default_factory=dict)
     liability_ack: bool = False
+    sensitive_data_ack: bool = False
 
 
 def _detect_task_type(prompt: str, context: dict[str, Any] | None = None) -> str:
@@ -519,6 +521,17 @@ async def attach_ui_plugin(profile_id: str, req: UIPluginAttachRequest):
             "timestamp": time.time(),
         }
 
+    scope = (req.connector_scope or "general").strip().lower()
+    if scope in {"banking", "finance"} and not req.sensitive_data_ack:
+        return {
+            "success": False,
+            "profile_id": profile_id,
+            "error": "sensitive_data_ack must be true for banking/finance scope",
+            "notice": "User remains fully responsible for third-party financial contracts and billing.",
+            "dna_immutable": True,
+            "timestamp": time.time(),
+        }
+
     profile = personal_node_store.load_profile(profile_id)
     if profile is None:
         schema = ui_designer.generate_schema(
@@ -537,6 +550,7 @@ async def attach_ui_plugin(profile_id: str, req: UIPluginAttachRequest):
         address=req.address,
         name=req.name,
         plugin_type=req.plugin_type,
+        connector_scope=req.connector_scope,
         metadata=req.metadata,
     )
     updated_schema = ui_designer.attach_plugin_to_schema(schema, plugin)
@@ -554,6 +568,7 @@ async def attach_ui_plugin(profile_id: str, req: UIPluginAttachRequest):
         "plugin": plugin,
         "storage": save_meta,
         "notice": "Plugin attached to local personal node. DNA/backend core remains immutable.",
+        "service_role": "api-support-only",
         "dna_immutable": True,
         "timestamp": time.time(),
     }

@@ -1,0 +1,69 @@
+name: Release - Immutable Manifest
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version (e.g. v1.0.12)"
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: immutable-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-immutable-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.release_version }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate immutable manifest
+        run: |
+          mkdir -p release-artifacts
+          cat > release-artifacts/immutable-manifest.json << EOF
+          {
+            "release_version": "${{ steps.ver.outputs.version }}",
+            "git_sha": "${{ github.sha }}",
+            "repository": "${{ github.repository }}",
+            "run_id": "${{ github.run_id }}",
+            "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "artifacts": {
+              "python_package": "pyproject.toml",
+              "npm_package": "packages/npm/neurosonic-shell/package.json",
+              "crate_package": "packages/crates/neurosonic-shell/Cargo.toml"
+            }
+          }
+          EOF
+          cat release-artifacts/immutable-manifest.json
+
+      - name: Upload immutable manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: immutable-release-${{ steps.ver.outputs.version }}
+          path: release-artifacts/immutable-manifest.json
+
+      - name: Release summary
+        run: |
+          echo "## Immutable Release Manifest" >> $GITHUB_STEP_SUMMARY
+          echo "- Version: \`${{ steps.ver.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Manifest: \`release-artifacts/immutable-manifest.json\`" >> $GITHUB_STEP_SUMMARY

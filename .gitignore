@@ -19,6 +19,7 @@ node_modules/
 Thumbs.db
 *.log
 logs/*.log
+logs/benchmarks/*.json
 memory/*.json
 repos/Lightning-SPP-3.14/memory/*.json
 memory/long_term/*

@@ -208,6 +208,35 @@ Run the public smoke suite:
 pytest -q tests/test_public_samples.py tests/test_examples_smoke.py
 ```
 
+## ⚡ First Benchmark (baseline + tuning + edge cases)
+
+Run the initial benchmark harness:
+
+```bash
+python scripts/benchmark_first.py --profile quick --pretty
+```
+
+Available tuning profiles:
+
+- `quick` (fast local validation)
+- `standard` (balanced signal)
+- `stress` (high iteration pressure)
+
+Useful overrides:
+
+```bash
+python scripts/benchmark_first.py --profile standard --iterations 80 --warmup 10 --long-prompt-size 16384 --pretty
+```
+
+What it measures in one run:
+
+- `/api/shell/think` success baseline
+- `/api/shell/think` edge cases (empty prompt, echo response, long prompt)
+- `/api/ui/plugins/{profile_id}` edge/security checks (private network, sensitive metadata)
+- plugin attach success baseline
+
+Output is written to `logs/benchmarks/first-benchmark-<timestamp>.json` with latency (`min`, `p50`, `p95`, `max`, `mean`, `stdev`), throughput (`rps`), and pass-rate per scenario.
+
 Kontrata për shell + NodeDB Fluid (anti-konflikt cross-language):
 
 - `docs/governance/NODEDB_FLUID_SHELL_CONTRACT.md`
@@ -229,6 +258,49 @@ To sync/link all repositories under `Web8kameleon-hub` for `neurosonic.eu`:
 ```powershell
 pwsh -File scripts/sync_web8kameleon_repos.ps1
 ```
+
+## 🧭 OS-CLX Policy (lightweight) + Cross-Repo Acceleration
+
+Për të sjellë ide nga repo të tjera pa e rënduar këtë repo:
+
+- Udhëzues: `docs/guides/OS_CLX_CROSS_REPO_ACCELERATION.md`
+- Policy profile: `docs/governance/OS_CLX_POLICY_PROFILE.json`
+- Guard script: `scripts/os_clx_policy_guard.py`
+
+Run policy guard:
+
+```bash
+python scripts/os_clx_policy_guard.py
+```
+
+Strict mode (fail edhe për warnings):
+
+```bash
+python scripts/os_clx_policy_guard.py --strict
+```
+
+Guardrails të portuara nga OS-CLX (lightweight):
+
+- `scripts/guardrails/repo_integrity_guard.py`
+- `scripts/guardrails/routes_history_guard.py`
+- `scripts/guardrails/compose.services.txt`
+
+Run integrity + routes history guards:
+
+```bash
+python scripts/guardrails/repo_integrity_guard.py
+python scripts/guardrails/routes_history_guard.py
+```
+
+Artefaktet e raportit gjenerohen te:
+
+- `docs/production/canonical/repo_integrity_guard_report.json`
+- `docs/production/canonical/routes_history_guard_report.json`
+
+Immutable release manifest workflow:
+
+- `.github/workflows/release-immutable.yml`
+- Trigger: `git tag vX.Y.Z ; git push origin vX.Y.Z` ose manual `workflow_dispatch`
 
 ## 🔬 Testet
 

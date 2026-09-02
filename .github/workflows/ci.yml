@@ -11,13 +11,23 @@ jobs:
     name: "NO FAKE Police Check"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install minimal test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
       - name: Run NO FAKE Police
         run: python neurosonic_no_fake_police.py --ci
+      - name: Run OS-CLX Policy Guard (strict)
+        run: python scripts/os_clx_policy_guard.py --strict
+      - name: Run Repo Integrity Guard
+        run: python scripts/guardrails/repo_integrity_guard.py
+      - name: Run Routes History Guard
+        run: python scripts/guardrails/routes_history_guard.py
       - name: Run Architecture Tests
         run: python test_architecture.py
 

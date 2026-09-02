@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "minimums": {
+    "ts": 0,
+    "python": 2,
+    "combined": 2
+  },
+  "counts": {
+    "ts": 0,
+    "python": 2,
+    "combined": 2
+  },
+  "failures": [],
+  "samples": {
+    "ts_first_20": [],
+    "python_first_20": [
+      "backend/health.py",
+      "backend/main.py"
+    ],
+    "combined_first_20": [
+      "backend/health.py",
+      "backend/main.py"
+    ]
+  }
+}

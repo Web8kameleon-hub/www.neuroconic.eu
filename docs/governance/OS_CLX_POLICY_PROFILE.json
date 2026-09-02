@@ -1,0 +1,27 @@
+{
+  "profile": "os-clx-lightweight-v1",
+  "description": "Lightweight governance profile inspired by OS-CLX: keep repo slim, enforce no-fake readiness, and preserve multi-ecosystem launch capability.",
+  "rules": {
+    "max_repo_files": 25000,
+    "max_tracked_file_mb": 5,
+    "allowed_large_file_suffixes": [
+      ".md",
+      ".json"
+    ],
+    "required_paths": [
+      "NO_FAKE_POLICY.md",
+      "neurosonic_no_fake_police.py",
+      "README.md",
+      "scripts/benchmark_first.py",
+      "packages/npm/neurosonic-shell/package.json",
+      "packages/crates/neurosonic-shell/Cargo.toml"
+    ],
+    "required_python_scripts": [
+      "neurosonic",
+      "neurosonic-shell",
+      "neurosonic-no-fake-police"
+    ],
+    "require_multi_ecosystem_metadata": true,
+    "cloudflare_readiness": true
+  }
+}

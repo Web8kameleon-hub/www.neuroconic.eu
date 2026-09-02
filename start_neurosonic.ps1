@@ -24,6 +24,23 @@ foreach ($ScriptPath in @($LightningPopup, $BackendPopup, $FrontendPopup)) {
     }
 }
 
+$PortsToFree = @(8080, 8000, 5500)
+Write-Host "[0/3] Duke pastruar instancat e vjetra ne porta 8080/8000/5500..." -ForegroundColor DarkYellow
+foreach ($Port in $PortsToFree) {
+    $ProcessIds = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($ProcessId in $ProcessIds) {
+        try {
+            Stop-Process -Id $ProcessId -Force -ErrorAction Stop
+            Write-Host ("  ✅ Porta {0} u lirua (PID {1})" -f $Port, $ProcessId) -ForegroundColor DarkGray
+        }
+        catch {
+            Write-Host ("  ⚠️ Nuk u ndal PID {0} ne porten {1}: {2}" -f $ProcessId, $Port, $_.Exception.Message) -ForegroundColor Yellow
+        }
+    }
+}
+Start-Sleep -Milliseconds 800
+
 Write-Host "[1/3] Duke hapur popup per Lightning SPP..." -ForegroundColor Yellow
 Start-Process -FilePath $PwshExe -ArgumentList @("-NoExit", "-File", $LightningPopup) -WorkingDirectory $ProjectRoot
 Start-Sleep -Seconds 2

@@ -1,11 +1,11 @@
 # 🧠 NEUROSONIC / CLISONIX TRINITY+ASI
 
-**Zero Dependencies • Zero Fake • Zero Noise • Absolute Independence**
+## Zero Dependencies • Zero Fake • Zero Noise • Absolute Independence
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success?style=flat-square)]()
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success?style=flat-square)](./README.sq.md)
 [![No Fake](https://img.shields.io/badge/NO%20FAKE-PASSING-ff69b4?style=flat-square)](NO_FAKE_POLICY.md)
-[![Sovereign AI](https://img.shields.io/badge/Sovran-AI-8b5cf6?style=flat-square)]()
+[![Sovereign AI](https://img.shields.io/badge/Sovran-AI-8b5cf6?style=flat-square)](./docs/Architecture.md)
 
 ---
 
@@ -13,14 +13,14 @@
 
 Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar me **zero varësi nga jashtë**. Përdor vetëm Python standard library - asnjë pip install, asnjë npm, asnjë apt-get.
 
-**Krijues: Ledjan Ahmati**
+### Krijues: Ledjan Ahmati
 
 ---
 
 ## 🧩 Përbërësit Kryesorë
 
 | Përbërësi | Përshkrimi |
-|-----------|------------|
+| --------- | ---------- |
 | 🧠 **CLX Kernel** | Runtime kryesor, planifikues i burimeve |
 | 🧬 **HVO Memory** | 6 lloje memorie (Horizontal, Vertical, Orbital, Resonance, Film, Stigma) |
 | 🔐 **Auth i Brendshëm** | Autentifikim pa OAuth |
@@ -130,6 +130,6 @@ python neurosonic_no_fake_police.py --cd  # CD kontroll (bllokon deploy)
 
 ---
 
-**NEUROSONIC / CLISONIX TRINITY+ASI v1.0**
+## NEUROSONIC / CLISONIX TRINITY+ASI v1.0
 
-*"Kodi që nuk është real, nuk ekzekutohet."*
+> "Kodi që nuk është real, nuk ekzekutohet."

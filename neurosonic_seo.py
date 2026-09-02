@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 NEUROSONIC SEO GENERATOR
 Gjeneron automatikisht sitemap.xml, robots.txt dhe JSON-LD structured data
@@ -10,9 +9,9 @@ Aligned with:
   - G009 Knowledge Law (Unified, versioned, single source of truth)
 """
 
-import os
-import json
 import datetime
+import json
+import os
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DOMAIN = "https://www.neurosonic.eu"
@@ -22,8 +21,10 @@ def _lastmod_for(path_rel):
     """Kthen dateshmërinë e fundit të modifikimit për një skedar relativ."""
     p = os.path.join(ROOT, path_rel.lstrip("/"))
     if os.path.isfile(p):
-        return datetime.datetime.fromtimestamp(os.path.getmtime(p)).date().isoformat()
-    return datetime.date.today().isoformat()
+        return datetime.datetime.fromtimestamp(
+            os.path.getmtime(p), tz=datetime.timezone.utc
+        ).date().isoformat()
+    return datetime.datetime.now(tz=datetime.timezone.utc).date().isoformat()
 
 
 # ---------------------------------------------------------------------

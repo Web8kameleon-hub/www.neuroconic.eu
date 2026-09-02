@@ -18,6 +18,7 @@
     .result { white-space:pre-wrap; background:#0a122a; border:1px solid #253569; border-radius:10px; padding:12px; max-height:320px; overflow:auto; }
     .widgets { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:10px; }
     .widget { background:#0b1430; border:1px solid #2a3e80; border-radius:10px; padding:10px; }
+    .actions-row { margin-top:12px; display:flex; gap:10px; align-items:center; }
   </style>
 </head>
 <body>
@@ -44,7 +45,7 @@
           <input id="owner" value="local-user" />
         </div>
       </div>
-      <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+      <div class="actions-row">
         <button onclick="generatePanel()">Generate & Save</button>
         <button onclick="listProfiles()">List Profiles</button>
         <span class="muted" id="status">Ready</span>

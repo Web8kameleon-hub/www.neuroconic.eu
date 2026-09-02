@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 NEUROSONIC + LIGHTNING-SPP-3.14 BRIDGE - REAL SERVICES ONLY
 Asnje simulim. Asnje fake. Thirrje HTTP reale ne Lightning SPP.
@@ -17,18 +16,16 @@ Komponentet reale:
 - BatchProcessAsync(sources) -> Batch processing
 """
 
-import os
-import sys
-import json
-import time
 import hashlib
-import datetime
-import urllib.request
-import urllib.parse
+import json
+import os
+import time
 import urllib.error
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, field
+import urllib.parse
+import urllib.request
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class LightningMode(Enum):
@@ -70,9 +67,9 @@ class LightningResult:
     hash: str
     timestamp: float
     source: str
-    confidence: Optional[float] = None
-    size_bytes: Optional[int] = None
-    error: Optional[str] = None
+    confidence: float | None = None
+    size_bytes: int | None = None
+    error: str | None = None
 
 
 class NeurosonicLightningBridge:
@@ -95,7 +92,7 @@ class NeurosonicLightningBridge:
         POST /api/v1/batch
     """
 
-    def __init__(self, base_url: Optional[str] = None, dna=None, genome=None):
+    def __init__(self, base_url: str | None = None, dna=None, genome=None):
         configured_url = (
             base_url
             or os.environ.get("LIGHTNING_SPP_URL")
@@ -119,7 +116,7 @@ class NeurosonicLightningBridge:
             "errors": 0,
         }
         self.service_available = self._check_health()
-        print(f" Neurosonic-Lightning Bridge inicializuar")
+        print(" Neurosonic-Lightning Bridge inicializuar")
         print(f"    Target: {self.base_url}")
         print(f"    Service: {'GATI' if self.service_available else 'Ne pritje...'}")
 
@@ -134,11 +131,11 @@ class NeurosonicLightningBridge:
             with urllib.request.urlopen(req, timeout=2) as resp:
                 data = json.loads(resp.read().decode())
                 return data.get("status") == "healthy" or resp.status == 200
-        except Exception as e:
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as e:
             print(f"    Health check: {e}")
             return False
 
-    def _request(self, endpoint: str, data: Any = None, method: str = "POST") -> Dict:
+    def _request(self, endpoint: str, data: Any = None, method: str = "POST") -> dict[str, Any]:
         """Ben thirrje HTTP reale ne Lightning SPP"""
         endpoint_map = {
             "/api/v1/scan": "/scan",
@@ -173,7 +170,7 @@ class NeurosonicLightningBridge:
             }
         except urllib.error.URLError as e:
             return {"error": f"Connection failed: {e.reason}", "status": "error"}
-        except Exception as e:
+        except (TimeoutError, ValueError, OSError) as e:
             return {"error": str(e), "status": "error"}
 
     def _generate_id(self, prefix: str = "lsp") -> str:
@@ -422,7 +419,7 @@ class NeurosonicLightningBridge:
         scan_mode: LightningMode = LightningMode.TIDEWAVE,
         process_engine: ProcessingEngine = ProcessingEngine.HYBRID,
         print_quality: PrintQuality = PrintQuality.STIGMA,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Pipeline i plote real duke perdorur ExecuteLightningPipelineAsync.
 
@@ -469,7 +466,7 @@ class NeurosonicLightningBridge:
     # BATCH PROCESS - Perputhet me BatchProcessAsync
     # ========================================================================
 
-    def batch_process(self, sources: List[str]) -> Dict[str, Any]:
+    def batch_process(self, sources: list[str]) -> dict[str, Any]:
         """
         Batch processing real duke perdorur BatchProcessAsync.
 
@@ -500,7 +497,7 @@ class NeurosonicLightningBridge:
     # STATISTICS
     # ========================================================================
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Statistikat e integrimit"""
         return {
             "total_scans": self.statistics["total_scans"],
@@ -516,7 +513,7 @@ class NeurosonicLightningBridge:
             "base_url": self.base_url,
         }
 
-    def get_profile(self) -> Dict[str, Any]:
+    def get_profile(self) -> dict[str, Any]:
         """Kthen profilin e bridge"""
         return {
             "name": "Neurosonic-Lightning Bridge",

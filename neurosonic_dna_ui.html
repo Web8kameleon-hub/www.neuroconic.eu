@@ -1453,7 +1453,7 @@
                 }, i * 80);
             });
 
-            addMessage('ai', '⏳ Processing with real services...', null, null, []);
+                         e('ai', '⏳ Processing with real services...', null, null, [], null);
 
             try {
                 const result = await apiPost('/api/shell/think', {
@@ -1470,7 +1470,8 @@
                     responseText,
                     result.hash || null,
                     result.confidence == null ? null : Number(result.confidence).toFixed(1),
-                    Array.isArray(result.sources) ? result.sources : []
+                    Arr                esult.sources) ? result.sources : [],
+                    result.trace || null,                                           ation || null
                 );
             } catch (error) {
                 addMessage(
@@ -1478,12 +1479,14 @@
                     '⚠️ Service unavailable. No mock response is generated. Start backend/lightning and retry.',
                     null,
                     null,
-                    []
+                    [],
+                    null,
+                    null
                 );
             }
         }
 
-        function addMessage(type, text, hash, confidence, sources) {
+        function addMessage(type, text, hash, confidence, sources, trace, verification) {
             const container = document.getElementById('chatMessages');
             const div = document.createElement('div');
             div.className = `message ${type}`;
@@ -1499,6 +1502,8 @@
                     ${confidence ? `<span>📊 ${confidence}%</span>` : ''}
                     <span>🕒 ${new Date().toLocaleTimeString()}</span>
                 </div>
+                ${trace ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;font-size:9px;color:var(--text-muted);"><span>🧭 trace:${trace.trace_id || 'n/a'}</span><span>⚙️ engine:${trace.engine || 'n/a'}</span><span>⏱ ${Math.round(trace.elapsed_ms || 0)}ms</span><span>🔁 echo:${trace.echo_detected ? 'yes' : 'no'}</span></div>` : ''}
+                ${verification ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;font-size:9px;color:var(--text-muted);"><span>🔐 integrity:${verification.integrity_verified ? 'ok' : 'fail'}</span><span>📚 source:${verification.source_verified ? 'ok' : 'fail'}</span><span>🧠 reasoning:${verification.reasoning_validated ? 'ok' : 'degraded'}</span></div>` : ''}
                 ${sources && sources.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${sources.map(s => `<span style="font-size:9px;color:var(--accent-cyan);padding:1px 6px;background:var(--bg-primary);border-radius:4px;">📚 ${s}</span>`).join('')}</div>` : ''}
             `;
 
@@ -1508,7 +1513,7 @@
 
         function clearChat() {
             document.getElementById('chatMessages').innerHTML = '';
-            addMessage('ai', '🧹 Chat cleared. Ready for new queries.');
+            addMessage('ai', '🧹 Chat cleared. Ready for new queries.', null, null, [], null, null);
         }
 
         function exportChat() {

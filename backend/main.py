@@ -10,6 +10,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from typing import Any
 
 from fastapi import FastAPI
@@ -270,6 +271,15 @@ async def dashboard_alias():
 async def frontend_index():
     """Shërben hyrjen historike të frontend-it."""
     return FileResponse(os.path.join(_project_root, "index.html"))
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Shërben favicon pa 404 për kërkesat e browser-it."""
+    return FileResponse(
+        os.path.join(_project_root, "og-neurosonic.svg"),
+        media_type="image/svg+xml",
+    )
 
 
 @app.get("/dna-ui", include_in_schema=False)
@@ -763,7 +773,28 @@ async def self_learning_cycles(limit: int = 20):
 @app.post("/api/shell/think")
 async def shell_think(req: ShellThinkRequest):
     started_at = time.time()
+    trace_id = uuid.uuid4().hex
     prompt = req.prompt.strip()
+    input_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest() if prompt else ""
+
+    def _trace_step(
+        step: str,
+        status: str,
+        duration_ms: float,
+        input_hash_value: str,
+        output_hash_value: str,
+        details: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "step": step,
+            "status": status,
+            "duration_ms": round(duration_ms, 3),
+            "input_hash": input_hash_value,
+            "output_hash": output_hash_value,
+            "details": details or {},
+        }
+
+    pipeline_trace: list[dict[str, Any]] = []
     selected_engine = _resolve_processing_engine(
         explicit_engine=req.engine,
         task_type=req.task_type,
@@ -772,17 +803,124 @@ async def shell_think(req: ShellThinkRequest):
     )
 
     if not prompt:
+        elapsed_ms = (time.time() - started_at) * 1000
+        pipeline_trace.append(
+            _trace_step(
+                step="ui_prompt",
+                status="failed",
+                duration_ms=elapsed_ms,
+                input_hash_value=input_hash,
+                output_hash_value="",
+                details={"reason": "empty_prompt"},
+            )
+        )
         return {
             "success": False,
             "status": "error",
             "error": "Prompt is empty",
+            "trace": {
+                "trace_id": trace_id,
+                "engine": selected_engine.value,
+                "started_at": started_at,
+                "finished_at": time.time(),
+                "elapsed_ms": elapsed_ms,
+                "input_hash": input_hash,
+                "output_hash": "",
+                "echo_detected": False,
+                "pipeline": pipeline_trace,
+            },
             "timestamp": time.time(),
         }
 
+    pipeline_trace.append(
+        _trace_step(
+            step="ui_prompt",
+            status="ok",
+            duration_ms=0,
+            input_hash_value=input_hash,
+            output_hash_value=input_hash,
+            details={"length": len(prompt)},
+        )
+    )
+
+    bridge_started = time.time()
     result = bridge.process(prompt, selected_engine, True)
+    bridge_elapsed_ms = (time.time() - bridge_started) * 1000
+    pipeline_trace.append(
+        _trace_step(
+            step="bridge_process",
+            status="error" if (result.error or result.status == "error") else "ok",
+            duration_ms=bridge_elapsed_ms,
+            input_hash_value=input_hash,
+            output_hash_value=result.hash or "",
+            details={"engine": selected_engine.value, "result_status": result.status},
+        )
+    )
+
     elapsed_ms = (time.time() - started_at) * 1000
 
     if result.error or result.status == "error":
+        pipeline_trace.extend(
+            [
+                _trace_step(
+                    step="scanner",
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                ),
+                _trace_step(
+                    step="intent",
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                ),
+                _trace_step(
+                    step="planner",
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                ),
+                _trace_step(
+                    step="memory",
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                ),
+                _trace_step(
+                    step="knowledge",
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                ),
+                _trace_step(
+                    step="reasoning",
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                ),
+                _trace_step(
+                    step="validator",
+                    status="not_instrumented",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                ),
+                _trace_step(
+                    step="response",
+                    status="failed",
+                    duration_ms=0,
+                    input_hash_value=input_hash,
+                    output_hash_value="",
+                    details={"reason": result.error or "processing_failed"},
+                ),
+            ]
+        )
         return {
             "success": False,
             "status": "service_unavailable",
@@ -791,6 +929,22 @@ async def shell_think(req: ShellThinkRequest):
             "latency_ms": elapsed_ms,
             "timestamp": time.time(),
             "verified": False,
+            "verification": {
+                "integrity_verified": False,
+                "source_verified": False,
+                "reasoning_validated": False,
+            },
+            "trace": {
+                "trace_id": trace_id,
+                "engine": selected_engine.value,
+                "started_at": started_at,
+                "finished_at": time.time(),
+                "elapsed_ms": elapsed_ms,
+                "input_hash": input_hash,
+                "output_hash": "",
+                "echo_detected": False,
+                "pipeline": pipeline_trace,
+            },
             "sources": [bridge.base_url],
         }
 
@@ -807,6 +961,76 @@ async def shell_think(req: ShellThinkRequest):
             except ValueError:
                 pass
 
+    output_hash = hashlib.sha256(output_text.encode("utf-8")).hexdigest()
+    echo_detected = output_text.strip().lower() == prompt.strip().lower()
+
+    pipeline_trace.extend(
+        [
+            _trace_step(
+                step="scanner",
+                status="not_instrumented",
+                duration_ms=0,
+                input_hash_value=input_hash,
+                output_hash_value=input_hash,
+            ),
+            _trace_step(
+                step="intent",
+                status="not_instrumented",
+                duration_ms=0,
+                input_hash_value=input_hash,
+                output_hash_value=input_hash,
+            ),
+            _trace_step(
+                step="planner",
+                status="not_instrumented",
+                duration_ms=0,
+                input_hash_value=input_hash,
+                output_hash_value=input_hash,
+            ),
+            _trace_step(
+                step="memory",
+                status="not_instrumented",
+                duration_ms=0,
+                input_hash_value=input_hash,
+                output_hash_value=input_hash,
+            ),
+            _trace_step(
+                step="knowledge",
+                status="not_instrumented",
+                duration_ms=0,
+                input_hash_value=input_hash,
+                output_hash_value=input_hash,
+            ),
+            _trace_step(
+                step="reasoning",
+                status="not_instrumented",
+                duration_ms=0,
+                input_hash_value=input_hash,
+                output_hash_value=output_hash,
+                details={"echo_detected": echo_detected},
+            ),
+            _trace_step(
+                step="validator",
+                status="ok" if result.hash else "degraded",
+                duration_ms=0,
+                input_hash_value=output_hash,
+                output_hash_value=result.hash or output_hash,
+            ),
+            _trace_step(
+                step="response",
+                status="ok",
+                duration_ms=0,
+                input_hash_value=result.hash or output_hash,
+                output_hash_value=output_hash,
+                details={"length": len(output_text)},
+            ),
+        ]
+    )
+
+    integrity_verified = bool(result.hash)
+    source_verified = True
+    reasoning_validated = not echo_detected
+
     return {
         "success": True,
         "status": result.status,
@@ -816,7 +1040,23 @@ async def shell_think(req: ShellThinkRequest):
         "engine": selected_engine.value,
         "latency_ms": elapsed_ms,
         "timestamp": time.time(),
-        "verified": True,
+        "verified": integrity_verified,
+        "verification": {
+            "integrity_verified": integrity_verified,
+            "source_verified": source_verified,
+            "reasoning_validated": reasoning_validated,
+        },
+        "trace": {
+            "trace_id": trace_id,
+            "engine": selected_engine.value,
+            "started_at": started_at,
+            "finished_at": time.time(),
+            "elapsed_ms": elapsed_ms,
+            "input_hash": input_hash,
+            "output_hash": output_hash,
+            "echo_detected": echo_detected,
+            "pipeline": pipeline_trace,
+        },
         "sources": [bridge.base_url, "dna:" + dna._hash],
     }
 

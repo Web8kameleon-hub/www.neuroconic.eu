@@ -107,6 +107,11 @@ class BatchRequest(BaseModel):
     sources: list[str]
 
 
+class ShellThinkRequest(BaseModel):
+    prompt: str
+    engine: ProcessingEngine = ProcessingEngine.HYBRID
+
+
 # ========================================================================
 # Endpoints
 # ========================================================================
@@ -367,6 +372,60 @@ async def lightning_stats():
 @app.get("/api/lightning/profile")
 async def lightning_profile():
     return bridge.get_profile()
+
+
+@app.post("/api/shell/think")
+async def shell_think(req: ShellThinkRequest):
+    started_at = time.time()
+    prompt = req.prompt.strip()
+    if not prompt:
+        return {
+            "success": False,
+            "status": "error",
+            "error": "Prompt is empty",
+            "timestamp": time.time(),
+        }
+
+    result = bridge.process(prompt, req.engine, True)
+    elapsed_ms = (time.time() - started_at) * 1000
+
+    if result.error or result.status == "error":
+        return {
+            "success": False,
+            "status": "service_unavailable",
+            "error": result.error or "Processing failed",
+            "engine": req.engine.value,
+            "latency_ms": elapsed_ms,
+            "timestamp": time.time(),
+            "verified": False,
+            "sources": [bridge.base_url],
+        }
+
+    output_text = ""
+    if isinstance(result.data, (dict, list)):
+        output_text = json.dumps(result.data, ensure_ascii=False)
+    elif result.data is None:
+        output_text = ""
+    else:
+        output_text = str(result.data)
+        if output_text and len(output_text) % 2 == 0:
+            try:
+                output_text = bytes.fromhex(output_text).decode("utf-8")
+            except ValueError:
+                pass
+
+    return {
+        "success": True,
+        "status": result.status,
+        "response": output_text,
+        "hash": result.hash,
+        "confidence": result.confidence,
+        "engine": req.engine.value,
+        "latency_ms": elapsed_ms,
+        "timestamp": time.time(),
+        "verified": True,
+        "sources": [bridge.base_url, "dna:" + dna._hash],
+    }
 
 
 # ========================================================================

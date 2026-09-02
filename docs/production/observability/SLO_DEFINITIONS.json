@@ -1,0 +1,36 @@
+{
+  "service": "neurosonic-backend",
+  "version": "1.0",
+  "updated_at": "2026-09-02",
+  "slos": [
+    {
+      "id": "slo-availability-shell-think",
+      "name": "Shell Think Availability",
+      "objective": 99.5,
+      "window_days": 30,
+      "indicator": "successful_requests / total_requests",
+      "source": "benchmark overall_pass_rate until production telemetry pipeline is connected",
+      "scope": "/api/shell/think"
+    },
+    {
+      "id": "slo-latency-shell-think-p95",
+      "name": "Shell Think P95 Latency",
+      "objective": 450,
+      "window_days": 30,
+      "unit": "ms",
+      "indicator": "p95(duration_ms)",
+      "source": "benchmark scenario latency",
+      "scope": "/api/shell/think"
+    },
+    {
+      "id": "slo-latency-plugin-attach-p95",
+      "name": "Plugin Attach P95 Latency",
+      "objective": 500,
+      "window_days": 30,
+      "unit": "ms",
+      "indicator": "p95(duration_ms)",
+      "source": "benchmark scenario latency",
+      "scope": "/api/ui/plugins/{profile_id}"
+    }
+  ]
+}

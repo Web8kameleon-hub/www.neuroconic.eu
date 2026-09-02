@@ -1,10 +1,10 @@
 # 🧠 NEUROSONIC / CLISONIX TRINITY+ASI
 
-> Zero Dependencies • Zero Fake • Zero Noise • Absolute Independence
+> Evidence-first AI platform with optional runtime profiles
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Neurosonic-green?style=flat-square)](LICENSE)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success?style=flat-square)](PUBLIC_USAGE.md)
+[![Core Stdlib](https://img.shields.io/badge/core-stdlib%20mode-success?style=flat-square)](PUBLIC_USAGE.md)
 [![No Fake](https://img.shields.io/badge/NO%20FAKE-PASSING-ff69b4?style=flat-square)](NO_FAKE_POLICY.md)
 [![GitHub Stars](https://img.shields.io/github/stars/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu)
 [![GitHub Issues](https://img.shields.io/github/issues/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu/issues)
@@ -17,7 +17,12 @@
 
 ## 📋 Përshkrimi
 
-Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar me **zero varësi nga jashtë**. Përdor vetëm Python standard library - asnjë pip install, asnjë npm, asnjë apt-get.
+Neurosonic është një platformë AI me dy mënyra përdorimi:
+
+- **Core mode (stdlib-first)**: komponentët bazë që mund të ekzekutohen pa profile të jashtme.
+- **Backend/dev/public profiles**: aktivizohen me `requirements*.txt` ose extras te `pyproject.toml`.
+
+Pretendimet në këtë README janë të lidhura me artefakte testimi, benchmark dhe guardrails që gjenden në repo.
 
 ### 🔑 Fjalë Kyçe
 
@@ -42,6 +47,12 @@ Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar 
   - [⚡ First Benchmark (baseline + tuning + edge cases)](#-first-benchmark-baseline--tuning--edge-cases)
   - [📦 Publishing (PyPI + npm + crates)](#-publishing-pypi--npm--crates)
   - [🧭 OS-CLX Policy (lightweight) + Cross-Repo Acceleration](#-os-clx-policy-lightweight--cross-repo-acceleration)
+  - [📈 Production Evidence Pack](#-production-evidence-pack)
+  - [📡 Full Observability Pack](#-full-observability-pack)
+  - [📊 Comparative Benchmark Evidence](#-comparative-benchmark-evidence)
+  - [🧯 Formal Threat Modeling (STRIDE)](#-formal-threat-modeling-stride)
+  - [🌍 External Benchmark Evidence](#-external-benchmark-evidence)
+  - [🧱 Structure Consolidation Plan](#-structure-consolidation-plan)
   - [🔬 Testet](#-testet)
   - [🚓 NO FAKE Police](#-no-fake-police)
   - [🤝 Kontribuimi](#-kontribuimi)
@@ -78,8 +89,12 @@ Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar 
 git clone https://github.com/LedjanAhmati/www.neurosonic.eu
 cd www.neurosonic.eu
 
-# Run - Zero installs!
+# Core shell mode (stdlib-first)
 python neurosonic.py
+
+# Backend/API profile
+pip install -r requirements.txt
+python -m backend.main
 ```
 
 ## 🛠️ Startup Recovery (Popup + Auto-clean Ports)
@@ -304,6 +319,82 @@ Immutable release manifest workflow:
 
 - `.github/workflows/release-immutable.yml`
 - Trigger: `git tag vX.Y.Z ; git push origin vX.Y.Z` ose manual `workflow_dispatch`
+
+## 📈 Production Evidence Pack
+
+Gjenero artefaktet bazë të evidencës (latency trend, availability trend, incident log, rollback drills):
+
+```bash
+python scripts/production_evidence_pack.py --pretty
+```
+
+Artefaktet ruhen te:
+
+- `docs/production/evidence/latency_trend.json`
+- `docs/production/evidence/availability_trend.json`
+- `docs/production/evidence/incident_log.md`
+- `docs/production/evidence/rollback_drills.md`
+
+## 📡 Full Observability Pack
+
+SLO dashboards, error budgets dhe tracing uniform janë formalizuar te:
+
+- `docs/production/observability/SLO_DEFINITIONS.json`
+- `docs/production/observability/SLO_DASHBOARD_GRAFANA.json`
+- `docs/production/observability/ERROR_BUDGET_POLICY.md`
+- `docs/production/observability/TRACING_UNIFORM_STANDARD.md`
+
+Gjenero snapshot-in e SLO/error budget nga evidenca aktuale:
+
+```bash
+python scripts/observability_slo_snapshot.py --pretty
+```
+
+Valido tracing contract-in në endpoint real:
+
+```bash
+python scripts/trace_uniform_check.py
+```
+
+Artefaktet e observability ruhen te:
+
+- `docs/production/evidence/slo_snapshot_latest.json`
+- `docs/production/evidence/error_budget_status_latest.md`
+- `docs/production/evidence/trace_uniform_check_latest.json`
+
+## 📊 Comparative Benchmark Evidence
+
+Krahason dy benchmark outputs reale dhe prodhon raport JSON + Markdown:
+
+```bash
+python scripts/benchmark_compare.py --pretty
+```
+
+Default behavior: përdor dy skedarët më të fundit te `logs/benchmarks/first-benchmark-*.json`.
+
+Artefaktet ruhen te:
+
+- `docs/production/evidence/benchmark_compare_latest.json`
+- `docs/production/evidence/benchmark_compare_latest.md`
+
+## 🧯 Formal Threat Modeling (STRIDE)
+
+Threat model formal me assets, trust boundaries, STRIDE register dhe risk scoring:
+
+- `docs/production/security/THREAT_MODEL_STRIDE.md`
+
+## 🌍 External Benchmark Evidence
+
+Referencat e benchmark-eve të jashtme dhe mapping-u me evidencën lokale:
+
+- `docs/production/evidence/EXTERNAL_BENCHMARK_EVIDENCE.md`
+- `docs/production/evidence/external_benchmark_evidence.json`
+
+## 🧱 Structure Consolidation Plan
+
+Për hartën aktuale të moduleve dhe planin e konsolidimit pa refaktor destruktiv, shih:
+
+- `docs/guides/STRUCTURE_CONSOLIDATION_PLAN.md`
 
 ## 🔬 Testet
 

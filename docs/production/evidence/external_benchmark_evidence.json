@@ -1,0 +1,57 @@
+{
+  "collected_at": "2026-09-02",
+  "sources": [
+    {
+      "name": "TechEmpower Web Framework Benchmarks",
+      "url": "https://www.techempower.com/benchmarks/",
+      "key_points": [
+        "Public multi-framework benchmark rounds with environment details",
+        "Round 23 listed with dated publication",
+        "Compares HTTP and database-oriented scenarios"
+      ]
+    },
+    {
+      "name": "TechEmpower FrameworkBenchmarks repository",
+      "url": "https://github.com/TechEmpower/FrameworkBenchmarks",
+      "key_points": [
+        "Open benchmark harness and scripts",
+        "Quick-start and reproducibility guidance",
+        "Repository marked archived/read-only in 2026"
+      ]
+    },
+    {
+      "name": "Python Performance Benchmark Suite",
+      "url": "https://pyperformance.readthedocs.io/",
+      "key_points": [
+        "Authoritative Python performance suite",
+        "Focuses on real-world benchmarks",
+        "Provides stability guidance and benchmark groups"
+      ]
+    },
+    {
+      "name": "OpenTelemetry tracing API",
+      "url": "https://opentelemetry.io/docs/specs/otel/trace/api/",
+      "key_points": [
+        "Defines trace and span context semantics",
+        "Specifies TraceId/SpanId shapes and propagation principles",
+        "Provides stable instrumentation baseline"
+      ]
+    }
+  ],
+  "local_mapping": {
+    "service_under_test": "www.neurosonic.eu backend endpoints",
+    "local_benchmark_artifacts": [
+      "logs/benchmarks/first-benchmark-*.json",
+      "docs/production/evidence/benchmark_compare_latest.json"
+    ],
+    "mapping_notes": [
+      "TechEmpower-like endpoint latency/throughput views mapped via local scenario p95 and RPS",
+      "Python runtime trends tracked via local trend artifacts and compared over time",
+      "Tracing comparability aligned with OpenTelemetry-style identifiers and span concepts"
+    ]
+  },
+  "limitations": [
+    "No direct claim of ranking versus external frameworks until same harness and hardware are used",
+    "Current evidence is methodology alignment plus local empirical measurements"
+  ]
+}

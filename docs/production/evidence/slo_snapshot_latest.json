@@ -1,0 +1,21 @@
+{
+  "generated_at": 1788377922.9510796,
+  "targets": {
+    "availability_percent": 99.5,
+    "latency_p95_ms": 450.0
+  },
+  "observed": {
+    "availability_percent": 100.0,
+    "latency_p95_ms": 5.254,
+    "availability_source": "logs/benchmarks/first-benchmark-20260902-205731.json",
+    "latency_source": "logs/benchmarks/first-benchmark-20260902-205731.json"
+  },
+  "error_budget": {
+    "burn_rate": 0.0,
+    "status": "healthy"
+  },
+  "slo_eval": {
+    "availability_met": true,
+    "latency_p95_met": true
+  }
+}

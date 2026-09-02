@@ -1,0 +1,27 @@
+{
+  "metric": "latency",
+  "unit": "ms",
+  "series": [
+    {
+      "date_utc": "2026-09-02T18:55:09Z",
+      "profile": "quick",
+      "avg_p50_ms": 3.746,
+      "avg_p95_ms": 4.222,
+      "source": "logs/benchmarks/first-benchmark-20260902-205509.json"
+    },
+    {
+      "date_utc": "2026-09-02T18:57:26Z",
+      "profile": "quick",
+      "avg_p50_ms": 3.708,
+      "avg_p95_ms": 4.334,
+      "source": "logs/benchmarks/first-benchmark-20260902-205726.json"
+    },
+    {
+      "date_utc": "2026-09-02T18:57:28Z",
+      "profile": "standard",
+      "avg_p50_ms": 4.023,
+      "avg_p95_ms": 5.254,
+      "source": "logs/benchmarks/first-benchmark-20260902-205731.json"
+    }
+  ]
+}

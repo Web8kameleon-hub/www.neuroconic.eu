@@ -1,0 +1,41 @@
+{
+  "title": "Neurosonic SLO Dashboard",
+  "description": "Dashboard template for availability, latency, and error budget burn.",
+  "panels": [
+    {
+      "id": "panel-availability",
+      "title": "Availability % (30d)",
+      "type": "timeseries",
+      "metric": "availability_percent",
+      "source_file": "docs/production/evidence/availability_trend.json",
+      "thresholds": [
+        { "color": "green", "value": 99.5 },
+        { "color": "red", "value": 99.0 }
+      ]
+    },
+    {
+      "id": "panel-latency-p95",
+      "title": "Latency p95 (ms)",
+      "type": "timeseries",
+      "metric": "avg_p95_ms",
+      "source_file": "docs/production/evidence/latency_trend.json",
+      "thresholds": [
+        { "color": "green", "value": 450 },
+        { "color": "orange", "value": 500 },
+        { "color": "red", "value": 650 }
+      ]
+    },
+    {
+      "id": "panel-error-budget",
+      "title": "Error Budget Burn",
+      "type": "stat",
+      "metric": "burn_rate",
+      "source_file": "docs/production/evidence/slo_snapshot_latest.json",
+      "thresholds": [
+        { "color": "green", "value": 0.5 },
+        { "color": "orange", "value": 1.0 },
+        { "color": "red", "value": 1.01 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "benchmark": "neurosonic-comparative-evidence",
+  "created_at": 1788377923.1980422,
+  "baseline_file": "logs/benchmarks/first-benchmark-20260902-205726.json",
+  "candidate_file": "logs/benchmarks/first-benchmark-20260902-205731.json",
+  "baseline_profile": "quick",
+  "candidate_profile": "standard",
+  "totals": {
+    "shared_scenarios": 7,
+    "baseline_overall_pass_rate": 1.0,
+    "candidate_overall_pass_rate": 1.0,
+    "overall_pass_rate_delta": 0.0
+  },
+  "scenarios": [
+    {
+      "scenario": "plugin_attach_private_network_edge",
+      "baseline": {
+        "p50_ms": 3.273,
+        "p95_ms": 3.835,
+        "throughput_rps": 304.422,
+        "pass_rate": 1.0
+      },
+      "candidate": {
+        "p50_ms": 3.482,
+        "p95_ms": 4.186,
+        "throughput_rps": 283.715,
+        "pass_rate": 1.0
+      },
+      "delta": {
+        "p50_ms": 0.209,
+        "p95_ms": 0.351,
+        "throughput_rps": -20.707,
+        "pass_rate": 0.0,
+        "p95_percent": 9.15,
+        "throughput_percent": -6.8
+      }
+    },
+    {
+      "scenario": "plugin_attach_sensitive_metadata_edge",
+      "baseline": {
+        "p50_ms": 3.185,
+        "p95_ms": 3.817,
+        "throughput_rps": 304.245,
+        "pass_rate": 1.0
+      },
+      "candidate": {
+        "p50_ms": 5.67,
+        "p95_ms": 9.696,
+        "throughput_rps": 174.66,
+        "pass_rate": 1.0
+      },
+      "delta": {
+        "p50_ms": 2.485,
+        "p95_ms": 5.879,
+        "throughput_rps": -129.585,
+        "pass_rate": 0.0,
+        "p95_percent": 154.02,
+        "throughput_percent": -42.59
+      }
+    },
+    {
+      "scenario": "plugin_attach_success_baseline",
+      "baseline": {
+        "p50_ms": 4.679,
+        "p95_ms": 5.222,
+        "throughput_rps": 212.188,
+        "pass_rate": 1.0
+      },
+      "candidate": {
+        "p50_ms": 4.675,
+        "p95_ms": 5.67,
+        "throughput_rps": 210.162,
+        "pass_rate": 1.0
+      },
+      "delta": {
+        "p50_ms": -0.004,
+        "p95_ms": 0.448,
+        "throughput_rps": -2.026,
+        "pass_rate": 0.0,
+        "p95_percent": 8.58,
+        "throughput_percent": -0.95
+      }
+    },
+    {
+      "scenario": "shell_think_echo_edge",
+      "baseline": {
+        "p50_ms": 3.716,
+        "p95_ms": 4.514,
+        "throughput_rps": 259.391,
+        "pass_rate": 1.0
+      },
+      "candidate": {
+        "p50_ms": 3.673,
+        "p95_ms": 4.533,
+        "throughput_rps": 263.772,
+        "pass_rate": 1.0
+      },
+      "delta": {
+        "p50_ms": -0.043,
+        "p95_ms": 0.019,
+        "throughput_rps": 4.381,
+        "pass_rate": 0.0,
+        "p95_percent": 0.42,
+        "throughput_percent": 1.69
+      }
+    },
+    {
+      "scenario": "shell_think_empty_prompt_edge",
+      "baseline": {
+        "p50_ms": 3.7,
+        "p95_ms": 4.238,
+        "throughput_rps": 278.677,
+        "pass_rate": 1.0
+      },
+      "candidate": {
+        "p50_ms": 3.224,
+        "p95_ms": 3.951,
+        "throughput_rps": 306.208,
+        "pass_rate": 1.0
+      },
+      "delta": {
+        "p50_ms": -0.476,
+        "p95_ms": -0.287,
+        "throughput_rps": 27.531,
+        "pass_rate": 0.0,
+        "p95_percent": -6.77,
+        "throughput_percent": 9.88
+      }
+    },
+    {
+      "scenario": "shell_think_long_prompt_tuning",
+      "baseline": {
+        "p50_ms": 3.702,
+        "p95_ms": 4.255,
+        "throughput_rps": 267.123,
+        "pass_rate": 1.0
+      },
+      "candidate": {
+        "p50_ms": 3.861,
+        "p95_ms": 4.662,
+        "throughput_rps": 258.639,
+        "pass_rate": 1.0
+      },
+      "delta": {
+        "p50_ms": 0.159,
+        "p95_ms": 0.407,
+        "throughput_rps": -8.484,
+        "pass_rate": 0.0,
+        "p95_percent": 9.57,
+        "throughput_percent": -3.18
+      }
+    },
+    {
+      "scenario": "shell_think_reasoning_success",
+      "baseline": {
+        "p50_ms": 3.702,
+        "p95_ms": 4.46,
+        "throughput_rps": 262.185,
+        "pass_rate": 1.0
+      },
+      "candidate": {
+        "p50_ms": 3.577,
+        "p95_ms": 4.083,
+        "throughput_rps": 279.394,
+        "pass_rate": 1.0
+      },
+      "delta": {
+        "p50_ms": -0.125,
+        "p95_ms": -0.377,
+        "throughput_rps": 17.209,
+        "pass_rate": 0.0,
+        "p95_percent": -8.45,
+        "throughput_percent": 6.56
+      }
+    }
+  ]
+}

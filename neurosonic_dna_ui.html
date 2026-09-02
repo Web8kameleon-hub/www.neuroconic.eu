@@ -704,6 +704,42 @@
             gap: 12px;
         }
 
+        neuro-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            background: rgba(5, 8, 20, 0.9);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        neuro-footer .links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        neuro-footer a,
+        neuro-footer button {
+            color: var(--text-muted);
+            background: transparent;
+            border: 0;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 11px;
+            padding: 0;
+        }
+
+        neuro-footer a:hover,
+        neuro-footer button:hover {
+            color: var(--accent-cyan);
+        }
+
         neuro-status .dot {
             width: 6px;
             height: 6px;
@@ -775,9 +811,9 @@
                 <span class="item" onclick="switchPlugin('marketplace')">Marketplace</span>
             </div>
             <div class="right">
-                <span id="statusHash"># 4f8a3c2d</span>
-                <span id="statusTime">🕒 2026-07-27</span>
-                <span id="statusHeartbeat">⚡ 37ms</span>
+                <span id="statusHash"># live</span>
+                <span id="statusTime">🕒 loading...</span>
+                <span id="statusHeartbeat">⚡ loading...</span>
             </div>
         </neuro-menu>
 
@@ -798,21 +834,21 @@
                         <div class="item" data-plugin="memory"><span class="icon">🧠</span> Memory <span
                             class="badge">HVO</span></div>
                         <div class="item" data-plugin="agents"><span class="icon">🤖</span> Agents <span
-                            class="badge">12</span></div>
+                            class="badge" id="badgeAgents">0</span></div>
                         <div class="item" data-plugin="nodes"><span class="icon">🧩</span> Nodes <span
-                            class="badge">8</span></div>
+                            class="badge" id="badgeNodes">0</span></div>
 
                     <div class="divider"></div>
                     <div class="section">Labs</div>
-                        <div class="item" data-plugin="labs"><span class="icon">🧪</span> Labs <span class="badge">26</span>
+                        <div class="item" data-plugin="labs"><span class="icon">🧪</span> Labs <span class="badge" id="badgeLabs">0</span>
                     </div>
                         <div class="item" data-plugin="marketplace"><span class="icon">🛒</span> Marketplace <span
-                            class="badge">3</span></div>
+                            class="badge" id="badgeMarketplace">0</span></div>
 
                     <div class="divider"></div>
                     <div class="section">Identity</div>
                         <div class="item" data-plugin="profile"><span class="icon">👤</span> Profile <span
-                            class="badge active">Arben</span></div>
+                            class="badge active" id="badgeProfile">local-user</span></div>
                         <div class="item" data-plugin="settings"><span class="icon">⚙️</span> Settings</div>
                 </div>
             </neuro-nav>
@@ -861,12 +897,12 @@
                                 <br><br>
                                 <span class="intro-line-cyan">🔍 No Fake Engine Active</span><br>
                                 <span class="intro-line-purple">🧠 HVO Memory: 6 Types</span><br>
-                                <span class="intro-line-green">🤖 12 Agents Active</span>
+                                <span class="intro-line-green" id="introAgentsActive">🤖 0 Agents Active</span>
                             </div>
                             <div class="meta">
                                 <span class="verified">✅ VERIFIED</span>
-                                <span># 4f8a3c2d</span>
-                                <span>🕒 2026-07-27</span>
+                                <span id="introHash"># live</span>
+                                <span id="introDate">🕒 loading...</span>
                             </div>
                         </div>
                     </div>
@@ -963,16 +999,23 @@
         <neuro-status>
             <div class="left">
                 <span>🧠 <span class="value">Neurosonic AI OE v1.0</span></span>
-                <span><span class="dot online"></span> <span class="value">Online</span></span>
+                <span><span class="dot online" id="statusDot"></span> <span class="value" id="statusOnlineText">Online</span></span>
                 <span>🛡️ <span class="value status-strong">Zero Trust</span></span>
             </div>
             <div class="right">
-                <span>📡 <span class="value" id="statusPing">12ms</span></span>
-                <span>🌊 <span class="value" id="statusTide">28%</span></span>
-                <span>⚡ <span class="value" id="statusHeart">37ms</span></span>
-                <span># <span class="value" id="statusHashBottom">4f8a3c2d</span></span>
+                <span>📡 <span class="value" id="statusPing">loading...</span></span>
+                <span>🌊 <span class="value" id="statusTide">loading...</span></span>
+                <span>⚡ <span class="value" id="statusHeart">loading...</span></span>
+                <span># <span class="value" id="statusHashBottom">live</span></span>
             </div>
         </neuro-status>
+
+        <neuro-footer>
+            <div class="links" id="legalLinks"></div>
+            <div>
+                <span id="footerContact">Contact: clisonix@pm.me</span>
+            </div>
+        </neuro-footer>
 
     </neuro-shell>
 
@@ -1011,6 +1054,53 @@
                 return Object.keys(this.plugins);
             }
         };
+
+            const CONTACT_EMAIL = 'clisonix@pm.me';
+            const LEGAL_LINKS = [
+                { label: 'Kushtet', href: '/docs/legal/LICENSE.md' },
+                { label: 'Privatësia', href: '/docs/legal/PRIVACY.md' },
+                { label: 'Siguria', href: '/SECURITY.md' },
+                { label: 'Statusi', href: '/api/health' },
+                { label: 'Komuniteti', href: '/docs/community/ROADMAP.md' },
+                { label: 'Dokumentarë', href: '/docs/wiki/Home.md' },
+                { label: 'Kontakt', href: `mailto:${CONTACT_EMAIL}` }
+            ];
+
+            function renderFooterLinks() {
+                const container = document.getElementById('legalLinks');
+                container.innerHTML = '';
+
+                for (const link of LEGAL_LINKS) {
+                    const anchor = document.createElement('a');
+                    anchor.href = link.href;
+                    anchor.textContent = link.label;
+                    anchor.target = link.href.startsWith('mailto:') ? '_self' : '_blank';
+                    anchor.rel = 'noopener';
+                    container.appendChild(anchor);
+                }
+
+                const cookiesButton = document.createElement('button');
+                cookiesButton.type = 'button';
+                cookiesButton.textContent = 'Menaxho cookies';
+                cookiesButton.onclick = () => {
+                    const current = localStorage.getItem('cookie_preferences') || 'unset';
+                    const next = current === 'accepted' ? 'declined' : 'accepted';
+                    localStorage.setItem('cookie_preferences', next);
+                    alert(`Cookie preferences: ${next}`);
+                };
+                container.appendChild(cookiesButton);
+
+                const privacyButton = document.createElement('button');
+                privacyButton.type = 'button';
+                privacyButton.textContent = 'Mos ndani informacionin tim personal';
+                privacyButton.onclick = () => {
+                    localStorage.setItem('do_not_share_personal_info', 'true');
+                    alert('Preference saved: do_not_share_personal_info=true');
+                };
+                container.appendChild(privacyButton);
+
+                document.getElementById('footerContact').textContent = `Contact: ${CONTACT_EMAIL}`;
+            }
 
         // ====================================================================
         // PLUGIN DEFINITIONS
@@ -1192,15 +1282,18 @@
         NeuroPluginRegistry.register('profile', {
             title: '👤 Digital Persona',
             render: function () {
+                const profileName = localStorage.getItem('profile_name') || 'local-user';
+                const profileRole = localStorage.getItem('profile_role') || 'Personal Node Owner';
+                const profileId = localStorage.getItem('profile_id') || 'LOCAL-NODE';
                 return `
                     <div class="card">
                         <div class="title">👤 Identity</div>
                         <div style="display:flex;align-items:center;gap:12px;padding:8px;background:var(--bg-primary);border-radius:6px;">
                             <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">👤</div>
                             <div>
-                                <div style="font-weight:600;color:#fff;">Arben Hoxha</div>
-                                <div style="font-size:11px;color:var(--text-muted);">Inxhinier Makinerie</div>
-                                <div style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);">NGI-ENG-0042</div>
+                                <div style="font-weight:600;color:#fff;">${profileName}</div>
+                                <div style="font-size:11px;color:var(--text-muted);">${profileRole}</div>
+                                <div style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);">${profileId}</div>
                             </div>
                         </div>
                     </div>
@@ -1446,7 +1539,10 @@
                 try {
                     const health = await apiGet('/api/health');
                     const stats = await apiGet('/api/lightning/stats');
+                    const genome = await apiGet('/api/genome');
                     const ping = Math.max(1, Math.round(performance.now() - started));
+                    document.getElementById('statusDot').className = health.lightning_service ? 'dot online' : 'dot';
+                    document.getElementById('statusOnlineText').textContent = health.lightning_service ? 'Online' : 'Degraded';
 
                     document.getElementById('statusHeart').textContent = `${ping}ms`;
                     document.getElementById('statusHeartbeat').textContent = `⚡ ${ping}ms`;
@@ -1456,6 +1552,8 @@
                     const hashToken = String(Math.floor(health.timestamp)).slice(-8);
                     document.getElementById('statusHash').textContent = `# ${hashToken}`;
                     document.getElementById('statusHashBottom').textContent = hashToken;
+                    document.getElementById('introHash').textContent = `# ${hashToken}`;
+                    document.getElementById('introDate').textContent = `🕒 ${new Date(health.timestamp * 1000).toLocaleString()}`;
 
                 const errors = Number(stats.errors || 0);
                 const trust = errors === 0 ? 100 : Math.max(0, 100 - errors);
@@ -1463,14 +1561,35 @@
                 document.getElementById('statGpu').textContent = `${Math.round(stats.average_process_time_ms || 0)}ms`;
                 document.getElementById('statMemory').textContent = `${Math.round(stats.average_print_time_ms || 0)}ms`;
                 document.getElementById('statTrust').textContent = `${trust}%`;
-                document.getElementById('statAgents').textContent = String(health.genome_packages || 0);
+                    const genomePackages = Number(health.genome_packages || 0);
+                    const categoryCount = genome && genome.categories ? Object.keys(genome.categories).length : 0;
+                    const marketplaceCount = Array.isArray(genome?.categories?.economy)
+                        ? genome.categories.economy.length
+                        : 0;
+                    const labsCount = Array.isArray(genome?.categories?.intelligence)
+                        ? genome.categories.intelligence.length
+                        : 0;
+
+                    document.getElementById('statAgents').textContent = String(genomePackages);
                 document.getElementById('statTasks').textContent = String((stats.total_processes || 0) + (stats.total_scans || 0));
+                    document.getElementById('badgeAgents').textContent = String(genomePackages);
+                    document.getElementById('badgeNodes').textContent = String(categoryCount);
+                    document.getElementById('badgeLabs').textContent = String(labsCount);
+                    document.getElementById('badgeMarketplace').textContent = String(marketplaceCount);
+                    document.getElementById('introAgentsActive').textContent = `🤖 ${genomePackages} Agents Active`;
+
+                    const profileName = localStorage.getItem('profile_name') || 'local-user';
+                    document.getElementById('badgeProfile').textContent = profileName;
             } catch (error) {
                 document.getElementById('statusHeartbeat').textContent = '⚡ offline';
                 document.getElementById('statusPing').textContent = 'offline';
                 document.getElementById('statusTide').textContent = 'offline';
                 document.getElementById('statusHash').textContent = '# offline';
                 document.getElementById('statusHashBottom').textContent = 'offline';
+                    document.getElementById('introHash').textContent = '# offline';
+                    document.getElementById('introDate').textContent = `🕒 ${new Date().toLocaleString()}`;
+                    document.getElementById('statusDot').className = 'dot';
+                    document.getElementById('statusOnlineText').textContent = 'Offline';
             }
         }
 
@@ -1515,6 +1634,7 @@
 
         // Load default plugin
         switchPlugin('memory');
+                renderFooterLinks();
             updateStatus();
 
         // Update time

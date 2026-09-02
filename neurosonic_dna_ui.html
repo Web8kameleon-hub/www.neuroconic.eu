@@ -1055,52 +1055,52 @@
             }
         };
 
-            const CONTACT_EMAIL = 'clisonix@pm.me';
-            const LEGAL_LINKS = [
-                { label: 'Kushtet', href: '/docs/legal/LICENSE.md' },
-                { label: 'Privatësia', href: '/docs/legal/PRIVACY.md' },
-                { label: 'Siguria', href: '/SECURITY.md' },
-                { label: 'Statusi', href: '/api/health' },
-                { label: 'Komuniteti', href: '/docs/community/ROADMAP.md' },
-                { label: 'Dokumentarë', href: '/docs/wiki/Home.md' },
-                { label: 'Kontakt', href: `mailto:${CONTACT_EMAIL}` }
-            ];
+                const CONTACT_EMAIL = 'clisonix@pm.me';
+                const LEGAL_LINKS = [
+                    { label: 'Kushtet', href: '/docs/legal/LICENSE.md' },
+                    { label: 'Privatësia', href: '/docs/legal/PRIVACY.md' },
+                    { label: 'Siguria', href: '/SECURITY.md' },
+                    { label: 'Statusi', href: '/api/health' },
+                    { label: 'Komuniteti', href: '/docs/community/ROADMAP.md' },
+                    { label: 'Dokumentarë', href: '/docs/wiki/Home.md' },
+                    { label: 'Kontakt', href: `mailto:${CONTACT_EMAIL}` }
+                ];
 
-            function renderFooterLinks() {
-                const container = document.getElementById('legalLinks');
-                container.innerHTML = '';
+                function renderFooterLinks() {
+                    const container = document.getElementById('legalLinks');
+                    container.innerHTML = '';
 
-                for (const link of LEGAL_LINKS) {
-                    const anchor = document.createElement('a');
-                    anchor.href = link.href;
-                    anchor.textContent = link.label;
-                    anchor.target = link.href.startsWith('mailto:') ? '_self' : '_blank';
-                    anchor.rel = 'noopener';
-                    container.appendChild(anchor);
+                    for (const link of LEGAL_LINKS) {
+                        const anchor = document.createElement('a');
+                        anchor.href = link.href;
+                        anchor.textContent = link.label;
+                        anchor.target = link.href.startsWith('mailto:') ? '_self' : '_blank';
+                        anchor.rel = 'noopener';
+                        container.appendChild(anchor);
+                    }
+
+                    const cookiesButton = document.createElement('button');
+                    cookiesButton.type = 'button';
+                    cookiesButton.textContent = 'Menaxho cookies';
+                    cookiesButton.onclick = () => {
+                        const current = localStorage.getItem('cookie_preferences') || 'unset';
+                        const next = current === 'accepted' ? 'declined' : 'accepted';
+                        localStorage.setItem('cookie_preferences', next);
+                        alert(`Cookie preferences: ${next}`);
+                    };
+                    container.appendChild(cookiesButton);
+
+                    const privacyButton = document.createElement('button');
+                    privacyButton.type = 'button';
+                    privacyButton.textContent = 'Mos ndani informacionin tim personal';
+                    privacyButton.onclick = () => {
+                        localStorage.setItem('do_not_share_personal_info', 'true');
+                        alert('Preference saved: do_not_share_personal_info=true');
+                    };
+                    container.appendChild(privacyButton);
+
+                    document.getElementById('footerContact').textContent = `Contact: ${CONTACT_EMAIL}`;
                 }
-
-                const cookiesButton = document.createElement('button');
-                cookiesButton.type = 'button';
-                cookiesButton.textContent = 'Menaxho cookies';
-                cookiesButton.onclick = () => {
-                    const current = localStorage.getItem('cookie_preferences') || 'unset';
-                    const next = current === 'accepted' ? 'declined' : 'accepted';
-                    localStorage.setItem('cookie_preferences', next);
-                    alert(`Cookie preferences: ${next}`);
-                };
-                container.appendChild(cookiesButton);
-
-                const privacyButton = document.createElement('button');
-                privacyButton.type = 'button';
-                privacyButton.textContent = 'Mos ndani informacionin tim personal';
-                privacyButton.onclick = () => {
-                    localStorage.setItem('do_not_share_personal_info', 'true');
-                    alert('Preference saved: do_not_share_personal_info=true');
-                };
-                container.appendChild(privacyButton);
-
-                document.getElementById('footerContact').textContent = `Contact: ${CONTACT_EMAIL}`;
-            }
 
         // ====================================================================
         // PLUGIN DEFINITIONS
@@ -1634,7 +1634,7 @@
 
         // Load default plugin
         switchPlugin('memory');
-                renderFooterLinks();
+                    renderFooterLinks();
             updateStatus();
 
         // Update time

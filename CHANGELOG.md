@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.4 - 2026-09-02
+
+SEO hardening release focused on reducing homepage warnings and improving dynamic discoverability signals.
+
+### Added (v1.0.4)
+
+- Add complete SEO head metadata in `index.html`: canonical, hreflang, robots directives, Open Graph, Twitter Card, and JSON-LD.
+- Add social preview asset `og-neurosonic.svg` and connect it to Open Graph/Twitter tags.
+- Add `apple-touch-icon` declaration for stronger mobile/web app compatibility.
+
+### Changed (v1.0.4)
+
+- Align PWA manifest language with site language (`manifest.webmanifest` -> `lang: sq`).
+- Expand `neurosonic_seo.py` page map with current dynamic UI/documentation routes.
+- Regenerate `sitemap.xml` and `robots.txt` from the SEO generator to keep crawl/index rules synchronized.
+
+### Release Sync (v1.0.4)
+
+- Git tag: `v1.0.4`
+- Base feature commit: `ada589c`
+- Release URL: <https://github.com/Web8kameleon-hub/www.neuroconic.eu/releases/tag/v1.0.4>
+
 ## v1.0.3 - 2026-09-02
 
 Feature release focused on user-owned Git export flow for Personal Node profiles with explicit third-party liability boundaries.

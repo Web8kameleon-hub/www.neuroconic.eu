@@ -5,163 +5,190 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Neurosonic Personal UI Composer</title>
   <style>
-    body { font-family: Segoe UI, sans-serif; background: #0b1020; color: #e8ecff; margin: 0; }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", sans-serif; background: #0b1020; color: #e8ecff; margin: 0; }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
     .card { background: #121933; border: 1px solid #24305f; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-    h1 { margin: 0 0 8px 0; color: #7dd3fc; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    label { display: block; font-size: 12px; color: #9fb0e6; margin-bottom: 4px; }
-    input, textarea, select { width: 100%; box-sizing: border-box; background: #0d1430; color: #e8ecff; border: 1px solid #2b3b77; border-radius: 8px; padding: 10px; }
-    textarea { min-height: 90px; }
-    button { border: 0; border-radius: 10px; padding: 10px 14px; background: linear-gradient(135deg,#22d3ee,#6366f1); color: white; font-weight: 700; cursor: pointer; }
+    h1 { margin: 0 0 4px 0; color: #7dd3fc; }
     .muted { color: #93a3d8; font-size: 13px; }
-    .result { white-space: pre-wrap; background: #0a122a; border: 1px solid #253569; border-radius: 10px; padding: 12px; max-height: 320px; overflow: auto; }
+
+    /* --- Chat --- */
+    .chat-log { display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto; padding: 4px; }
+    .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; line-height: 1.4; white-space: pre-wrap; }
+    .msg.user { align-self: flex-end; background: linear-gradient(135deg,#22d3ee,#6366f1); color: white; border-bottom-right-radius: 4px; }
+    .msg.assistant { align-self: flex-start; background: #0d1430; border: 1px solid #2b3b77; border-bottom-left-radius: 4px; }
+    .msg.system { align-self: center; color: #93a3d8; font-size: 12px; background: transparent; }
+    .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
+    .chat-input-row textarea { flex: 1; min-height: 52px; resize: vertical; background: #0d1430; color: #e8ecff; border: 1px solid #2b3b77; border-radius: 10px; padding: 12px; font-size: 15px; }
+    .send-btn { border: 0; border-radius: 10px; padding: 0 22px; background: linear-gradient(135deg,#22d3ee,#6366f1); color: white; font-weight: 700; cursor: pointer; font-size: 15px; }
+    .send-btn:disabled { opacity: 0.6; cursor: wait; }
+    .typing { display: inline-flex; gap: 4px; align-items: center; }
+    .typing span { width: 6px; height: 6px; border-radius: 50%; background: #7dd3fc; animation: blink 1.2s infinite ease-in-out; }
+    .typing span:nth-child(2) { animation-delay: .2s; }
+    .typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+
+    /* --- Preview --- */
     .widgets { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 10px; margin-top: 10px; }
-    .widget { background: #0b1430; border: 1px solid #2a3e80; border-radius: 10px; padding: 10px; }
+    .widget { background: #0b1430; border: 1px solid #2a3e80; border-radius: 10px; padding: 12px; }
+    .widget strong { color: #7dd3fc; }
+    .empty-hint { color: #93a3d8; font-size: 14px; padding: 20px; text-align: center; }
+
+    /* --- Advanced (collapsed) --- */
+    details.advanced { margin-top: 6px; }
+    details.advanced summary { cursor: pointer; color: #93a3d8; font-size: 13px; padding: 6px 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    label { display: block; font-size: 12px; color: #9fb0e6; margin-bottom: 4px; }
+    input, textarea, select { width: 100%; background: #0d1430; color: #e8ecff; border: 1px solid #2b3b77; border-radius: 8px; padding: 10px; font-size: 14px; }
+    button.secondary { border: 1px solid #2b3b77; border-radius: 10px; padding: 8px 14px; background: transparent; color: #cdd7ff; cursor: pointer; font-size: 13px; }
     .row-actions { margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .row-ack { margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .row-ack { margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #9fb0e6; }
     .checkbox-auto { width: auto; }
     .label-inline { margin: 0; }
+    .result { white-space: pre-wrap; background: #0a122a; border: 1px solid #253569; border-radius: 10px; padding: 12px; max-height: 260px; overflow: auto; font-size: 12px; }
     .top-gap-sm { margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>🧠 Personal UI Composer</h1>
-    <p class="muted">Everything is dynamic for user UI. Backend DNA remains immutable.</p>
+    <h1>🧠 Krijo panelin tënd</h1>
+    <p class="muted">Thjesht më thuaj çfarë do të shohësh — s'ke nevojë të dish kodim. Bëhu kreativ, unë kujdesem për pjesën teknike.</p>
 
     <div class="card">
-      <div class="grid">
-        <div>
-          <label for="prompt">Design Prompt</label>
-          <textarea id="prompt" title="Panel design prompt" placeholder="Describe the panel you want">Create a governance panel with health, audit, and quick actions.</textarea>
-        </div>
-        <div>
-          <label for="preferences">Preferences (JSON)</label>
-          <textarea id="preferences" title="Panel preferences JSON" placeholder="Add JSON preferences">title=My Personal Node, palette=neon-night, columns=12</textarea>
-        </div>
-        <div>
-          <label for="profile">Profile ID</label>
-          <input id="profile" title="Profile identifier" placeholder="default" value="default" />
-        </div>
-        <div>
-          <label for="owner">Owner ID</label>
-          <input id="owner" title="Owner identifier" placeholder="local-user" value="local-user" />
+      <div id="chatLog" class="chat-log">
+        <div class="msg assistant">
+          Përshëndetje! 👋 Unë jam ndihmësi yt për të krijuar panelin personal.
+          Më thuaj çfarë do të doje të shihje — p.sh. "dua një panel me motin, listën e detyrave
+          dhe një hartë të aktivitetit tim" — dhe unë e ndërtoj menjëherë.
         </div>
       </div>
-      <div class="row-actions">
-        <button onclick="generatePanel()">Generate & Save</button>
-        <button onclick="listProfiles()">List Profiles</button>
-        <span class="muted" id="status">Ready</span>
+      <div class="chat-input-row">
+        <textarea id="chatInput" placeholder="Shkruaj këtu çfarë dëshiron... (Enter për të dërguar, Shift+Enter për rresht të ri)"></textarea>
+        <button id="sendBtn" class="send-btn" onclick="sendChatMessage()">Dërgo</button>
       </div>
     </div>
 
     <div class="card">
-      <h3>Generated Schema</h3>
-      <div id="schema" class="result">No schema yet.</div>
+      <h3>👀 Pamja e panelit tënd</h3>
+      <div id="widgets" class="widgets">
+        <div class="empty-hint">Kur të flasësh me ndihmësin më sipër, panelin do ta shohësh këtu.</div>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>Widgets Preview</h3>
-      <div id="widgets" class="widgets"></div>
-    </div>
+    <details class="advanced">
+      <summary>⚙️ Opsione të avancuara (për përdorues teknikë)</summary>
 
-    <div class="card">
-      <h3>Profiles</h3>
-      <div id="profiles" class="result">No profiles loaded.</div>
-    </div>
+      <div class="card top-gap-sm">
+        <div class="grid">
+          <div>
+            <label for="profile">Profile ID</label>
+            <input id="profile" title="Profile identifier" placeholder="default" value="default" />
+          </div>
+          <div>
+            <label for="owner">Owner ID</label>
+            <input id="owner" title="Owner identifier" placeholder="local-user" value="local-user" />
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="secondary" onclick="listProfiles()">List Profiles</button>
+          <span class="muted" id="status">Ready</span>
+        </div>
+        <div id="profiles" class="result top-gap-sm">No profiles loaded.</div>
+      </div>
 
-    <div class="card">
-      <h3>Dynamic Plugins (Any Address)</h3>
-    <p class="muted">Use email, app endpoint, website, internal API, or local service. Third-party subscriptions, billing,
-        and contracts remain user responsibility.</p>
-      <div class="grid">
-        <div>
-          <label for="pluginAddress">Plugin Address</label>
-          <input id="pluginAddress" title="Plugin endpoint address" placeholder="https://example.com/api or mail@domain.com" value="https://example.com/api" />
-        </div>
-        <div>
-          <label for="pluginName">Plugin Name</label>
-          <input id="pluginName" title="Plugin display name" placeholder="External Connector" value="External Connector" />
-        </div>
-        <div>
-          <label for="pluginType">Plugin Type</label>
-          <select id="pluginType" title="Plugin address type">
-            <option value="auto" selected>Auto</option>
-            <option value="banking">Banking</option>
-            <option value="email">Email</option>
-            <option value="website">Website</option>
-            <option value="app-endpoint">App Endpoint</option>
-            <option value="internal-api">Internal API</option>
-            <option value="local-service">Local Service</option>
-            <option value="generic-endpoint">Generic Endpoint</option>
-          </select>
-        </div>
-        <div>
-        <label for="connectorScope">Connector Scope</label>
-        <select id="connectorScope" title="Plugin connector scope">
-            <option value="general" selected>General</option>
-            <option value="banking">Banking</option>
-            <option value="finance">Finance</option>
-            <option value="iot">IoT</option>
-            <option value="mesh">Mesh</option>
-            <option value="kloud">Kloud Signal</option>
-        </select>
-        </div>
-        <div>
-          <label for="pluginMeta">Metadata (JSON)</label>
-          <textarea id="pluginMeta" title="Plugin metadata JSON" placeholder="metadata for runtime">runtime=llama-local, transport=tide</textarea>
-        </div>
-      </div>
-      <div class="row-ack">
-        <input id="liabilityAck" type="checkbox" class="checkbox-auto" />
-        <label for="liabilityAck" class="label-inline">I confirm third-party billing/contracts are my responsibility.</label>
-      </div>
-    <div class="row-ack">
-        <input id="sensitiveDataAck" type="checkbox" class="checkbox-auto" />
-        <label for="sensitiveDataAck" class="label-inline">I confirm I authorize sensitive/financial data processing on my
-            personal node.</label>
-    </div>
-      <div class="row-actions">
-        <button onclick="attachPlugin()">Attach Plugin</button>
-        <button onclick="listPlugins()">List Plugins</button>
-      </div>
-      <div id="pluginsResult" class="result top-gap-sm">No plugins attached yet.</div>
-    </div>
-<div class="card">
-    <h3>Save to Your Git Repository</h3>
-    <p class="muted">Export your profile JSON to your own repo path. Neurosonic is API-support-only and not responsible
-        for repository access, subscriptions, or provider billing.</p>
-    <div class="grid">
-        <div>
-            <label for="gitRepoPath">Local Git Repository Path</label>
-            <input id="gitRepoPath" title="Absolute path to your local git repository"
-                placeholder="C:\\Users\\you\\my-ui-repo" />
-        </div>
-        <div>
-            <label for="gitOutputPath">Relative Export Path</label>
-            <input id="gitOutputPath" title="Relative path inside repository"
-                placeholder="personal_node/profiles/default.json" />
-        </div>
-        <div>
-            <label for="gitCommitMessage">Commit Message</label>
-            <input id="gitCommitMessage" title="Git commit message" placeholder="Save Neurosonic profile" />
+      <div class="card">
+        <h3>Dynamic Plugins (Any Address)</h3>
+        <p class="muted">Use email, app endpoint, website, internal API, or local service. Third-party subscriptions, billing,
+          and contracts remain user responsibility.</p>
+        <div class="grid">
+          <div>
+            <label for="pluginAddress">Plugin Address</label>
+            <input id="pluginAddress" title="Plugin endpoint address" placeholder="https://example.com/api or mail@domain.com" value="https://example.com/api" />
+          </div>
+          <div>
+            <label for="pluginName">Plugin Name</label>
+            <input id="pluginName" title="Plugin display name" placeholder="External Connector" value="External Connector" />
+          </div>
+          <div>
+            <label for="pluginType">Plugin Type</label>
+            <select id="pluginType" title="Plugin address type">
+              <option value="auto" selected>Auto</option>
+              <option value="banking">Banking</option>
+              <option value="email">Email</option>
+              <option value="website">Website</option>
+              <option value="app-endpoint">App Endpoint</option>
+              <option value="internal-api">Internal API</option>
+              <option value="local-service">Local Service</option>
+              <option value="generic-endpoint">Generic Endpoint</option>
+            </select>
+          </div>
+          <div>
+            <label for="connectorScope">Connector Scope</label>
+            <select id="connectorScope" title="Plugin connector scope">
+              <option value="general" selected>General</option>
+              <option value="banking">Banking</option>
+              <option value="finance">Finance</option>
+              <option value="iot">IoT</option>
+              <option value="mesh">Mesh</option>
+              <option value="kloud">Kloud Signal</option>
+            </select>
+          </div>
+          <div>
+            <label for="pluginMeta">Metadata (JSON)</label>
+            <textarea id="pluginMeta" title="Plugin metadata JSON" placeholder="metadata for runtime">runtime=llama-local, transport=tide</textarea>
+          </div>
         </div>
         <div class="row-ack">
+          <input id="liabilityAck" type="checkbox" class="checkbox-auto" />
+          <label for="liabilityAck" class="label-inline">I confirm third-party billing/contracts are my responsibility.</label>
+        </div>
+        <div class="row-ack">
+          <input id="sensitiveDataAck" type="checkbox" class="checkbox-auto" />
+          <label for="sensitiveDataAck" class="label-inline">I confirm I authorize sensitive/financial data processing on my
+            personal node.</label>
+        </div>
+        <div class="row-actions">
+          <button class="secondary" onclick="attachPlugin()">Attach Plugin</button>
+          <button class="secondary" onclick="listPlugins()">List Plugins</button>
+        </div>
+        <div id="pluginsResult" class="result top-gap-sm">No plugins attached yet.</div>
+      </div>
+
+      <div class="card">
+        <h3>Save to Your Git Repository</h3>
+        <p class="muted">Export your profile JSON to your own repo path. Neurosonic is API-support-only and not responsible
+          for repository access, subscriptions, or provider billing.</p>
+        <div class="grid">
+          <div>
+            <label for="gitRepoPath">Local Git Repository Path</label>
+            <input id="gitRepoPath" title="Absolute path to your local git repository"
+              placeholder="C:\Users\you\my-ui-repo" />
+          </div>
+          <div>
+            <label for="gitOutputPath">Relative Export Path</label>
+            <input id="gitOutputPath" title="Relative path inside repository"
+              placeholder="personal_node/profiles/default.json" />
+          </div>
+          <div>
+            <label for="gitCommitMessage">Commit Message</label>
+            <input id="gitCommitMessage" title="Git commit message" placeholder="Save Neurosonic profile" />
+          </div>
+          <div class="row-ack">
             <input id="gitCommit" type="checkbox" class="checkbox-auto" />
             <label for="gitCommit" class="label-inline">Create commit after staging file</label>
+          </div>
         </div>
-    </div>
-    <div class="row-ack">
-        <input id="gitLiabilityAck" type="checkbox" class="checkbox-auto" />
-        <label for="gitLiabilityAck" class="label-inline">I confirm third-party subscriptions, billing, contracts, and
+        <div class="row-ack">
+          <input id="gitLiabilityAck" type="checkbox" class="checkbox-auto" />
+          <label for="gitLiabilityAck" class="label-inline">I confirm third-party subscriptions, billing, contracts, and
             repo permissions are my responsibility.</label>
-    </div>
-    <div class="row-actions">
-        <button onclick="saveProfileToGit()">Save Profile To Git</button>
-    </div>
-    <div id="gitSaveResult" class="result top-gap-sm">No git export yet.</div>
-</div>
+        </div>
+        <div class="row-actions">
+          <button class="secondary" onclick="saveProfileToGit()">Save Profile To Git</button>
+        </div>
+        <div id="gitSaveResult" class="result top-gap-sm">No git export yet.</div>
+      </div>
+    </details>
   </div>
 
   <script>
@@ -169,6 +196,8 @@
     if (window.location.port === "5500" || window.location.port === "5501") {
       API_BASE = "http://127.0.0.1:8000";
     }
+
+    const chatHistory = [];
 
     async function postJson(endpoint, body) {
       const resp = await fetch(API_BASE + endpoint, {
@@ -186,45 +215,97 @@
       return await resp.json();
     }
 
+    function appendMessage(role, text) {
+      const log = document.getElementById("chatLog");
+      const el = document.createElement("div");
+      el.className = "msg " + role;
+      el.textContent = text;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+
+    function appendTypingIndicator() {
+      const log = document.getElementById("chatLog");
+      const el = document.createElement("div");
+      el.className = "msg assistant";
+      el.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+
     function renderWidgets(schema) {
       const container = document.getElementById("widgets");
       container.innerHTML = "";
       const widgets = (schema && schema.widgets) || [];
+      if (widgets.length === 0) {
+        container.innerHTML = '<div class="empty-hint">Kur të flasësh me ndihmësin më sipër, panelin do ta shohësh këtu.</div>';
+        return;
+      }
       for (const widget of widgets) {
         const el = document.createElement("div");
         el.className = "widget";
-        el.innerHTML = `<strong>${widget.title || widget.type}</strong><div class="muted">type: ${widget.type}</div><div class="muted">id: ${widget.id}</div>`;
+        const contentLine = widget.content
+          ? `<div class="muted top-gap-sm">${String(widget.content).slice(0, 140)}</div>`
+          : "";
+        el.innerHTML = `<strong>${widget.title || widget.type}</strong><div class="muted">${widget.type}</div>${contentLine}`;
         container.appendChild(el);
       }
     }
 
-    async function generatePanel() {
-      const status = document.getElementById("status");
-      status.textContent = "Generating...";
-      try {
-        let preferences = {};
-        try {
-          preferences = JSON.parse(document.getElementById("preferences").value || "{}");
-        } catch {
-          preferences = { raw_preferences: document.getElementById("preferences").value };
-        }
-        const payload = {
-          prompt: document.getElementById("prompt").value,
-          profile_id: document.getElementById("profile").value,
-          owner_id: document.getElementById("owner").value,
-          preferences,
-          save: true
-        };
+    async function sendChatMessage() {
+      const input = document.getElementById("chatInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const message = input.value.trim();
+      if (!message) return;
 
-        const data = await postJson("/api/ui/design", payload);
-        document.getElementById("schema").textContent = JSON.stringify(data.schema, null, 2);
-        renderWidgets(data.schema);
-        status.textContent = `Saved profile ${data.profile_id}`;
+      appendMessage("user", message);
+      chatHistory.push({ role: "user", content: message });
+      input.value = "";
+      input.disabled = true;
+      sendBtn.disabled = true;
+      const typingEl = appendTypingIndicator();
+
+      try {
+        const profileId = document.getElementById("profile").value || "default";
+        const ownerId = document.getElementById("owner").value || "local-user";
+        const data = await postJson("/api/ui/chat", {
+          message,
+          profile_id: profileId,
+          owner_id: ownerId,
+          history: chatHistory.slice(-8),
+          save: true
+        });
+
+        typingEl.remove();
+        const reply = data.reply || (data.success
+          ? "Ja panelin tënd i ri!"
+          : "Diçka shkoi keq, provo përsëri.");
+        appendMessage("assistant", reply);
+        chatHistory.push({ role: "assistant", content: reply });
+
+        if (data.schema) {
+          renderWidgets(data.schema);
+        }
       } catch (err) {
-        status.textContent = "Error: " + err.message;
+        typingEl.remove();
+        appendMessage("system", "Gabim lidhjeje: " + err.message + ". Provo përsëri.");
+      } finally {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
       }
     }
 
+    document.getElementById("chatInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendChatMessage();
+      }
+    });
+
+    // --- Advanced panel (unchanged technical controls) ---
     async function listProfiles() {
       try {
         const data = await getJson("/api/ui/panels");
@@ -247,10 +328,10 @@
         address: document.getElementById("pluginAddress").value,
         name: document.getElementById("pluginName").value,
         plugin_type: document.getElementById("pluginType").value,
-          connector_scope: document.getElementById("connectorScope").value,
+        connector_scope: document.getElementById("connectorScope").value,
         metadata,
-          liability_ack: !!document.getElementById("liabilityAck").checked,
-          sensitive_data_ack: !!document.getElementById("sensitiveDataAck").checked
+        liability_ack: !!document.getElementById("liabilityAck").checked,
+        sensitive_data_ack: !!document.getElementById("sensitiveDataAck").checked
       };
 
       try {
@@ -272,21 +353,21 @@
     }
 
     async function saveProfileToGit() {
-        const profileId = document.getElementById("profile").value || "default";
-        const payload = {
-            repository_path: document.getElementById("gitRepoPath").value,
-            relative_output_path: document.getElementById("gitOutputPath").value || null,
-            commit: !!document.getElementById("gitCommit").checked,
-            commit_message: document.getElementById("gitCommitMessage").value || null,
-            liability_ack: !!document.getElementById("gitLiabilityAck").checked
-        };
+      const profileId = document.getElementById("profile").value || "default";
+      const payload = {
+        repository_path: document.getElementById("gitRepoPath").value,
+        relative_output_path: document.getElementById("gitOutputPath").value || null,
+        commit: !!document.getElementById("gitCommit").checked,
+        commit_message: document.getElementById("gitCommitMessage").value || null,
+        liability_ack: !!document.getElementById("gitLiabilityAck").checked
+      };
 
-        try {
-            const data = await postJson(`/api/ui/panels/${encodeURIComponent(profileId)}/git-save`, payload);
-            document.getElementById("gitSaveResult").textContent = JSON.stringify(data, null, 2);
-        } catch (err) {
-            document.getElementById("gitSaveResult").textContent = "Error: " + err.message;
-        }
+      try {
+        const data = await postJson(`/api/ui/panels/${encodeURIComponent(profileId)}/git-save`, payload);
+        document.getElementById("gitSaveResult").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("gitSaveResult").textContent = "Error: " + err.message;
+      }
     }
   </script>
 </body>

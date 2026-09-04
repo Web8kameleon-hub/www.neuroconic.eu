@@ -158,6 +158,19 @@ class UIDesignRequest(BaseModel):
     save: bool = True
 
 
+class UIChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class UIChatRequest(BaseModel):
+    message: str
+    profile_id: str = "default"
+    owner_id: str = "local-user"
+    history: list[UIChatMessage] = Field(default_factory=list)
+    save: bool = True
+
+
 class UIPanelSaveRequest(BaseModel):
     panel: dict[str, Any]
 
@@ -554,6 +567,126 @@ async def create_ui_design(req: UIDesignRequest, request: Request):
         "schema": schema,
         "saved": req.save,
         "storage": save_meta,
+        "timestamp": time.time(),
+    }
+
+
+_UI_CHAT_SYSTEM_PROMPT = """You are a friendly, non-technical UI design assistant inside Neurosonic.
+You talk to everyday people who have never coded and just describe, in their own words,
+what personal dashboard/panel they want. Never mention JSON, schemas, APIs, or code to the user.
+
+You must reply with ONLY a single JSON object (no markdown fences, no extra text) with this shape:
+{
+  "reply": "a short, warm, conversational reply in the user's own language explaining what you built or asking one simple follow-up question",
+  "title": "a short friendly title for the panel",
+  "widgets": [
+    {"type": "hero|timeline|status|markdown|list|counter|calendar|weather|console|image-dropzone|policy-grid|chat|links|table|chart",
+     "title": "widget title", "col": 12, "content": "optional text content"}
+  ]
+}
+
+Keep "reply" human, encouraging and creative - like a helpful designer friend, never robotic.
+If the request is vague, still produce a reasonable first draft of widgets and ask one clarifying
+question in "reply". Always output valid JSON and nothing else."""
+
+
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    """Nxjerr objektin e parë JSON të vlefshëm nga teksti i LLM-it.
+
+    Modelet lokale ndonjëherë shtojnë tekst përpara/pas JSON-it (p.sh.
+    <think> blloqe arsyetimi). Kjo funksion gjen kllapën e parë '{' dhe
+    përpiqet të parse-ojë progresivisht deri te kllapa përfundimtare '}'.
+    """
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    try:
+        parsed = json.loads(text[start : end + 1])
+        return parsed if isinstance(parsed, dict) else None
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
+@app.post("/api/ui/chat")
+async def ui_chat(req: UIChatRequest, request: Request):
+    """Krijon/përditëson panelin e përdoruesit përmes një bisede njerëzore.
+
+    Ndryshe nga /api/ui/design (që kërkon prompt teknik + preferences JSON),
+    ky endpoint pranon vetëm mesazhin e lirë të përdoruesit dhe kthen një
+    përgjigje bisedore plus skemën e re/të përditësuar të panelit.
+    """
+    owner_id = _resolve_trusted_owner_id(request)
+    message = req.message.strip()
+
+    if not message:
+        return {
+            "success": False,
+            "reply": "Më thuaj pak fjalë për panelin që dëshiron dhe fillojmë menjëherë!",
+            "profile_id": req.profile_id,
+            "schema": None,
+            "timestamp": time.time(),
+        }
+
+    existing = personal_node_store.load_profile(req.profile_id)
+    existing_schema = existing.get("schema") if isinstance(existing, dict) else None
+
+    history_text = "\n".join(f"{item.role}: {item.content}" for item in req.history[-6:])
+    context_note = (
+        f"\nExisting panel title: {existing_schema.get('title')}" if existing_schema else ""
+    )
+    llm_prompt = (
+        f"{history_text}\nuser: {message}{context_note}\n\n"
+        "Respond now with the JSON object described in your instructions."
+    )
+
+    llm_result = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
+    plan = _extract_json_object(llm_result.text) if llm_result.text else None
+
+    if llm_result.error or not plan:
+        # LLM nuk u përgjigj ose s'ktheu JSON të vlefshëm: asnjë fake success,
+        # thjesht një përgjigje e ndershme dhe skema ekzistuese (nëse ka).
+        return {
+            "success": False,
+            "reply": (
+                "Nuk arrita ta gjeneroj panelin këtë herë "
+                f"({llm_result.error or 'përgjigje e paformatuar'}). Provo ta rithuash "
+                "kërkesën me pak fjalë të tjera."
+            ),
+            "profile_id": req.profile_id,
+            "schema": existing_schema,
+            "llm_error": llm_result.error,
+            "timestamp": time.time(),
+        }
+
+    widget_plan = plan.get("widgets") if isinstance(plan.get("widgets"), list) else None
+    schema = ui_designer.generate_schema(
+        prompt=message,
+        preferences={},
+        owner_id=owner_id,
+        widget_plan=widget_plan,
+        title_override=plan.get("title") if isinstance(plan.get("title"), str) else None,
+    )
+    if isinstance(existing_schema, dict) and existing_schema.get("integrations", {}).get("plugins"):
+        schema["integrations"]["plugins"] = existing_schema["integrations"]["plugins"]
+
+    save_meta = None
+    if req.save:
+        save_meta = personal_node_store.save_profile(req.profile_id, schema)
+
+    reply_text = plan.get("reply")
+    if not isinstance(reply_text, str) or not reply_text.strip():
+        reply_text = "Ja panelin tënd të ri! Më thuaj çfarë të ndryshoj."
+
+    return {
+        "success": True,
+        "reply": reply_text.strip(),
+        "profile_id": req.profile_id,
+        "schema": schema,
+        "saved": req.save,
+        "storage": save_meta,
+        "provider": llm_result.provider,
+        "model": llm_result.model,
         "timestamp": time.time(),
     }
 

@@ -37,7 +37,9 @@ Optional forward-compatible field:
 Run:
 
 ```bash
-python scripts/trace_uniform_check.py
+python scripts/trace_uniform_check.py --base-url http://127.0.0.1:8000
 ```
 
-This check is lightweight and validates trace field presence and shape against live endpoint behavior.
+This check validates trace field presence and shape against a running backend. It
+does not replace bridge results or fabricate a response; an unavailable backend
+is a failed check.

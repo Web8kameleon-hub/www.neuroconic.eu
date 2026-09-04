@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Changed
+
+- Replace in-process benchmark and trace checks with live HTTP checks against a
+  backend provided explicitly through `--base-url`; unavailable services now
+  fail the checks instead of producing synthetic evidence.
+- Update benchmark comparison to select only `live-benchmark-*` artifacts.
+- Add `scripts/release_readiness.py` and the release-readiness runbook for
+  deterministic repository gates plus optional live verification.
+- Align dev HTTP client constraints with the TestClient compatibility range.
+
+### Release blockers observed locally
+
+- The current active Python environment has Starlette `0.27.0` with httpx
+  `0.28.1`; that combination makes the existing TestClient tests fail before
+  endpoint assertions execute. Install the repository's declared development
+  dependencies in a clean environment before approving a release.
+- Existing test files still use monkeypatch-based test doubles. This conflicts
+  with the written No Fake policy even though the current scanner does not flag
+  every occurrence; they require a policy-aligned integration-test redesign.
+
 ## v1.0.13 - 2026-09-02
 
 Observability and evidence maturity release focused on SLO/error-budget formalization, uniform tracing validation, STRIDE threat modeling, and external benchmark evidence mapping.

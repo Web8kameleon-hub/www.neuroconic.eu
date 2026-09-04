@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
+"""Benchmark a running Neurosonic backend through its public HTTP API.
+
+This harness never changes runtime objects and never manufactures endpoint
+responses. It records measurements only from the server supplied with
+``--base-url``. A backend that is unavailable is a failed benchmark.
+"""
+
 from __future__ import annotations
 
 import argparse
 import json
 import statistics
-import sys
 import time
+import urllib.error
+import urllib.request
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from fastapi.testclient import TestClient
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-import backend.main as backend_main
-from neurosonic_lightning_bridge import LightningResult, ProcessingEngine
-
-
-@dataclass
+@dataclass(frozen=True)
 class TuningProfile:
     name: str
     iterations: int
@@ -28,241 +27,189 @@ class TuningProfile:
     long_prompt_size: int
 
 
-@dataclass
+@dataclass(frozen=True)
 class Scenario:
     name: str
     endpoint: str
     method: str
-    payload_factory: Callable[[TuningProfile], dict[str, Any]]
-    expected_status: int
-    verifier: Callable[[dict[str, Any]], bool]
-    mode: str
+    payload_factory: Callable[[TuningProfile], dict[str, Any] | None]
+    verifier: Callable[[int, dict[str, Any]], bool]
 
 
-PROFILES: dict[str, TuningProfile] = {
-    "quick": TuningProfile(name="quick", iterations=10, warmup=2, long_prompt_size=2048),
-    "standard": TuningProfile(name="standard", iterations=50, warmup=5, long_prompt_size=8192),
-    "stress": TuningProfile(name="stress", iterations=200, warmup=15, long_prompt_size=32768),
+PROFILES = {
+    "quick": TuningProfile("quick", iterations=10, warmup=2, long_prompt_size=2048),
+    "standard": TuningProfile("standard", iterations=50, warmup=5, long_prompt_size=8192),
+    "stress": TuningProfile("stress", iterations=200, warmup=15, long_prompt_size=32768),
 }
 
 
-def _percentile(sorted_values: list[float], q: float) -> float:
-    if not sorted_values:
-        return 0.0
-    if len(sorted_values) == 1:
-        return sorted_values[0]
-    index = (len(sorted_values) - 1) * q
-    low = int(index)
-    high = min(low + 1, len(sorted_values) - 1)
-    weight = index - low
-    return sorted_values[low] * (1.0 - weight) + sorted_values[high] * weight
+def _percentile(values: list[float], quantile: float) -> float:
+    if len(values) == 1:
+        return values[0]
+    index = (len(values) - 1) * quantile
+    lower = int(index)
+    upper = min(lower + 1, len(values) - 1)
+    return values[lower] * (1.0 - index + lower) + values[upper] * (index - lower)
 
 
-def _build_stub(mode: str) -> Callable[..., LightningResult]:
-    def _process(data: str, engine=ProcessingEngine.HYBRID, ai_enhance: bool = True) -> LightningResult:
-        if mode == "echo":
-            payload: Any = data
-        elif mode == "error":
-            payload = None
-        else:
-            payload = {
-                "provider": "benchmark-runtime",
-                "model": "benchmark-model-v1",
-                "generated_tokens": max(16, min(256, len(data) // 4)),
-                "answer": f"Processed {len(data)} chars safely",
-            }
-
-        status = "error" if mode == "error" else "completed"
-        error = "simulated_runtime_error" if mode == "error" else None
-        return LightningResult(
-            id="bench",
-            status=status,
-            data=payload,
-            hash="benchhash123",
-            timestamp=time.time(),
-            source=(engine.value if isinstance(engine, ProcessingEngine) else str(engine)),
-            confidence=0.95,
-            error=error,
-        )
-
-    return _process
+def _is_success(status: int, body: dict[str, Any]) -> bool:
+    return 200 <= status < 300 and body.get("success") is True
 
 
-def _verify_shell_success(payload: dict[str, Any]) -> bool:
+def _has_trace_contract(status: int, body: dict[str, Any]) -> bool:
+    trace = body.get("trace")
+    verification = body.get("verification")
     return (
-        payload.get("success") is True
-        and payload.get("status") == "completed"
-        and payload.get("verification", {}).get("reasoning_validated") is True
+        200 <= status < 300
+        and isinstance(trace, dict)
+        and isinstance(verification, dict)
+        and isinstance(trace.get("pipeline"), list)
+        and "reasoning_validated" in verification
     )
 
 
-def _verify_shell_empty(payload: dict[str, Any]) -> bool:
-    return payload.get("success") is False and payload.get("error") == "Prompt is empty"
-
-
-def _verify_shell_degraded(payload: dict[str, Any]) -> bool:
+def _rejects_private_address(status: int, body: dict[str, Any]) -> bool:
     return (
-        payload.get("success") is False
-        and payload.get("status") == "degraded"
-        and payload.get("trace", {}).get("echo_detected") is True
+        200 <= status < 300
+        and body.get("success") is False
+        and "private or local network" in str(body.get("error", ""))
     )
 
 
-def _verify_plugin_private(payload: dict[str, Any]) -> bool:
-    return payload.get("success") is False and "private or local network" in str(payload.get("error", ""))
+def _rejects_sensitive_metadata(status: int, body: dict[str, Any]) -> bool:
+    return (
+        200 <= status < 300
+        and body.get("success") is False
+        and "sensitive key" in str(body.get("error", ""))
+    )
 
 
-def _verify_plugin_sensitive(payload: dict[str, Any]) -> bool:
-    return payload.get("success") is False and "sensitive key" in str(payload.get("error", ""))
-
-
-def _verify_plugin_success(payload: dict[str, Any]) -> bool:
-    return payload.get("success") is True and payload.get("dna_immutable") is True
-
-
-def _build_scenarios() -> list[Scenario]:
+def _scenarios() -> list[Scenario]:
     return [
+        Scenario("api_health", "/api/health", "GET", lambda _: None, _is_success),
         Scenario(
-            name="shell_think_reasoning_success",
-            endpoint="/api/shell/think",
-            method="POST",
-            payload_factory=lambda _: {
-                "prompt": "Analyze policy conflicts and propose safe resolution.",
-                "task_type": "reasoning",
-            },
-            expected_status=200,
-            verifier=_verify_shell_success,
-            mode="success",
+            "shell_think_empty_prompt_edge",
+            "/api/shell/think",
+            "POST",
+            lambda _: {"prompt": "   ", "task_type": "reasoning"},
+            lambda status, body: (
+                200 <= status < 300
+                and body.get("success") is False
+                and body.get("error") == "Prompt is empty"
+            ),
         ),
         Scenario(
-            name="shell_think_empty_prompt_edge",
-            endpoint="/api/shell/think",
-            method="POST",
-            payload_factory=lambda _: {
-                "prompt": "   ",
+            "shell_think_contract",
+            "/api/shell/think",
+            "POST",
+            lambda _: {
+                "prompt": "Explain the active governance policy.",
                 "task_type": "reasoning",
             },
-            expected_status=200,
-            verifier=_verify_shell_empty,
-            mode="success",
+            _has_trace_contract,
         ),
         Scenario(
-            name="shell_think_echo_edge",
-            endpoint="/api/shell/think",
-            method="POST",
-            payload_factory=lambda _: {
-                "prompt": "go or no go",
-                "task_type": "reasoning",
-            },
-            expected_status=200,
-            verifier=_verify_shell_degraded,
-            mode="echo",
-        ),
-        Scenario(
-            name="shell_think_long_prompt_tuning",
-            endpoint="/api/shell/think",
-            method="POST",
-            payload_factory=lambda profile: {
+            "shell_think_long_prompt_edge",
+            "/api/shell/think",
+            "POST",
+            lambda profile: {
                 "prompt": "A" * profile.long_prompt_size,
                 "task_type": "reasoning",
             },
-            expected_status=200,
-            verifier=_verify_shell_success,
-            mode="success",
+            _has_trace_contract,
         ),
         Scenario(
-            name="plugin_attach_private_network_edge",
-            endpoint="/api/ui/plugins/bench-profile",
-            method="POST",
-            payload_factory=lambda _: {
-                "address": "http://127.0.0.1:8080",
-                "liability_ack": True,
-            },
-            expected_status=200,
-            verifier=_verify_plugin_private,
-            mode="success",
+            "plugin_attach_private_network_edge",
+            "/api/ui/plugins/bench-profile",
+            "POST",
+            lambda _: {"address": "http://127.0.0.1:8080", "liability_ack": True},
+            _rejects_private_address,
         ),
         Scenario(
-            name="plugin_attach_sensitive_metadata_edge",
-            endpoint="/api/ui/plugins/bench-profile",
-            method="POST",
-            payload_factory=lambda _: {
-                "address": "https://plugins.example.com/secure",
-                "liability_ack": True,
-                "metadata": {"api_key": "x"},
-            },
-            expected_status=200,
-            verifier=_verify_plugin_sensitive,
-            mode="success",
-        ),
-        Scenario(
-            name="plugin_attach_success_baseline",
-            endpoint="/api/ui/plugins/bench-profile",
-            method="POST",
-            payload_factory=lambda _: {
+            "plugin_attach_sensitive_metadata_edge",
+            "/api/ui/plugins/bench-profile",
+            "POST",
+            lambda _: {
                 "address": "https://plugins.example.com/connector",
                 "liability_ack": True,
-                "metadata": {"region": "eu-west"},
+                "metadata": {"api_key": "redacted"},
             },
-            expected_status=200,
-            verifier=_verify_plugin_success,
-            mode="success",
+            _rejects_sensitive_metadata,
         ),
     ]
 
 
-def _run_scenario(client: TestClient, scenario: Scenario, profile: TuningProfile) -> dict[str, Any]:
-    latencies_ms: list[float] = []
-    pass_count = 0
-    samples: list[dict[str, Any]] = []
-    total_calls = profile.iterations + profile.warmup
-
-    original_process = backend_main.bridge.process
-    backend_main.bridge.process = _build_stub(scenario.mode)
+def _request(
+    base_url: str,
+    scenario: Scenario,
+    payload: dict[str, Any] | None,
+    timeout: float,
+) -> tuple[int, dict[str, Any]]:
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    request = urllib.request.Request(
+        f"{base_url.rstrip('/')}{scenario.endpoint}",
+        data=data,
+        method=scenario.method,
+        headers={"Content-Type": "application/json"} if data is not None else {},
+    )
     try:
-        for call_index in range(total_calls):
-            payload = scenario.payload_factory(profile)
-            started = time.perf_counter()
-            response = client.request(scenario.method, scenario.endpoint, json=payload)
-            elapsed_ms = (time.perf_counter() - started) * 1000
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            status = response.status
+            raw = response.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as error:
+        status = error.code
+        raw = error.read().decode("utf-8", errors="replace")
+    body = json.loads(raw)
+    if not isinstance(body, dict):
+        raise ValueError(f"{scenario.name}: server returned a non-object JSON response")
+    return status, body
 
-            if call_index >= profile.warmup:
-                latencies_ms.append(elapsed_ms)
-                body = response.json()
-                ok = response.status_code == scenario.expected_status and scenario.verifier(body)
-                pass_count += int(ok)
-                if len(samples) < 3:
-                    samples.append(
-                        {
-                            "status_code": response.status_code,
-                            "success": body.get("success"),
-                            "status": body.get("status"),
-                            "error": body.get("error"),
-                        }
-                    )
-    finally:
-        backend_main.bridge.process = original_process
 
-    sorted_latencies = sorted(latencies_ms)
-    total_duration_s = sum(latencies_ms) / 1000 if latencies_ms else 0.0
-    throughput_rps = (len(latencies_ms) / total_duration_s) if total_duration_s > 0 else 0.0
-    mean_ms = statistics.mean(latencies_ms) if latencies_ms else 0.0
-    stdev_ms = statistics.pstdev(latencies_ms) if len(latencies_ms) > 1 else 0.0
-
+def _run_scenario(
+    base_url: str, scenario: Scenario, profile: TuningProfile, timeout: float
+) -> dict[str, Any]:
+    latencies: list[float] = []
+    passed = 0
+    samples: list[dict[str, Any]] = []
+    for index in range(profile.warmup + profile.iterations):
+        started = time.perf_counter()
+        status, body = _request(
+            base_url, scenario, scenario.payload_factory(profile), timeout
+        )
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        if index < profile.warmup:
+            continue
+        latencies.append(elapsed_ms)
+        passed += int(scenario.verifier(status, body))
+        if len(samples) < 3:
+            samples.append(
+                {
+                    "status_code": status,
+                    "success": body.get("success"),
+                    "status": body.get("status"),
+                    "error": body.get("error"),
+                }
+            )
+    ordered = sorted(latencies)
+    total_seconds = sum(latencies) / 1000
     return {
         "name": scenario.name,
         "endpoint": scenario.endpoint,
         "iterations": profile.iterations,
         "warmup": profile.warmup,
-        "pass_rate": (pass_count / profile.iterations) if profile.iterations else 0.0,
-        "throughput_rps": round(throughput_rps, 3),
+        "pass_rate": round(passed / profile.iterations, 4),
+        "throughput_rps": round(len(latencies) / total_seconds, 3)
+        if total_seconds
+        else 0.0,
         "latency_ms": {
-            "min": round(sorted_latencies[0], 3) if sorted_latencies else 0.0,
-            "p50": round(_percentile(sorted_latencies, 0.50), 3),
-            "p95": round(_percentile(sorted_latencies, 0.95), 3),
-            "max": round(sorted_latencies[-1], 3) if sorted_latencies else 0.0,
-            "mean": round(mean_ms, 3),
-            "stdev": round(stdev_ms, 3),
+            "min": round(ordered[0], 3),
+            "p50": round(_percentile(ordered, 0.50), 3),
+            "p95": round(_percentile(ordered, 0.95), 3),
+            "max": round(ordered[-1], 3),
+            "mean": round(statistics.mean(latencies), 3),
+            "stdev": round(statistics.pstdev(latencies), 3)
+            if len(latencies) > 1
+            else 0.0,
         },
         "samples": samples,
     }
@@ -270,29 +217,18 @@ def _run_scenario(client: TestClient, scenario: Scenario, profile: TuningProfile
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Neurosonic first benchmark: baseline, tuning and edge-case scenarios."
+        description="Measure a live Neurosonic backend via HTTP."
     )
     parser.add_argument(
-        "--profile",
-        choices=sorted(PROFILES.keys()),
-        default="quick",
-        help="Tuning profile to run.",
+        "--base-url", required=True, help="Running backend URL, e.g. http://127.0.0.1:8000"
     )
-    parser.add_argument("--iterations", type=int, default=None, help="Override profile iterations.")
-    parser.add_argument("--warmup", type=int, default=None, help="Override warmup iterations.")
-    parser.add_argument(
-        "--long-prompt-size",
-        type=int,
-        default=None,
-        help="Override long prompt size used in edge scenario.",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default=None,
-        help="Output JSON file path. Default: logs/benchmarks/first-benchmark-<ts>.json",
-    )
-    parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
+    parser.add_argument("--profile", choices=sorted(PROFILES), default="quick")
+    parser.add_argument("--iterations", type=int)
+    parser.add_argument("--warmup", type=int)
+    parser.add_argument("--long-prompt-size", type=int)
+    parser.add_argument("--timeout", type=float, default=30.0)
+    parser.add_argument("--output", help="JSON result path; default is under logs/benchmarks.")
+    parser.add_argument("--pretty", action="store_true")
     return parser.parse_args()
 
 
@@ -300,57 +236,54 @@ def main() -> int:
     args = _parse_args()
     selected = PROFILES[args.profile]
     profile = TuningProfile(
-        name=selected.name,
-        iterations=args.iterations if args.iterations is not None else selected.iterations,
-        warmup=args.warmup if args.warmup is not None else selected.warmup,
-        long_prompt_size=(
-            args.long_prompt_size
-            if args.long_prompt_size is not None
-            else selected.long_prompt_size
-        ),
+        selected.name,
+        args.iterations if args.iterations is not None else selected.iterations,
+        args.warmup if args.warmup is not None else selected.warmup,
+        args.long_prompt_size
+        if args.long_prompt_size is not None
+        else selected.long_prompt_size,
     )
-
-    if profile.iterations <= 0:
-        raise ValueError("iterations must be > 0")
-    if profile.warmup < 0:
-        raise ValueError("warmup must be >= 0")
-    if profile.long_prompt_size < 16:
-        raise ValueError("long_prompt_size must be >= 16")
-
-    started = time.time()
-    client = TestClient(backend_main.app)
-    scenarios = _build_scenarios()
-    results = [_run_scenario(client, scenario, profile) for scenario in scenarios]
-
-    overall_pass_rate = statistics.mean([entry["pass_rate"] for entry in results]) if results else 0.0
-    output = {
-        "benchmark": "neurosonic-first-benchmark",
-        "created_at": started,
+    if (
+        profile.iterations <= 0
+        or profile.warmup < 0
+        or profile.long_prompt_size < 16
+        or args.timeout <= 0
+    ):
+        raise ValueError(
+            "iterations > 0, warmup >= 0, long-prompt-size >= 16 dhe timeout > 0 kërkohen"
+        )
+    created_at = time.time()
+    results = [
+        _run_scenario(args.base_url, item, profile, args.timeout)
+        for item in _scenarios()
+    ]
+    report = {
+        "benchmark": "neurosonic-live-http-benchmark",
+        "created_at": created_at,
+        "base_url": args.base_url,
         "profile": asdict(profile),
         "totals": {
             "scenario_count": len(results),
-            "overall_pass_rate": round(overall_pass_rate, 4),
+            "overall_pass_rate": round(
+                statistics.mean(item["pass_rate"] for item in results), 4
+            ),
         },
         "results": results,
     }
-
     output_path = Path(args.output) if args.output else Path(
-        "logs/benchmarks/first-benchmark-" + time.strftime("%Y%m%d-%H%M%S") + ".json"
+        "logs/benchmarks/live-benchmark-" + time.strftime("%Y%m%d-%H%M%S") + ".json"
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
-        json.dumps(output, indent=2 if args.pretty else None, ensure_ascii=False),
+        json.dumps(report, ensure_ascii=False, indent=2 if args.pretty else None) + "\n",
         encoding="utf-8",
     )
-
     print(f"Benchmark completed: {output_path}")
     print(
-        "Overall pass rate: "
-        f"{output['totals']['overall_pass_rate']:.2%} | "
-        f"Scenarios: {output['totals']['scenario_count']} | "
-        f"Profile: {profile.name}"
+        f"Overall pass rate: {report['totals']['overall_pass_rate']:.2%} | "
+        f"Scenarios: {report['totals']['scenario_count']}"
     )
-    return 0
+    return 0 if report["totals"]["overall_pass_rate"] == 1.0 else 1
 
 
 if __name__ == "__main__":

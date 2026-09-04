@@ -231,7 +231,7 @@ pytest -q tests/test_public_samples.py tests/test_examples_smoke.py
 Run the initial benchmark harness:
 
 ```bash
-python scripts/benchmark_first.py --profile quick --pretty
+python scripts/benchmark_first.py --base-url http://127.0.0.1:8000 --profile quick --pretty
 ```
 
 Available tuning profiles:
@@ -243,7 +243,7 @@ Available tuning profiles:
 Useful overrides:
 
 ```bash
-python scripts/benchmark_first.py --profile standard --iterations 80 --warmup 10 --long-prompt-size 16384 --pretty
+python scripts/benchmark_first.py --base-url http://127.0.0.1:8000 --profile standard --iterations 80 --warmup 10 --long-prompt-size 16384 --pretty
 ```
 
 What it measures in one run:
@@ -253,7 +253,7 @@ What it measures in one run:
 - `/api/ui/plugins/{profile_id}` edge/security checks (private network, sensitive metadata)
 - plugin attach success baseline
 
-Output is written to `logs/benchmarks/first-benchmark-<timestamp>.json` with latency (`min`, `p50`, `p95`, `max`, `mean`, `stdev`), throughput (`rps`), and pass-rate per scenario.
+Output is written to `logs/benchmarks/live-benchmark-<timestamp>.json` with latency (`min`, `p50`, `p95`, `max`, `mean`, `stdev`), throughput (`rps`), and pass-rate per live scenario. The backend URL is required; unavailable services fail the run.
 
 Kontrata për shell + NodeDB Fluid (anti-konflikt cross-language):
 
@@ -353,7 +353,7 @@ python scripts/observability_slo_snapshot.py --pretty
 Valido tracing contract-in në endpoint real:
 
 ```bash
-python scripts/trace_uniform_check.py
+python scripts/trace_uniform_check.py --base-url http://127.0.0.1:8000
 ```
 
 Artefaktet e observability ruhen te:
@@ -370,7 +370,7 @@ Krahason dy benchmark outputs reale dhe prodhon raport JSON + Markdown:
 python scripts/benchmark_compare.py --pretty
 ```
 
-Default behavior: përdor dy skedarët më të fundit te `logs/benchmarks/first-benchmark-*.json`.
+Default behavior: përdor dy skedarët më të fundit te `logs/benchmarks/live-benchmark-*.json`.
 
 Artefaktet ruhen te:
 

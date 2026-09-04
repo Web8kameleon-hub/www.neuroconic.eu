@@ -41,7 +41,7 @@
   "local_mapping": {
     "service_under_test": "www.neurosonic.eu backend endpoints",
     "local_benchmark_artifacts": [
-      "logs/benchmarks/first-benchmark-*.json",
+      "logs/benchmarks/live-benchmark-*.json",
       "docs/production/evidence/benchmark_compare_latest.json"
     ],
     "mapping_notes": [

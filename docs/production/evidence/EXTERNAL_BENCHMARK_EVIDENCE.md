@@ -20,7 +20,7 @@ This document records external benchmark references and how they are mapped to l
 ## Local Evidence Mapping
 
 - Local benchmark artifacts:
-  - `logs/benchmarks/first-benchmark-*.json`
+  - `logs/benchmarks/live-benchmark-*.json`
   - `docs/production/evidence/benchmark_compare_latest.json`
   - `docs/production/evidence/benchmark_compare_latest.md`
 - Observability evidence:
@@ -31,7 +31,7 @@ This document records external benchmark references and how they are mapped to l
 ## Credibility Boundary
 
 - This repository **does not claim external rank parity** unless tests are run with the same harness and comparable hardware/network conditions.
-- Current evidence demonstrates:
-  - local empirical benchmarks,
+- Current evidence demonstrates, after live runs are collected:
+  - local HTTP benchmark measurements,
   - explicit methodology references,
   - and transparent limitations.

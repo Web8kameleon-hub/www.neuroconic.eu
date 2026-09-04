@@ -45,9 +45,11 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 
 def _pick_latest_two(benchmarks_dir: Path) -> tuple[Path, Path]:
-    files = sorted(benchmarks_dir.glob("first-benchmark-*.json"), key=lambda item: item.stat().st_mtime)
+    files = sorted(
+        benchmarks_dir.glob("live-benchmark-*.json"), key=lambda item: item.stat().st_mtime
+    )
     if len(files) < 2:
-        raise ValueError("Need at least two benchmark files in logs/benchmarks to compare.")
+        raise ValueError("Need at least two live benchmark files in logs/benchmarks to compare.")
     return files[-2], files[-1]
 
 

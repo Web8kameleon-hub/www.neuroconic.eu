@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-BENCHMARK_GLOB = "first-benchmark-*.json"
+BENCHMARK_GLOB = "live-benchmark-*.json"
 
 
 def _parse_args() -> argparse.Namespace:
@@ -17,7 +17,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--benchmarks-dir",
         default="logs/benchmarks",
-        help="Directory containing first benchmark JSON files.",
+        help="Directory containing live benchmark JSON files.",
     )
     parser.add_argument(
         "--evidence-dir",
@@ -103,14 +103,14 @@ def _build_latency_trend(points: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _build_availability_trend(points: list[dict[str, Any]]) -> dict[str, Any]:
     return {
-        "metric": "availability",
+        "metric": "scenario_contract_pass_rate",
         "unit": "percent",
-        "definition": "Derived from benchmark overall_pass_rate for tracked scenarios.",
+        "definition": "Derived from live benchmark scenario contract pass rates; not service availability.",
         "series": [
             {
                 "date_utc": item["date_utc"],
                 "profile": item["profile"],
-                "availability_percent": item["availability_percent"],
+                "scenario_contract_pass_percent": item["availability_percent"],
                 "overall_pass_rate": item["overall_pass_rate"],
                 "source": item["file"],
             }

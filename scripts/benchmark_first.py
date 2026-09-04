@@ -52,8 +52,14 @@ def _percentile(values: list[float], quantile: float) -> float:
     return values[lower] * (1.0 - index + lower) + values[upper] * (index - lower)
 
 
-def _is_success(status: int, body: dict[str, Any]) -> bool:
-    return 200 <= status < 300 and body.get("success") is True
+def _is_healthy(status: int, body: dict[str, Any]) -> bool:
+    """Validate the documented health endpoint contract.
+
+    Health replies carry ``status: healthy`` rather than the action-endpoint
+    ``success`` flag, so treating them as interchangeable makes a clean
+    production benchmark fail by construction.
+    """
+    return 200 <= status < 300 and body.get("status") == "healthy"
 
 
 def _has_trace_contract(status: int, body: dict[str, Any]) -> bool:
@@ -86,7 +92,7 @@ def _rejects_sensitive_metadata(status: int, body: dict[str, Any]) -> bool:
 
 def _scenarios() -> list[Scenario]:
     return [
-        Scenario("api_health", "/api/health", "GET", lambda _: None, _is_success),
+        Scenario("api_health", "/api/health", "GET", lambda _: None, _is_healthy),
         Scenario(
             "shell_think_empty_prompt_edge",
             "/api/shell/think",

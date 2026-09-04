@@ -41,6 +41,7 @@ from neurosonic_lightning_bridge import (
     PrintQuality,
     ProcessingEngine,
 )
+from neurosonic_llm_bridge import OllamaBridge
 from neurosonic_ui_designer import PersonalNodeStore, UIDesignEngine
 
 app = FastAPI(
@@ -68,6 +69,7 @@ genome = NeurosonicGenome()
 matrix = NeurosonicCompatibilityMatrix(dna, genome)
 evolution = NeurosonicEvolutionEngine(dna, genome)
 bridge = NeurosonicLightningBridge(dna=dna, genome=genome)
+llm_bridge = OllamaBridge()
 selten_analyzer = SeltenDatenAnalyzer()
 pliris_filter = PlirisDatenFilter()
 self_learning = SelfLearningCycleManager()
@@ -400,12 +402,15 @@ async def ui_composer():
 async def health():
     lightning_service = bridge._check_health()
     bridge.service_available = lightning_service
+    llm_service = llm_bridge.is_available()
     return {
         "status": "healthy",
         "timestamp": time.time(),
         "dna_integrity": dna._hash == dna._compute_dna_hash(),
         "genome_packages": len(genome.packages),
         "lightning_service": lightning_service,
+        "llm_service": llm_service,
+        "llm_model": llm_bridge.model,
         "api_version": "1.0.0",
     }
 
@@ -883,24 +888,6 @@ async def shell_think(req: ShellThinkRequest):
     def _normalize_for_echo(text: str) -> str:
         return " ".join((text or "").split()).strip().lower()
 
-    def _extract_runtime_metadata(result_data: Any) -> tuple[str | None, str | None, int | None]:
-        if not isinstance(result_data, dict):
-            return None, None, None
-
-        provider = result_data.get("provider") or result_data.get("source")
-        model = result_data.get("model") or result_data.get("model_name")
-        generated_tokens_raw = (
-            result_data.get("generated_tokens")
-            or result_data.get("tokens")
-            or result_data.get("eval_count")
-        )
-        try:
-            generated_tokens = int(generated_tokens_raw) if generated_tokens_raw is not None else None
-        except (TypeError, ValueError):
-            generated_tokens = None
-
-        return provider, model, generated_tokens
-
     def _trace_step(
         step: str,
         component: str,
@@ -1098,32 +1085,37 @@ async def shell_think(req: ShellThinkRequest):
             "sources": [bridge.base_url],
         }
 
-    output_text = ""
-    if isinstance(result.data, (dict, list)):
-        output_text = json.dumps(result.data, ensure_ascii=False)
-    elif result.data is None:
-        output_text = ""
-    else:
-        output_text = str(result.data)
-        if output_text and len(output_text) % 2 == 0:
-            try:
-                output_text = bytes.fromhex(output_text).decode("utf-8")
-            except ValueError:
-                pass
+    llm_result = llm_bridge.generate(prompt)
+    llm_output_hash = hashlib.sha256(llm_result.text.encode("utf-8")).hexdigest() if llm_result.text else ""
+    pipeline_trace.append(
+        _trace_step(
+            step="llm_generate",
+            component="pipeline.llm",
+            entered=True,
+            status="error" if llm_result.error else "ok",
+            duration_ms=llm_result.elapsed_ms,
+            input_hash_value=input_hash,
+            output_hash_value=llm_output_hash,
+            details={"provider": llm_result.provider, "model": llm_result.model, "error": llm_result.error},
+        )
+    )
 
+    output_text = llm_result.text
     output_hash = hashlib.sha256(output_text.encode("utf-8")).hexdigest()
-    echo_detected = _normalize_for_echo(output_text) == _normalize_for_echo(prompt)
-    provider, model, generated_tokens = _extract_runtime_metadata(result.data)
+    echo_detected = bool(output_text) and _normalize_for_echo(output_text) == _normalize_for_echo(prompt)
+    provider, model, generated_tokens = llm_result.provider, llm_result.model, llm_result.tokens
     has_non_empty_output = bool(output_text.strip())
-    reasoning_validated = has_non_empty_output and not echo_detected
+    reasoning_validated = has_non_empty_output and not echo_detected and not llm_result.error
+    elapsed_ms = (time.time() - started_at) * 1000
 
     if not reasoning_validated:
         execution_status = "degraded" if echo_detected else "failed"
-        failure_reason = (
-            "Echo response detected; no generated reasoning output from provider"
-            if echo_detected
-            else "No reasoning output returned by provider"
-        )
+        if echo_detected:
+            failure_reason = "Echo response detected; no generated reasoning output from provider"
+        elif llm_result.error:
+            failure_reason = f"LLM provider error: {llm_result.error}"
+        else:
+            failure_reason = "No reasoning output returned by provider"
 
         pipeline_trace.extend(
             [

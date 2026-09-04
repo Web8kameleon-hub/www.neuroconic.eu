@@ -1,6 +1,35 @@
 name: neurosonic
 
 services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: "30m"
+    volumes:
+      - ollama-data:/root/.ollama
+    expose:
+      - "11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama pull ${OLLAMA_MODEL:-deepseek-r1:7b}"]
+
   lightning-spp:
     build:
       context: ./repos/Lightning-SPP-3.14
@@ -34,9 +63,13 @@ services:
     depends_on:
       lightning-spp:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     environment:
       NEUROSONIC_MODE: production
       LIGHTNING_SPP_URL: http://lightning-spp:8080
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:7b}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://neurosonic.eu,https://www.neurosonic.eu}
       PYTHONUNBUFFERED: "1"
       PYTHONUTF8: "1"
@@ -62,9 +95,13 @@ services:
     depends_on:
       lightning-spp:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     environment:
       NEUROSONIC_MODE: production
       LIGHTNING_SPP_URL: http://lightning-spp:8080
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:7b}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://neurosonic.eu,https://www.neurosonic.eu}
       PYTHONUNBUFFERED: "1"
       PYTHONUTF8: "1"
@@ -109,3 +146,4 @@ volumes:
   spp-memory:
   backend-memory:
   backend-logs:
+  ollama-data:

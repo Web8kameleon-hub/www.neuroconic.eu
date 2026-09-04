@@ -51,32 +51,32 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>🧠 Krijo panelin tënd</h1>
-    <p class="muted">Thjesht më thuaj çfarë do të shohësh — s'ke nevojë të dish kodim. Bëhu kreativ, unë kujdesem për pjesën teknike.</p>
+    <h1>🧠 Build Your Panel</h1>
+    <p class="muted">Just tell me what you'd like to see — no coding knowledge needed. Be creative, I'll handle the technical part.</p>
 
     <div class="card">
       <div id="chatLog" class="chat-log">
         <div class="msg assistant">
-          Përshëndetje! 👋 Unë jam ndihmësi yt për të krijuar panelin personal.
-          Më thuaj çfarë do të doje të shihje — p.sh. "dua një panel me motin, listën e detyrave
-          dhe një hartë të aktivitetit tim" — dhe unë e ndërtoj menjëherë.
+          Hi there! 👋 I'm your assistant for building your personal panel.
+          Tell me what you'd like to see — e.g. "I want a panel with the weather, a to-do list,
+          and a map of my activity" — and I'll build it right away.
         </div>
       </div>
       <div class="chat-input-row">
-        <textarea id="chatInput" placeholder="Shkruaj këtu çfarë dëshiron... (Enter për të dërguar, Shift+Enter për rresht të ri)"></textarea>
-        <button id="sendBtn" class="send-btn" onclick="sendChatMessage()">Dërgo</button>
+        <textarea id="chatInput" placeholder="Type what you'd like here... (Enter to send, Shift+Enter for a new line)"></textarea>
+        <button id="sendBtn" class="send-btn" onclick="sendChatMessage()">Send</button>
       </div>
     </div>
 
     <div class="card">
-      <h3>👀 Pamja e panelit tënd</h3>
+      <h3>👀 Your Panel Preview</h3>
       <div id="widgets" class="widgets">
-        <div class="empty-hint">Kur të flasësh me ndihmësin më sipër, panelin do ta shohësh këtu.</div>
+        <div class="empty-hint">Once you chat with the assistant above, your panel will appear here.</div>
       </div>
     </div>
 
     <details class="advanced">
-      <summary>⚙️ Opsione të avancuara (për përdorues teknikë)</summary>
+      <summary>⚙️ Advanced options (for technical users)</summary>
 
       <div class="card top-gap-sm">
         <div class="grid">
@@ -240,7 +240,7 @@
       container.innerHTML = "";
       const widgets = (schema && schema.widgets) || [];
       if (widgets.length === 0) {
-        container.innerHTML = '<div class="empty-hint">Kur të flasësh me ndihmësin më sipër, panelin do ta shohësh këtu.</div>';
+        container.innerHTML = '<div class="empty-hint">Once you chat with the assistant above, your panel will appear here.</div>';
         return;
       }
       for (const widget of widgets) {
@@ -280,8 +280,8 @@
 
         typingEl.remove();
         const reply = data.reply || (data.success
-          ? "Ja panelin tënd i ri!"
-          : "Diçka shkoi keq, provo përsëri.");
+          ? "Here's your new panel!"
+          : "Something went wrong, please try again.");
         appendMessage("assistant", reply);
         chatHistory.push({ role: "assistant", content: reply });
 
@@ -290,7 +290,7 @@
         }
       } catch (err) {
         typingEl.remove();
-        appendMessage("system", "Gabim lidhjeje: " + err.message + ". Provo përsëri.");
+        appendMessage("system", "Connection error: " + err.message + ". Please try again.");
       } finally {
         input.disabled = false;
         sendBtn.disabled = false;

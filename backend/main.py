@@ -35,7 +35,6 @@ from neurosonic_data_intelligence import (
 from neurosonic_dna import NeurosonicDNA
 from neurosonic_evolution import NeurosonicEvolutionEngine
 from neurosonic_genome import NeurosonicGenome
-from neurosonic_lang72 import build_language_instruction, detect_language
 from neurosonic_lightning_bridge import (
     LightningMode,
     NeurosonicLightningBridge,
@@ -578,7 +577,7 @@ what personal dashboard/panel they want. Never mention JSON, schemas, APIs, or c
 
 You must reply with ONLY a single JSON object (no markdown fences, no extra text) with this shape:
 {
-  "reply": "a short, warm, conversational reply in the user's own language explaining what you built or asking one simple follow-up question",
+  "reply": "a short, warm, conversational reply IN ENGLISH explaining what you built or asking one simple follow-up question",
   "title": "a short friendly title for the panel",
   "widgets": [
     {"type": "hero|timeline|status|markdown|list|counter|calendar|weather|console|image-dropzone|policy-grid|chat|links|table|chart",
@@ -586,6 +585,8 @@ You must reply with ONLY a single JSON object (no markdown fences, no extra text
   ]
 }
 
+Always reply in English, regardless of what language the user writes in - this
+product is used by a global, English-speaking audience.
 Keep "reply" human, encouraging and creative - like a helpful designer friend, never robotic.
 If the request is vague, still produce a reasonable first draft of widgets and ask one clarifying
 question in "reply". Always output valid JSON and nothing else."""
@@ -611,11 +612,11 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
 
 @app.post("/api/ui/chat")
 async def ui_chat(req: UIChatRequest, request: Request):
-    """Krijon/përditëson panelin e përdoruesit përmes një bisede njerëzore.
+    """Conversational endpoint to create/update the user's personal panel.
 
-    Ndryshe nga /api/ui/design (që kërkon prompt teknik + preferences JSON),
-    ky endpoint pranon vetëm mesazhin e lirë të përdoruesit dhe kthen një
-    përgjigje bisedore plus skemën e re/të përditësuar të panelit.
+    Unlike /api/ui/design (which requires a technical prompt + preferences
+    JSON), this endpoint accepts only the user's free-form message and
+    returns a conversational reply plus the new/updated panel schema.
     """
     owner_id = _resolve_trusted_owner_id(request)
     message = req.message.strip()
@@ -623,7 +624,7 @@ async def ui_chat(req: UIChatRequest, request: Request):
     if not message:
         return {
             "success": False,
-            "reply": "Më thuaj pak fjalë për panelin që dëshiron dhe fillojmë menjëherë!",
+            "reply": "Tell me a bit about the panel you'd like, and we'll get started right away!",
             "profile_id": req.profile_id,
             "schema": None,
             "timestamp": time.time(),
@@ -641,24 +642,18 @@ async def ui_chat(req: UIChatRequest, request: Request):
         "Respond now with the JSON object described in your instructions."
     )
 
-    detected_lang = detect_language(message)
-    chat_system_prompt = (
-        f"{_UI_CHAT_SYSTEM_PROMPT}\n\n{build_language_instruction(detected_lang)}\n"
-        'This language rule applies only to the "reply" text value - JSON field '
-        'names (reply, title, widgets, type, etc.) must stay exactly as specified above.'
-    )
-    llm_result = llm_bridge.generate(llm_prompt, system=chat_system_prompt)
+    llm_result = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
     plan = _extract_json_object(llm_result.text) if llm_result.text else None
 
     if llm_result.error or not plan:
-        # LLM nuk u përgjigj ose s'ktheu JSON të vlefshëm: asnjë fake success,
-        # thjesht një përgjigje e ndershme dhe skema ekzistuese (nëse ka).
+        # LLM didn't respond, or returned text that wasn't valid JSON: never
+        # fake success, just an honest message and the existing schema (if any).
         return {
             "success": False,
             "reply": (
-                "Nuk arrita ta gjeneroj panelin këtë herë "
-                f"({llm_result.error or 'përgjigje e paformatuar'}). Provo ta rithuash "
-                "kërkesën me pak fjalë të tjera."
+                "I couldn't generate the panel this time "
+                f"({llm_result.error or 'unformatted response'}). Please try "
+                "rephrasing your request."
             ),
             "profile_id": req.profile_id,
             "schema": existing_schema,
@@ -683,7 +678,7 @@ async def ui_chat(req: UIChatRequest, request: Request):
 
     reply_text = plan.get("reply")
     if not isinstance(reply_text, str) or not reply_text.strip():
-        reply_text = "Ja panelin tënd të ri! Më thuaj çfarë të ndryshoj."
+        reply_text = "Here's your new panel! Let me know what you'd like to change."
 
     return {
         "success": True,
@@ -1018,6 +1013,12 @@ async def self_learning_cycles(limit: int = 20):
     return self_learning.get_cycles(limit=limit)
 
 
+_SHELL_THINK_SYSTEM_PROMPT = (
+    "Always reply in English, regardless of what language the user writes in - "
+    "this product is used by a global, English-speaking audience."
+)
+
+
 @app.post("/api/shell/think")
 async def shell_think(req: ShellThinkRequest):
     started_at = time.time()
@@ -1225,8 +1226,7 @@ async def shell_think(req: ShellThinkRequest):
             "sources": [bridge.base_url],
         }
 
-    detected_lang = detect_language(prompt)
-    llm_result = llm_bridge.generate(prompt, system=build_language_instruction(detected_lang))
+    llm_result = llm_bridge.generate(prompt, system=_SHELL_THINK_SYSTEM_PROMPT)
     llm_output_hash = hashlib.sha256(llm_result.text.encode("utf-8")).hexdigest() if llm_result.text else ""
     pipeline_trace.append(
         _trace_step(

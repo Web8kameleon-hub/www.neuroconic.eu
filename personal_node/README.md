@@ -9,6 +9,10 @@ This folder contains local-first assets for user-created personal dashboards.
 
 ## Backend endpoints
 
+- `POST /api/ui/chat` conversational endpoint: send a free-form message
+  (no JSON/preferences needed), get back a human reply plus the generated
+  panel schema. Powers the chat-first experience in
+  `ui_composer_dynamic.html` for non-technical users.
 - `POST /api/ui/design` generate a schema from prompt + preferences and optionally save.
 - `GET /api/ui/panels` list saved profiles.
 - `GET /api/ui/panels/{profile_id}` load one profile.

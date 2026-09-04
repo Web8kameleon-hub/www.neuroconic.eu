@@ -41,6 +41,7 @@ from neurosonic_lightning_bridge import (
     PrintQuality,
     ProcessingEngine,
 )
+from neurosonic_llm_bridge import OllamaBridge
 from neurosonic_ui_designer import PersonalNodeStore, UIDesignEngine
 
 app = FastAPI(
@@ -68,6 +69,7 @@ genome = NeurosonicGenome()
 matrix = NeurosonicCompatibilityMatrix(dna, genome)
 evolution = NeurosonicEvolutionEngine(dna, genome)
 bridge = NeurosonicLightningBridge(dna=dna, genome=genome)
+llm_bridge = OllamaBridge()
 selten_analyzer = SeltenDatenAnalyzer()
 pliris_filter = PlirisDatenFilter()
 self_learning = SelfLearningCycleManager()
@@ -153,6 +155,19 @@ class UIDesignRequest(BaseModel):
     profile_id: str = "default"
     owner_id: str = "local-user"
     preferences: dict[str, Any] = Field(default_factory=dict)
+    save: bool = True
+
+
+class UIChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class UIChatRequest(BaseModel):
+    message: str
+    profile_id: str = "default"
+    owner_id: str = "local-user"
+    history: list[UIChatMessage] = Field(default_factory=list)
     save: bool = True
 
 
@@ -451,12 +466,15 @@ async def ui_composer():
 async def health():
     lightning_service = bridge._check_health()
     bridge.service_available = lightning_service
+    llm_service = llm_bridge.is_available()
     return {
         "status": "healthy",
         "timestamp": time.time(),
         "dna_integrity": dna._hash == dna._compute_dna_hash(),
         "genome_packages": len(genome.packages),
         "lightning_service": lightning_service,
+        "llm_service": llm_service,
+        "llm_model": llm_bridge.model,
         "api_version": "1.0.14",
     }
 
@@ -600,6 +618,128 @@ async def create_ui_design(req: UIDesignRequest, request: Request):
         "schema": schema,
         "saved": req.save,
         "storage": save_meta,
+        "timestamp": time.time(),
+    }
+
+
+_UI_CHAT_SYSTEM_PROMPT = """You are a friendly, non-technical UI design assistant inside Neurosonic.
+You talk to everyday people who have never coded and just describe, in their own words,
+what personal dashboard/panel they want. Never mention JSON, schemas, APIs, or code to the user.
+
+You must reply with ONLY a single JSON object (no markdown fences, no extra text) with this shape:
+{
+  "reply": "a short, warm, conversational reply IN ENGLISH explaining what you built or asking one simple follow-up question",
+  "title": "a short friendly title for the panel",
+  "widgets": [
+    {"type": "hero|timeline|status|markdown|list|counter|calendar|weather|console|image-dropzone|policy-grid|chat|links|table|chart",
+     "title": "widget title", "col": 12, "content": "optional text content"}
+  ]
+}
+
+Always reply in English, regardless of what language the user writes in - this
+product is used by a global, English-speaking audience.
+Keep "reply" human, encouraging and creative - like a helpful designer friend, never robotic.
+If the request is vague, still produce a reasonable first draft of widgets and ask one clarifying
+question in "reply". Always output valid JSON and nothing else."""
+
+
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    """Nxjerr objektin e parë JSON të vlefshëm nga teksti i LLM-it.
+
+    Modelet lokale ndonjëherë shtojnë tekst përpara/pas JSON-it (p.sh.
+    <think> blloqe arsyetimi). Kjo funksion gjen kllapën e parë '{' dhe
+    përpiqet të parse-ojë progresivisht deri te kllapa përfundimtare '}'.
+    """
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    try:
+        parsed = json.loads(text[start : end + 1])
+        return parsed if isinstance(parsed, dict) else None
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
+@app.post("/api/ui/chat")
+async def ui_chat(req: UIChatRequest, request: Request):
+    """Conversational endpoint to create/update the user's personal panel.
+
+    Unlike /api/ui/design (which requires a technical prompt + preferences
+    JSON), this endpoint accepts only the user's free-form message and
+    returns a conversational reply plus the new/updated panel schema.
+    """
+    owner_id = _resolve_trusted_owner_id(request)
+    message = req.message.strip()
+
+    if not message:
+        return {
+            "success": False,
+            "reply": "Tell me a bit about the panel you'd like, and we'll get started right away!",
+            "profile_id": req.profile_id,
+            "schema": None,
+            "timestamp": time.time(),
+        }
+
+    existing = personal_node_store.load_profile(req.profile_id)
+    existing_schema = existing.get("schema") if isinstance(existing, dict) else None
+
+    history_text = "\n".join(f"{item.role}: {item.content}" for item in req.history[-6:])
+    context_note = (
+        f"\nExisting panel title: {existing_schema.get('title')}" if existing_schema else ""
+    )
+    llm_prompt = (
+        f"{history_text}\nuser: {message}{context_note}\n\n"
+        "Respond now with the JSON object described in your instructions."
+    )
+
+    llm_result = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
+    plan = _extract_json_object(llm_result.text) if llm_result.text else None
+
+    if llm_result.error or not plan:
+        # LLM didn't respond, or returned text that wasn't valid JSON: never
+        # fake success, just an honest message and the existing schema (if any).
+        return {
+            "success": False,
+            "reply": (
+                "I couldn't generate the panel this time "
+                f"({llm_result.error or 'unformatted response'}). Please try "
+                "rephrasing your request."
+            ),
+            "profile_id": req.profile_id,
+            "schema": existing_schema,
+            "llm_error": llm_result.error,
+            "timestamp": time.time(),
+        }
+
+    widget_plan = plan.get("widgets") if isinstance(plan.get("widgets"), list) else None
+    schema = ui_designer.generate_schema(
+        prompt=message,
+        preferences={},
+        owner_id=owner_id,
+        widget_plan=widget_plan,
+        title_override=plan.get("title") if isinstance(plan.get("title"), str) else None,
+    )
+    if isinstance(existing_schema, dict) and existing_schema.get("integrations", {}).get("plugins"):
+        schema["integrations"]["plugins"] = existing_schema["integrations"]["plugins"]
+
+    save_meta = None
+    if req.save:
+        save_meta = personal_node_store.save_profile(req.profile_id, schema)
+
+    reply_text = plan.get("reply")
+    if not isinstance(reply_text, str) or not reply_text.strip():
+        reply_text = "Here's your new panel! Let me know what you'd like to change."
+
+    return {
+        "success": True,
+        "reply": reply_text.strip(),
+        "profile_id": req.profile_id,
+        "schema": schema,
+        "saved": req.save,
+        "storage": save_meta,
+        "provider": llm_result.provider,
+        "model": llm_result.model,
         "timestamp": time.time(),
     }
 
@@ -924,6 +1064,12 @@ async def self_learning_cycles(limit: int = 20):
     return self_learning.get_cycles(limit=limit)
 
 
+_SHELL_THINK_SYSTEM_PROMPT = (
+    "Always reply in English, regardless of what language the user writes in - "
+    "this product is used by a global, English-speaking audience."
+)
+
+
 @app.post("/api/shell/think")
 async def shell_think(req: ShellThinkRequest):
     started_at = time.time()
@@ -1107,32 +1253,37 @@ async def shell_think(req: ShellThinkRequest):
             "sources": [bridge.base_url],
         }
 
-    output_text = ""
-    if isinstance(result.data, (dict, list)):
-        output_text = json.dumps(result.data, ensure_ascii=False)
-    elif result.data is None:
-        output_text = ""
-    else:
-        output_text = str(result.data)
-        if output_text and len(output_text) % 2 == 0:
-            try:
-                output_text = bytes.fromhex(output_text).decode("utf-8")
-            except ValueError:
-                pass
+    llm_result = llm_bridge.generate(prompt, system=_SHELL_THINK_SYSTEM_PROMPT)
+    llm_output_hash = hashlib.sha256(llm_result.text.encode("utf-8")).hexdigest() if llm_result.text else ""
+    pipeline_trace.append(
+        _trace_step(
+            step="llm_generate",
+            component="pipeline.llm",
+            entered=True,
+            status="error" if llm_result.error else "ok",
+            duration_ms=llm_result.elapsed_ms,
+            input_hash_value=input_hash,
+            output_hash_value=llm_output_hash,
+            details={"provider": llm_result.provider, "model": llm_result.model, "error": llm_result.error},
+        )
+    )
 
+    output_text = llm_result.text
     output_hash = hashlib.sha256(output_text.encode("utf-8")).hexdigest()
-    echo_detected = _normalize_for_echo(output_text) == _normalize_for_echo(prompt)
-    provider, model, generated_tokens = _extract_runtime_metadata(result.data)
+    echo_detected = bool(output_text) and _normalize_for_echo(output_text) == _normalize_for_echo(prompt)
+    provider, model, generated_tokens = llm_result.provider, llm_result.model, llm_result.tokens
     has_non_empty_output = bool(output_text.strip())
-    reasoning_validated = has_non_empty_output and not echo_detected
+    reasoning_validated = has_non_empty_output and not echo_detected and not llm_result.error
+    elapsed_ms = (time.time() - started_at) * 1000
 
     if not reasoning_validated:
         execution_status = "degraded" if echo_detected else "failed"
-        failure_reason = (
-            "Echo response detected; no generated reasoning output from provider"
-            if echo_detected
-            else "No reasoning output returned by provider"
-        )
+        if echo_detected:
+            failure_reason = "Echo response detected; no generated reasoning output from provider"
+        elif llm_result.error:
+            failure_reason = f"LLM provider error: {llm_result.error}"
+        else:
+            failure_reason = "No reasoning output returned by provider"
 
         pipeline_trace.extend(
             [

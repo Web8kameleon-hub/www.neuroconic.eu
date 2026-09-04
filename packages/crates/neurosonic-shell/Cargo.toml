@@ -1,6 +1,6 @@
 [package]
 name = "neurosonic-shell"
-version = "1.0.0"
+version = "1.0.14"
 edition = "2021"
 description = "Real-service Neurosonic shell and API client (no mock)."
 homepage = "https://neurosonic.eu"

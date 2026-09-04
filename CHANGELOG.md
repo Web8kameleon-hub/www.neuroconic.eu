@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## Unreleased
+## v1.0.14 - 2026-09-04
 
 ### Changed
 
@@ -21,6 +21,12 @@ All notable changes to this project are documented in this file.
 - Local repository gates, architecture tests and the complete pytest suite pass.
 - Public `/api/shell/think` evidence remains a release gate and must meet its
   configured availability and latency objectives before a production deploy.
+
+### Release Sync (v1.0.14)
+
+- Git tag: `v1.0.14`
+- Release scope: verified release readiness, live HTTP benchmark harness,
+  guarded production autodeploy, and policy-aligned runtime contract tests.
 
 ## v1.0.13 - 2026-09-02
 

@@ -29,19 +29,45 @@ njëjtin origin përmes Nginx.
 
 ## Domain dhe HTTPS
 
-Compose ekspozon `${HTTP_PORT:-80}`. Vendos Caddy, Traefik, Nginx Proxy Manager
-ose një load balancer/CDN përpara tij dhe detyro HTTP → HTTPS. Mos publiko portat
-`8000` ose `8080`.
+Compose ekspozon `${HTTP_PORT:-80}` dhe `${HTTPS_PORT:-443}`. Nginx brenda
+kontejnerit `web` terminon vetë TLS-në në 443 (porta 80 kthen vetëm `/healthz`
+dhe ridrejton pjesën tjetër në HTTPS). Mos publiko portat `8000` ose `8080`.
 
-Shembull Caddy:
+### TLS me Cloudflare (Origin Certificate)
+
+Kur domain-i është proxied në Cloudflare (orange cloud), rekomandohet modaliteti
+`Full (strict)` në SSL/TLS + një Origin Certificate në origin:
+
+```bash
+mkdir -p deploy/certs
+openssl req -new -newkey rsa:2048 -nodes \
+  -keyout deploy/certs/origin.key -out deploy/certs/origin.csr \
+  -subj "/CN=neurosonic.eu" \
+  -addext "subjectAltName=DNS:neurosonic.eu,DNS:*.neurosonic.eu"
+```
+
+Ngjit `origin.csr` te Cloudflare Dashboard → SSL/TLS → Origin Server →
+Create Certificate → "Use my private key and CSR", ruaj PEM-in e kthyer si
+`deploy/certs/origin.pem`. Vendos SSL/TLS mode në `Full (strict)`.
+
+`origin.key`/`origin.pem`/`origin.csr` janë në `.gitignore` — mos i commit
+kurrë. Restart `web` pas ndryshimit të certifikatave:
+
+```bash
+docker compose up -d --force-recreate web
+```
+
+### Alternativë: reverse proxy tjetër
+
+Nëse preferon Caddy, Traefik ose Nginx Proxy Manager përpara stack-ut (p.sh.
+kur domain-i nuk kalon nga Cloudflare), vendos `HTTPS_PORT` në një portë tjetër
+ose lëre proxy-n të flasë me origin-in vetëm në `HTTP_PORT`:
 
 ```caddyfile
 neurosonic.eu, www.neurosonic.eu {
     reverse_proxy 127.0.0.1:80
 }
 ```
-
-Nëse proxy përdor një portë lokale alternative:
 
 ```dotenv
 HTTP_PORT=8088

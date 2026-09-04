@@ -13,6 +13,7 @@ import re
 import sys
 import time
 import uuid
+from collections import Counter
 from urllib.parse import urlparse
 from typing import Any
 
@@ -610,6 +611,50 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
         return None
 
 
+# Chat quality guardrails: local models occasionally degrade into repetitive
+# or truncated "noise" instead of a coherent answer. These are deterministic,
+# measurable heuristics (not another LLM call) applied before trusting output.
+_UI_CHAT_MAX_REPLY_CHARS = 600
+_UI_CHAT_MAX_RETRIES = 1
+
+
+def _is_reply_noisy(text: str, min_unique_ratio: float = 0.5, min_words: int = 8) -> bool:
+    """Detects repetitive/degraded LLM output using vocabulary diversity.
+
+    A coherent reply of any reasonable length uses mostly distinct words
+    (empirically >=0.65 unique-word ratio even for longer, naturally
+    repetitive text). Degraded/looping model output collapses onto a small
+    set of words and phrases repeated many times (observed ~0.25 ratio in
+    real garbled responses), which this catches regardless of language.
+    An absolute repeated-trigram count is used as a secondary signal for
+    shorter texts where the ratio alone is less reliable.
+    """
+    words = re.findall(r"[\w'-]+", text.lower())
+    if len(words) < min_words:
+        return False
+
+    unique_ratio = len(set(words)) / len(words)
+    if unique_ratio < min_unique_ratio:
+        return True
+
+    trigrams = [" ".join(words[i : i + 3]) for i in range(len(words) - 2)]
+    if trigrams:
+        _, top_trigram_count = Counter(trigrams).most_common(1)[0]
+        if top_trigram_count >= 4:
+            return True
+
+    return False
+
+
+def _sanitize_chat_reply(text: str) -> str:
+    """Trims an LLM reply to a bounded, UI-friendly length."""
+    text = text.strip()
+    if len(text) <= _UI_CHAT_MAX_REPLY_CHARS:
+        return text
+    truncated = text[:_UI_CHAT_MAX_REPLY_CHARS].rsplit(" ", 1)[0]
+    return truncated.rstrip(",.;: ") + "…"
+
+
 @app.post("/api/ui/chat")
 async def ui_chat(req: UIChatRequest, request: Request):
     """Conversational endpoint to create/update the user's personal panel.
@@ -642,8 +687,22 @@ async def ui_chat(req: UIChatRequest, request: Request):
         "Respond now with the JSON object described in your instructions."
     )
 
-    llm_result = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
-    plan = _extract_json_object(llm_result.text) if llm_result.text else None
+    llm_result = None
+    plan = None
+    for attempt in range(_UI_CHAT_MAX_RETRIES + 1):
+        candidate = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
+        candidate_plan = _extract_json_object(candidate.text) if candidate.text else None
+        llm_result = candidate
+        plan = candidate_plan
+
+        if candidate.error or not candidate_plan:
+            continue
+
+        candidate_reply = candidate_plan.get("reply")
+        if isinstance(candidate_reply, str) and not _is_reply_noisy(candidate_reply):
+            break
+        # Noisy/repetitive reply: retry once with the same prompt before
+        # accepting it (small local models sometimes recover on retry).
 
     if llm_result.error or not plan:
         # LLM didn't respond, or returned text that wasn't valid JSON: never
@@ -679,6 +738,12 @@ async def ui_chat(req: UIChatRequest, request: Request):
     reply_text = plan.get("reply")
     if not isinstance(reply_text, str) or not reply_text.strip():
         reply_text = "Here's your new panel! Let me know what you'd like to change."
+    elif _is_reply_noisy(reply_text):
+        # Still noisy after retries: keep the (structurally valid) panel, but
+        # never show garbled text to the user.
+        reply_text = "Here's your new panel! (I had trouble phrasing a reply this time - let me know what you'd like to change.)"
+    else:
+        reply_text = _sanitize_chat_reply(reply_text)
 
     return {
         "success": True,

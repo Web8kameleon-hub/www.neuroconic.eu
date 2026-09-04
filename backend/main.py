@@ -35,6 +35,7 @@ from neurosonic_data_intelligence import (
 from neurosonic_dna import NeurosonicDNA
 from neurosonic_evolution import NeurosonicEvolutionEngine
 from neurosonic_genome import NeurosonicGenome
+from neurosonic_lang72 import build_language_instruction, detect_language
 from neurosonic_lightning_bridge import (
     LightningMode,
     NeurosonicLightningBridge,
@@ -640,7 +641,13 @@ async def ui_chat(req: UIChatRequest, request: Request):
         "Respond now with the JSON object described in your instructions."
     )
 
-    llm_result = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
+    detected_lang = detect_language(message)
+    chat_system_prompt = (
+        f"{_UI_CHAT_SYSTEM_PROMPT}\n\n{build_language_instruction(detected_lang)}\n"
+        'This language rule applies only to the "reply" text value - JSON field '
+        'names (reply, title, widgets, type, etc.) must stay exactly as specified above.'
+    )
+    llm_result = llm_bridge.generate(llm_prompt, system=chat_system_prompt)
     plan = _extract_json_object(llm_result.text) if llm_result.text else None
 
     if llm_result.error or not plan:
@@ -1218,7 +1225,8 @@ async def shell_think(req: ShellThinkRequest):
             "sources": [bridge.base_url],
         }
 
-    llm_result = llm_bridge.generate(prompt)
+    detected_lang = detect_language(prompt)
+    llm_result = llm_bridge.generate(prompt, system=build_language_instruction(detected_lang))
     llm_output_hash = hashlib.sha256(llm_result.text.encode("utf-8")).hexdigest() if llm_result.text else ""
     pipeline_trace.append(
         _trace_step(

@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 import backend.main as backend_main
 from neurosonic_lightning_bridge import LightningResult, ProcessingEngine
+from neurosonic_llm_bridge import LLMResult
 
 
 def _make_result(data, status: str = "completed", error: str | None = None) -> LightningResult:
@@ -17,13 +18,21 @@ def _make_result(data, status: str = "completed", error: str | None = None) -> L
     )
 
 
+def _make_llm_result(text: str, provider: str = "ollama", model: str = "deepseek-r1:7b", tokens: int | None = None) -> LLMResult:
+    return LLMResult(text=text, provider=provider, model=model, elapsed_ms=5.0, tokens=tokens)
+
+
 def test_shell_think_flags_echo_as_degraded(monkeypatch) -> None:
     prompt = "go or no go"
 
     def stub_process(data, engine=ProcessingEngine.HYBRID, ai_enhance=True):
-        return _make_result(prompt)
+        return _make_result("bridge-ok")
+
+    def stub_generate(text, system=None):
+        return _make_llm_result(prompt)
 
     monkeypatch.setattr(backend_main.bridge, "process", stub_process)
+    monkeypatch.setattr(backend_main.llm_bridge, "generate", stub_generate)
 
     client = TestClient(backend_main.app)
     response = client.post(
@@ -45,16 +54,18 @@ def test_shell_think_returns_provider_metadata_when_reasoning_valid(monkeypatch)
     prompt = "explain governance policy conflicts"
 
     def stub_process(data, engine=ProcessingEngine.HYBRID, ai_enhance=True):
-        return _make_result(
-            {
-                "provider": "ollama",
-                "model": "llama3.1:8b",
-                "generated_tokens": 84,
-                "answer": "Policy conflicts can be resolved by explicit precedence rules.",
-            }
+        return _make_result("bridge-ok")
+
+    def stub_generate(text, system=None):
+        return _make_llm_result(
+            "Policy conflicts can be resolved by explicit precedence rules.",
+            provider="ollama",
+            model="llama3.1:8b",
+            tokens=84,
         )
 
     monkeypatch.setattr(backend_main.bridge, "process", stub_process)
+    monkeypatch.setattr(backend_main.llm_bridge, "generate", stub_generate)
 
     client = TestClient(backend_main.app)
     response = client.post(
@@ -77,9 +88,13 @@ def test_shell_think_trace_contains_required_pipeline_steps(monkeypatch) -> None
     prompt = "Analyze governance policy conflicts"
 
     def stub_process(data, engine=ProcessingEngine.HYBRID, ai_enhance=True):
-        return _make_result("Structured answer that is not an echo")
+        return _make_result("bridge-ok")
+
+    def stub_generate(text, system=None):
+        return _make_llm_result("Structured answer that is not an echo")
 
     monkeypatch.setattr(backend_main.bridge, "process", stub_process)
+    monkeypatch.setattr(backend_main.llm_bridge, "generate", stub_generate)
 
     client = TestClient(backend_main.app)
     response = client.post(

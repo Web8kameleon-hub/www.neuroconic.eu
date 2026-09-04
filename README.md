@@ -152,6 +152,8 @@ neurosonic.eu/
 ├── neurosonic_evolution.py  # Evolution Engine
 ├── neurosonic_no_fake_police.py # NO FAKE Police
 ├── neurosonic_lightning_bridge.py # Lightning SPP Bridge
+├── neurosonic_llm_bridge.py # Ollama LLM Bridge (real text generation)
+├── neurosonic_lang72.py     # 72-Language detector (chat auto-reply language)
 ├── test_architecture.py     # Testet e plota
 ├── NO_FAKE_POLICY.md        # Politika NO FAKE
 ├── CONTRIBUTING.md          # Udhëzime për kontribuim

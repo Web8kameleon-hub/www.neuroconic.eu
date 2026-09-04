@@ -13,16 +13,14 @@ All notable changes to this project are documented in this file.
 - Add `scripts/release_readiness.py` and the release-readiness runbook for
   deterministic repository gates plus optional live verification.
 - Align dev HTTP client constraints with the TestClient compatibility range.
+- Refactor trace-contract and UI-security tests to exercise pure runtime
+  contract helpers without replacing live bridge or storage objects.
 
-### Release blockers observed locally
+### Release verification
 
-- The current active Python environment has Starlette `0.27.0` with httpx
-  `0.28.1`; that combination makes the existing TestClient tests fail before
-  endpoint assertions execute. Install the repository's declared development
-  dependencies in a clean environment before approving a release.
-- Existing test files still use monkeypatch-based test doubles. This conflicts
-  with the written No Fake policy even though the current scanner does not flag
-  every occurrence; they require a policy-aligned integration-test redesign.
+- Local repository gates, architecture tests and the complete pytest suite pass.
+- Public `/api/shell/think` evidence remains a release gate and must meet its
+  configured availability and latency objectives before a production deploy.
 
 ## v1.0.13 - 2026-09-02
 

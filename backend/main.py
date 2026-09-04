@@ -312,6 +312,57 @@ def _resolve_processing_engine(
     return routing.get(normalized, ProcessingEngine.HYBRID)
 
 
+def _normalize_for_echo(text: str) -> str:
+    """Normalize textual output before comparing it with the request prompt."""
+    return " ".join((text or "").split()).strip().lower()
+
+
+def _extract_runtime_metadata(
+    result_data: Any,
+) -> tuple[str | None, str | None, int | None]:
+    """Extract provider, model and generated token data from a bridge result."""
+    if not isinstance(result_data, dict):
+        return None, None, None
+
+    provider = result_data.get("provider") or result_data.get("source")
+    model = result_data.get("model") or result_data.get("model_name")
+    generated_tokens_raw = (
+        result_data.get("generated_tokens")
+        or result_data.get("tokens")
+        or result_data.get("eval_count")
+    )
+    try:
+        generated_tokens = (
+            int(generated_tokens_raw) if generated_tokens_raw is not None else None
+        )
+    except (TypeError, ValueError):
+        generated_tokens = None
+    return provider, model, generated_tokens
+
+
+def _trace_step(
+    step: str,
+    component: str,
+    entered: bool,
+    status: str,
+    duration_ms: float,
+    input_hash_value: str,
+    output_hash_value: str,
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Create one measured, structured pipeline trace step."""
+    return {
+        "step": step,
+        "component": component,
+        "entered": entered,
+        "status": status,
+        "duration_ms": round(duration_ms, 3),
+        "input_hash": input_hash_value,
+        "output_hash": output_hash_value,
+        "details": details or {},
+    }
+
+
 # ========================================================================
 # Endpoints
 # ========================================================================
@@ -879,48 +930,6 @@ async def shell_think(req: ShellThinkRequest):
     trace_id = uuid.uuid4().hex
     prompt = req.prompt.strip()
     input_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest() if prompt else ""
-
-    def _normalize_for_echo(text: str) -> str:
-        return " ".join((text or "").split()).strip().lower()
-
-    def _extract_runtime_metadata(result_data: Any) -> tuple[str | None, str | None, int | None]:
-        if not isinstance(result_data, dict):
-            return None, None, None
-
-        provider = result_data.get("provider") or result_data.get("source")
-        model = result_data.get("model") or result_data.get("model_name")
-        generated_tokens_raw = (
-            result_data.get("generated_tokens")
-            or result_data.get("tokens")
-            or result_data.get("eval_count")
-        )
-        try:
-            generated_tokens = int(generated_tokens_raw) if generated_tokens_raw is not None else None
-        except (TypeError, ValueError):
-            generated_tokens = None
-
-        return provider, model, generated_tokens
-
-    def _trace_step(
-        step: str,
-        component: str,
-        entered: bool,
-        status: str,
-        duration_ms: float,
-        input_hash_value: str,
-        output_hash_value: str,
-        details: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        return {
-            "step": step,
-            "component": component,
-            "entered": entered,
-            "status": status,
-            "duration_ms": round(duration_ms, 3),
-            "input_hash": input_hash_value,
-            "output_hash": output_hash_value,
-            "details": details or {},
-        }
 
     pipeline_trace: list[dict[str, Any]] = []
     selected_engine = _resolve_processing_engine(

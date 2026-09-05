@@ -1,6 +1,6 @@
 # ====================================================================
-# NEUROSONIC - ROLLING UPDATE FOR BACKEND POOL (backend + backend_b)
-# Recreate one backend at a time while validating health via Nginx.
+# NEUROSONIC - ROLLING UPDATE FOR BACKEND
+# Recreate backend and validate health via Nginx.
 # ====================================================================
 
 param(
@@ -97,22 +97,22 @@ Write-Host ""
 Push-Location $ProjectRoot
 try {
     if ($BuildFirst) {
-        Write-Host "[0/4] Building backend images..." -ForegroundColor Yellow
-        & docker compose -f $ComposeFile build backend backend_b | Out-Host
+        Write-Host "[0/3] Building backend image..." -ForegroundColor Yellow
+        & docker compose -f $ComposeFile build backend | Out-Host
     }
 
-    Write-Host "[1/4] Ensuring service topology is up..." -ForegroundColor Yellow
-    & docker compose -f $ComposeFile up -d --no-deps backend backend_b web | Out-Host
+    Write-Host "[1/3] Ensuring service topology is up..." -ForegroundColor Yellow
+    & docker compose -f $ComposeFile up -d --no-deps backend web | Out-Host
 
     if (-not (Wait-Http200 -Url $HealthUrl -TimeoutSeconds $HealthTimeoutSeconds -PollSeconds $PollIntervalSeconds)) {
         throw "API health nuk u be 200 ne kohe: $HealthUrl"
     }
     Write-Host "  ✅ Initial health OK" -ForegroundColor Green
 
-    $services = @("backend", "backend_b")
+    $services = @("backend")
     $step = 2
     foreach ($service in $services) {
-        Write-Host "[$step/4] Recreating $service ..." -ForegroundColor Yellow
+        Write-Host "[$step/3] Recreating $service ..." -ForegroundColor Yellow
         & docker compose -f $ComposeFile up -d --force-recreate --no-deps $service | Out-Host
 
         if (-not (Wait-ServiceHealthy -ServiceName $service -TimeoutSeconds $HealthTimeoutSeconds -PollSeconds $PollIntervalSeconds)) {
@@ -134,7 +134,7 @@ try {
         $step++
     }
 
-    Write-Host "[4/4] Final service status:" -ForegroundColor Yellow
+    Write-Host "[3/3] Final service status:" -ForegroundColor Yellow
     & docker compose -f $ComposeFile ps | Out-Host
 
     Write-Host ""

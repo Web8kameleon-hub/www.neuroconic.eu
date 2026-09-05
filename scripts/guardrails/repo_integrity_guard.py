@@ -85,7 +85,7 @@ def main() -> int:
             )
         )
 
-    required_services = ["lightning-spp", "backend", "backend_b", "web"]
+    required_services = ["lightning-spp", "backend", "web"]
     for service in required_services:
         if service not in services:
             failures.append(
@@ -95,7 +95,7 @@ def main() -> int:
                 )
             )
 
-    health_required = ["lightning-spp", "backend", "backend_b", "web"]
+    health_required = ["lightning-spp", "backend", "web"]
     for service in health_required:
         if service in services and not services[service].get("healthcheck", False):
             failures.append(

@@ -89,12 +89,12 @@ printf '\n'
 cd "$PROJECT_ROOT"
 
 if [[ "$BUILD_FIRST" == "1" ]]; then
-  echo "[0/4] Building backend images..."
-  docker compose -f "$COMPOSE_FILE" build backend backend_b
+  echo "[0/3] Building backend image..."
+  docker compose -f "$COMPOSE_FILE" build backend
 fi
 
-echo "[1/4] Ensuring service topology is up..."
-docker compose -f "$COMPOSE_FILE" up -d --no-deps backend backend_b web
+echo "[1/3] Ensuring service topology is up..."
+docker compose -f "$COMPOSE_FILE" up -d --no-deps backend web
 
 if ! wait_http_200 "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then
   echo "API health did not become 200 in time: $HEALTH_URL" >&2
@@ -104,8 +104,8 @@ fi
 echo "  ✅ Initial health OK"
 
 step=2
-for service in backend backend_b; do
-  echo "[$step/4] Recreating $service ..."
+for service in backend; do
+  echo "[$step/3] Recreating $service ..."
   docker compose -f "$COMPOSE_FILE" up -d --force-recreate --no-deps "$service"
 
   if ! wait_service_healthy "$service" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then
@@ -128,7 +128,7 @@ for service in backend backend_b; do
   step=$((step + 1))
 done
 
-echo "[4/4] Final service status:"
+echo "[3/3] Final service status:"
 docker compose -f "$COMPOSE_FILE" ps
 
 echo

@@ -114,6 +114,12 @@ for service in backend; do
     exit 1
   fi
 
+  # nginx (web) mund të mbajë një lidhje/adresë IP të vjetëruar te kontejneri
+  # i ri-krijuar i backend-it, gjë që shkakton 502 kalimtare edhe pse
+  # backend-i raporton "healthy" brenda. Bëj reload që nginx të rizgjidhë
+  # upstream-in para se të kontrollojmë health-in publik.
+  docker compose -f "$COMPOSE_FILE" exec -T web nginx -s reload 2>/dev/null || true
+
   if ! wait_http_200 "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then
     echo "API health failed after recreate of $service" >&2
     exit 1

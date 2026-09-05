@@ -96,6 +96,9 @@ services:
         condition: service_healthy
       ollama:
         condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
     environment:
       NEUROSONIC_MODE: production
       LIGHTNING_SPP_URL: http://lightning-spp:8080

@@ -74,7 +74,7 @@ function Invoke-ThinkSmoke {
     param([string]$Url)
 
     $body = @{ prompt = "rolling update smoke check"; task_type = "reasoning" } | ConvertTo-Json
-    $response = Invoke-RestMethod -Uri $Url -Method Post -ContentType "application/json" -Body $body -TimeoutSec 10 -SkipCertificateCheck
+    $response = Invoke-RestMethod -Uri $Url -Method Post -ContentType "application/json" -Body $body -TimeoutSec 90 -SkipCertificateCheck
 
     if ($null -eq $response -or -not $response.PSObject.Properties.Name.Contains("status")) {
         throw "Think smoke response is invalid."

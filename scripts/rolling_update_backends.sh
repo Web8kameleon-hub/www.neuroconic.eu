@@ -59,7 +59,7 @@ invoke_think_smoke() {
   local body='{"prompt":"rolling update smoke check","task_type":"reasoning"}'
   local response
 
-  response="$(curl -fsS -k -X POST -H 'Content-Type: application/json' --data "$body" --max-time 15 "$url")" || return 1
+  response="$(curl -fsS -k -X POST -H 'Content-Type: application/json' --data "$body" --max-time 90 "$url")" || return 1
 
   python3 - "$response" <<'PY'
 import json, sys

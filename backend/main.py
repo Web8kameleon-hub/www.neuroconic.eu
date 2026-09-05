@@ -17,7 +17,7 @@ from collections import Counter
 from urllib.parse import urlparse
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -27,6 +27,7 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, _project_root)
 os.chdir(_project_root)
 
+from neurosonic_auth import AuthError, NeurosonicAuth
 from neurosonic_compatibility import NeurosonicCompatibilityMatrix
 from neurosonic_data_intelligence import (
     PlirisDatenFilter,
@@ -76,6 +77,7 @@ pliris_filter = PlirisDatenFilter()
 self_learning = SelfLearningCycleManager()
 ui_designer = UIDesignEngine()
 personal_node_store = PersonalNodeStore(root_dir=os.path.join(_project_root, "personal_node", "profiles"))
+auth = NeurosonicAuth(root_dir=os.path.join(_project_root, "personal_node", "auth"))
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
@@ -124,6 +126,16 @@ class PipelineRequest(BaseModel):
 
 class BatchRequest(BaseModel):
     sources: list[str]
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 
 class ShellThinkRequest(BaseModel):
@@ -427,6 +439,41 @@ async def health():
         "llm_model": llm_bridge.model,
         "api_version": "1.0.15",
     }
+
+
+@app.post("/api/auth/register")
+async def auth_register(payload: RegisterRequest):
+    try:
+        result = auth.register(payload.email, payload.password)
+    except AuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return result
+
+
+@app.post("/api/auth/login")
+async def auth_login(payload: LoginRequest):
+    try:
+        result = auth.login(payload.email, payload.password)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    return result
+
+
+@app.get("/api/auth/me")
+async def auth_me(request: Request):
+    authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Mungon Bearer token")
+    token = authorization[7:].strip()
+    try:
+        claims = auth.verify_token(token)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    user = auth.get_user_by_email(claims["email"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
+    return user
 
 
 @app.get("/api/dna")

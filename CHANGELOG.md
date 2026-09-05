@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.15 - 2026-09-04
+
+Personal UI Composer release focused on human-friendly chat flows, safer widget generation, and hardened backend guardrails for malformed and noisy AI output.
+
+### Added (v1.0.15)
+
+- Add user-friendly personal UI composer flow for non-technical users.
+- Add safer fallback behavior for empty, invalid, or malformed UI requests.
+- Add stronger guardrails for noisy, repetitive, or empty LLM output across `/api/ui/chat`.
+- Add release metadata alignment for package, runtime API, and public release documentation.
+
+### Changed (v1.0.15)
+
+- Simplify the visible conversation-first UX without exposing technical runtime labels.
+- Improve widget generation so default fallback schemas remain stable and safe.
+- Harden API logic to sanitize noisy text and preserve a consistent user experience.
+- Align the release notes and version metadata with the 1.0.15 line.
+
+### Validation (v1.0.15)
+
+- `python -m py_compile __init__.py neurosonic.py neurosonic_core.py backend/main.py src/__init__.py` → PASS
+- `pytest -q` → final repo verification in CI
+
+### Release Sync (v1.0.15)
+
+- Git tag: `v1.0.15`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
 ## v1.0.13 - 2026-09-02
 
 Observability and evidence maturity release focused on SLO/error-budget formalization, uniform tracing validation, STRIDE threat modeling, and external benchmark evidence mapping.

@@ -18,7 +18,7 @@ def _make_result(data, status: str = "completed", error: str | None = None) -> L
     )
 
 
-def _make_llm_result(text: str, provider: str = "ollama", model: str = "deepseek-r1:7b", tokens: int | None = None) -> LLMResult:
+def _make_llm_result(text: str, provider: str = "ollama", model: str = "qwen2.5:7b", tokens: int | None = None) -> LLMResult:
     return LLMResult(text=text, provider=provider, model=model, elapsed_ms=5.0, tokens=tokens)
 
 

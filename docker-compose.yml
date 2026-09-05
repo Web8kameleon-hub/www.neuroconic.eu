@@ -28,7 +28,7 @@ services:
     environment:
       OLLAMA_HOST: ollama:11434
     entrypoint: ["/bin/sh", "-c"]
-    command: ["ollama pull ${OLLAMA_MODEL:-deepseek-r1:7b}"]
+    command: ["ollama pull ${OLLAMA_MODEL:-qwen2.5:7b}"]
 
   lightning-spp:
     build:
@@ -69,7 +69,7 @@ services:
       NEUROSONIC_MODE: production
       LIGHTNING_SPP_URL: http://lightning-spp:8080
       OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:7b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://neurosonic.eu,https://www.neurosonic.eu}
       PYTHONUNBUFFERED: "1"
       PYTHONUTF8: "1"
@@ -101,7 +101,7 @@ services:
       NEUROSONIC_MODE: production
       LIGHTNING_SPP_URL: http://lightning-spp:8080
       OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:7b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://neurosonic.eu,https://www.neurosonic.eu}
       PYTHONUNBUFFERED: "1"
       PYTHONUTF8: "1"

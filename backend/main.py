@@ -48,7 +48,7 @@ from neurosonic_ui_designer import PersonalNodeStore, UIDesignEngine
 app = FastAPI(
     title="Neurosonic Trinity+ASI API",
     description="Backend API per Neurosonic - DNA, Genome, Compatibility, Evolution, Lightning SPP",
-    version="1.0.0",
+    version="1.0.15",
 )
 
 _cors_origins = [
@@ -337,7 +337,7 @@ def _resolve_processing_engine(
 async def root():
     return {
         "name": "Neurosonic Trinity+ASI",
-        "version": "1.0.0",
+        "version": "1.0.15",
         "status": "online",
         "modules": [
             "dna",
@@ -425,7 +425,7 @@ async def health():
         "lightning_service": lightning_service,
         "llm_service": llm_service,
         "llm_model": llm_bridge.model,
-        "api_version": "1.0.0",
+        "api_version": "1.0.15",
     }
 
 
@@ -558,14 +558,23 @@ async def create_ui_design(req: UIDesignRequest, request: Request):
         preferences=req.preferences,
         owner_id=owner_id,
     )
+    film = ui_designer.build_experience_film(
+        req.prompt,
+        schema,
+        profile_id=req.profile_id,
+        owner_id=owner_id,
+    )
     save_meta = None
     if req.save:
         save_meta = personal_node_store.save_profile(req.profile_id, schema)
+        film_meta = personal_node_store.save_experience_film(req.profile_id, film)
+        save_meta["experience_film"] = film_meta
 
     return {
         "success": True,
         "profile_id": req.profile_id,
         "schema": schema,
+        "experience_film": film,
         "saved": req.save,
         "storage": save_meta,
         "timestamp": time.time(),
@@ -732,8 +741,16 @@ async def ui_chat(req: UIChatRequest, request: Request):
         schema["integrations"]["plugins"] = existing_schema["integrations"]["plugins"]
 
     save_meta = None
+    film = ui_designer.build_experience_film(
+        message,
+        schema,
+        profile_id=req.profile_id,
+        owner_id=owner_id,
+    )
     if req.save:
         save_meta = personal_node_store.save_profile(req.profile_id, schema)
+        film_meta = personal_node_store.save_experience_film(req.profile_id, film)
+        save_meta["experience_film"] = film_meta
 
     reply_text = plan.get("reply")
     if not isinstance(reply_text, str) or not reply_text.strip():
@@ -750,6 +767,7 @@ async def ui_chat(req: UIChatRequest, request: Request):
         "reply": reply_text.strip(),
         "profile_id": req.profile_id,
         "schema": schema,
+        "experience_film": film,
         "saved": req.save,
         "storage": save_meta,
         "provider": llm_result.provider,

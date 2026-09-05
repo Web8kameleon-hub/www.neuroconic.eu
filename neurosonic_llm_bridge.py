@@ -38,7 +38,7 @@ class OllamaBridge:
     def __init__(self, base_url: str | None = None, model: str | None = None):
         configured_url = base_url or os.environ.get("OLLAMA_URL") or "http://127.0.0.1:11434"
         self.base_url = configured_url.rstrip("/")
-        self.model = model or os.environ.get("OLLAMA_MODEL") or "deepseek-r1:7b"
+        self.model = model or os.environ.get("OLLAMA_MODEL") or "qwen2.5:7b"
         self.timeout_seconds = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "60"))
 
     def is_available(self) -> bool:

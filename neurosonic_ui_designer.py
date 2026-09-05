@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import time
 import uuid
@@ -26,18 +27,35 @@ class PersonalNodeStore:
 
     def save_profile(self, profile_id: str, schema: dict[str, Any]) -> dict[str, Any]:
         path = self._profile_path(profile_id)
-        payload = {
-            "profile_id": profile_id,
-            "updated_at": time.time(),
-            "schema": schema,
-            "schema_hash": hashlib.sha256(
-                json.dumps(schema, sort_keys=True, ensure_ascii=False).encode("utf-8")
-            ).hexdigest(),
-        }
+        existing = self.load_profile(profile_id) or {}
+        payload = dict(existing)
+        payload["profile_id"] = profile_id
+        payload["updated_at"] = time.time()
+        payload["schema"] = schema
+        payload["schema_hash"] = hashlib.sha256(
+            json.dumps(schema, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
         with open(path, "w", encoding="utf-8") as file:
             json.dump(payload, file, ensure_ascii=False, indent=2)
 
         return {"profile_id": profile_id, "path": path, "hash": payload["schema_hash"]}
+
+    def save_experience_film(self, profile_id: str, film: dict[str, Any]) -> dict[str, Any]:
+        profile = self.load_profile(profile_id) or {}
+        if not isinstance(profile, dict):
+            profile = {}
+        payload = dict(profile)
+        payload["experience_film"] = film
+        payload["experience_film_hash"] = hashlib.sha256(
+            json.dumps(film, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+        saved = self.upsert_profile_payload(profile_id, payload)
+        return {
+            "profile_id": profile_id,
+            "path": saved.get("path"),
+            "hash": payload["experience_film_hash"],
+            "updated_at": saved.get("updated_at"),
+        }
 
     def load_profile(self, profile_id: str) -> dict[str, Any] | None:
         path = self._profile_path(profile_id)
@@ -512,3 +530,125 @@ class UIDesignEngine:
             widgets.append(widget)
 
         return widgets or self._build_widgets(prompt, self._detect_mode(prompt), {})
+
+    def build_experience_film(
+        self,
+        prompt: str,
+        schema: dict[str, Any] | None,
+        *,
+        profile_id: str = "default",
+        owner_id: str = "local-user",
+        privacy_scope: str = "anonymous_pattern",
+    ) -> dict[str, Any]:
+        """Creates a privacy-safe reusable Experience Film from a generated panel.
+
+        The visible UX stays simple, while the runtime records only reusable
+        structure and a sanitized summary instead of raw personal details.
+        """
+        safe_prompt = self._sanitize_reusable_context(prompt or "")
+        safe_schema = schema if isinstance(schema, dict) else {}
+        widget_items = safe_schema.get("widgets", []) if isinstance(safe_schema.get("widgets", []), list) else []
+        widget_types = []
+        for widget in widget_items:
+            if isinstance(widget, dict):
+                widget_type = str(widget.get("type") or "markdown").strip()
+                if widget_type and widget_type not in widget_types:
+                    widget_types.append(widget_type)
+
+        intent = self._summarize_intent(safe_prompt)
+        experience_level = self._infer_experience_level(safe_prompt, widget_types)
+        privacy_kind = self._normalize_privacy_scope(privacy_scope)
+        title = str(safe_schema.get("title") or "My Panel").strip() or "My Panel"
+        fingerprint_payload = {
+            "profile_id": profile_id,
+            "title": title,
+            "intent": intent,
+            "widget_types": widget_types,
+            "experience_level": experience_level,
+            "privacy_scope": privacy_kind,
+        }
+        fingerprint = hashlib.sha256(
+            json.dumps(fingerprint_payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+
+        film = {
+            "film_version": "1.0",
+            "profile_id": profile_id,
+            "owner_id": owner_id,
+            "title": title,
+            "intent": intent,
+            "context": {
+                "prompt_summary": safe_prompt[:180] or "personal panel",
+                "mode": safe_schema.get("mode"),
+                "theme": safe_schema.get("theme", {}).get("palette") if isinstance(safe_schema.get("theme"), dict) else None,
+                "experience_level": experience_level,
+                "privacy_scope": privacy_kind,
+            },
+            "experience_level": experience_level,
+            "composition": {
+                "widget_count": len(widget_items),
+                "widget_types": widget_types,
+                "layout": safe_schema.get("layout") or {"type": "grid", "columns": 12, "gap": 16},
+            },
+            "capabilities": widget_types,
+            "execution_plan": [
+                {"step": 1, "label": "Capture intent", "summary": intent},
+                {"step": 2, "label": "Compose panel", "summary": f"Generate {len(widget_items)} widgets"},
+                {"step": 3, "label": "Save reusable pattern", "summary": f"Store as {privacy_kind}"},
+            ],
+            "artifacts": [
+                {"type": "panel_schema", "title": title, "widget_count": len(widget_items)},
+                {"type": "profile", "profile_id": profile_id},
+            ],
+            "outcome": {
+                "status": "ready",
+                "summary": f"{title} was generated from a reusable pattern.",
+            },
+            "privacy": {
+                "scope": privacy_kind,
+                "contains_sensitive_data": False,
+                "safeguards": [
+                    "Store only reusable structure and intent labels.",
+                    "Redact emails, phone numbers, URLs, and tokens before saving.",
+                    "Never persist raw private user records.",
+                ],
+            },
+            "fingerprint": fingerprint,
+            "created_at": time.time(),
+            "updated_at": time.time(),
+        }
+        return film
+
+    def _sanitize_reusable_context(self, prompt: str) -> str:
+        text = (prompt or "").strip()
+        if not text:
+            return ""
+        text = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[EMAIL]", text)
+        text = re.sub(r"https?://\S+|www\.\S+", "[URL]", text)
+        text = re.sub(r"\b(?:\+?\d[\d\s().-]{7,}\d)\b", "[PHONE]", text)
+        text = re.sub(r"(?i)(token|secret|password|api[_ -]?key|private[_ -]?key)\s*[:=]?\s*[A-Za-z0-9._\-+/=]{3,}", "\\1=[REDACTED]", text)
+        return text
+
+    def _summarize_intent(self, prompt: str) -> str:
+        text = (prompt or "").strip()
+        if not text:
+            return "personal panel"
+        normalized = re.sub(r"\s+", " ", text)
+        return normalized[:120].strip() or "personal panel"
+
+    def _infer_experience_level(self, prompt: str, widget_types: list[str]) -> str:
+        text = (prompt or "").lower()
+        if any(token in text for token in ["api", "debug", "deploy", "automation", "code", "workflow"]):
+            return "professional"
+        if any(token in text for token in ["plan", "calendar", "report", "track", "summarize", "overview"]):
+            return "guided"
+        if any(token in text for token in ["simple", "quick", "daily", "personal", "home", "notes"]):
+            return "simple"
+        if widget_types and any(token in " ".join(widget_types).lower() for token in ["chart", "table", "console", "policy-grid"]):
+            return "professional"
+        return "simple"
+
+    def _normalize_privacy_scope(self, privacy_scope: str) -> str:
+        normalized = (privacy_scope or "anonymous_pattern").strip().lower().replace(" ", "_")
+        allowed = {"private_film", "anonymous_pattern", "published_template"}
+        return normalized if normalized in allowed else "anonymous_pattern"

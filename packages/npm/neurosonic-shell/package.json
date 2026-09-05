@@ -1,6 +1,6 @@
 {
   "name": "@web8kameleon-hub/neurosonic-shell",
-  "version": "1.0.0",
+  "version": "1.0.15",
   "description": "Real-service Neurosonic shell and API client (no mock).",
   "type": "module",
   "bin": {

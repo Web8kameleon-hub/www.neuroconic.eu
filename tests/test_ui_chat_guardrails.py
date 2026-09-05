@@ -53,7 +53,7 @@ def test_sanitize_chat_reply_truncates_long_text() -> None:
 
 
 def _make_llm_result(text: str) -> LLMResult:
-    return LLMResult(text=text, provider="ollama", model="deepseek-r1:7b", elapsed_ms=5.0, tokens=10)
+    return LLMResult(text=text, provider="ollama", model="qwen2.5:7b", elapsed_ms=5.0, tokens=10)
 
 
 def test_ui_chat_retries_once_on_noisy_reply_and_recovers(monkeypatch, tmp_path) -> None:

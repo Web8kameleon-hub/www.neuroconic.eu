@@ -1,0 +1,86 @@
+name: Cloudflare WAF Diagnose/Fix
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "list = show rules, disable = pause rule blocking /api/*"
+        required: true
+        default: "list"
+        type: choice
+        options:
+          - list
+          - disable
+
+jobs:
+  waf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve Zone ID
+        id: zone
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          resp=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=neurosonic.eu" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+          echo "$resp" | jq -r '.success, .errors'
+          zone_id=$(echo "$resp" | jq -r '.result[0].id')
+          if [ -z "$zone_id" ] || [ "$zone_id" == "null" ]; then
+            echo "::error::Could not resolve zone id for neurosonic.eu"
+            exit 1
+          fi
+          echo "zone_id=$zone_id" >> "$GITHUB_OUTPUT"
+          echo "Zone ID: $zone_id"
+
+      - name: List custom firewall rulesets
+        id: list
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ZONE_ID: ${{ steps.zone.outputs.zone_id }}
+        run: |
+          echo "== Rulesets (phase: http_request_firewall_custom) =="
+          resp=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" \
+            -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json")
+          echo "$resp" | jq '.'
+          ruleset_id=$(echo "$resp" | jq -r '.result[] | select(.phase=="http_request_firewall_custom") | .id' | head -n1)
+          echo "ruleset_id=$ruleset_id" >> "$GITHUB_OUTPUT"
+
+          if [ -n "$ruleset_id" ] && [ "$ruleset_id" != "null" ]; then
+            echo "== Rules inside ruleset $ruleset_id =="
+            curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$ruleset_id" \
+              -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" | jq '.result.rules'
+          else
+            echo "No custom firewall ruleset found."
+          fi
+
+      - name: Disable rule blocking /api paths
+        if: ${{ inputs.action == 'disable' }}
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ZONE_ID: ${{ steps.zone.outputs.zone_id }}
+          RULESET_ID: ${{ steps.list.outputs.ruleset_id }}
+        run: |
+          if [ -z "$RULESET_ID" ] || [ "$RULESET_ID" == "null" ]; then
+            echo "::error::No ruleset id found, cannot disable."
+            exit 1
+          fi
+          rules_json=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID" \
+            -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json")
+          echo "$rules_json" | jq '.result.rules'
+
+          # Find rule(s) whose expression mentions /api
+          echo "$rules_json" | jq -c '.result.rules[] | select(.expression | test("api"))' > /tmp/matches.json
+          if [ ! -s /tmp/matches.json ]; then
+            echo "::warning::No rule expression contains 'api' - manual inspection needed."
+            exit 0
+          fi
+
+          while IFS= read -r rule; do
+            rule_id=$(echo "$rule" | jq -r '.id')
+            desc=$(echo "$rule" | jq -r '.description')
+            echo "Disabling rule: $rule_id ($desc)"
+            curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID/rules/$rule_id" \
+              -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" \
+              --data '{"enabled": false}' | jq '.success, .errors'
+          done < /tmp/matches.json

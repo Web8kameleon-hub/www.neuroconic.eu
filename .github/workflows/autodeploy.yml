@@ -86,9 +86,12 @@ jobs:
           REPO: ${{ github.repository }}
           GIT_REF: ${{ github.ref_name }}
         run: |
-          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" bash -s <<'EOS'
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- "$DEPLOY_PATH" "$REPO" "$GIT_REF" <<'EOS'
           set -Eeuo pipefail
-          DEPLOY_PATH="${DEPLOY_PATH:-/opt/www.neuroconic.eu}"
+          DEPLOY_PATH="${1:-/opt/www.neuroconic.eu}"
+          REPO="$2"
+          GIT_REF="$3"
           REPO_URL="https://github.com/${REPO}.git"
 
           mkdir -p "$DEPLOY_PATH"

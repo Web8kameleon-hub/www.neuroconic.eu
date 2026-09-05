@@ -2,3 +2,5 @@ lightning-spp
 backend
 backend_b
 web
+ollama
+ollama-pull

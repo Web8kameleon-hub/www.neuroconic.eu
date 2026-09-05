@@ -94,6 +94,7 @@ if [[ "$BUILD_FIRST" == "1" ]]; then
 fi
 
 echo "[1/3] Ensuring service topology is up..."
+docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 docker compose -f "$COMPOSE_FILE" up -d --no-deps --remove-orphans backend web
 
 if ! wait_http_200 "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then

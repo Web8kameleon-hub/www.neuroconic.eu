@@ -48,12 +48,27 @@ jobs:
     needs: ci-gate
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_SSH_KEY != '' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     steps:
+      - name: Check deploy secrets
+        id: check
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -n "$DEPLOY_HOST" ] && [ -n "$DEPLOY_SSH_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DEPLOY_HOST or DEPLOY_SSH_KEY secret is not set; skipping deploy step."
+          fi
+
       - name: Checkout
+        if: steps.check.outputs.ready == 'true'
         uses: actions/checkout@v4
 
       - name: Configure ssh
+        if: steps.check.outputs.ready == 'true'
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -62,6 +77,7 @@ jobs:
           ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Deploy via SSH
+        if: steps.check.outputs.ready == 'true'
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -97,6 +113,11 @@ jobs:
 
       - name: Deployment summary
         run: |
-          echo "## Auto-deploy complete" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Target: ${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.check.outputs.ready }}" = "true" ]; then
+            echo "## Auto-deploy complete" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Target: ${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Auto-deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Reason: DEPLOY_HOST/DEPLOY_SSH_KEY secrets not configured." >> "$GITHUB_STEP_SUMMARY"
+          fi

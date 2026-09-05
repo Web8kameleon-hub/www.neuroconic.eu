@@ -1,0 +1,102 @@
+name: Neurosonic AutoDeploy
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autodeploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci-gate:
+    name: CI gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Run NO FAKE Police
+        run: python neurosonic_no_fake_police.py --ci
+
+      - name: Run OS-CLX guard
+        run: python scripts/os_clx_policy_guard.py --strict
+
+      - name: Run repo integrity guard
+        run: python scripts/guardrails/repo_integrity_guard.py
+
+      - name: Run routes history guard
+        run: python scripts/guardrails/routes_history_guard.py
+
+  deploy:
+    name: Zero-downtime deploy
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_SSH_KEY != '' && github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure ssh
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy via SSH
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || 22 }}
+          REPO: ${{ github.repository }}
+          GIT_REF: ${{ github.ref_name }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" bash -s <<'EOS'
+          set -Eeuo pipefail
+          DEPLOY_PATH="${DEPLOY_PATH:-/opt/www.neuroconic.eu}"
+          REPO_URL="https://github.com/${REPO}.git"
+
+          mkdir -p "$DEPLOY_PATH"
+          if [ -d "$DEPLOY_PATH/.git" ]; then
+            cd "$DEPLOY_PATH"
+            git fetch --all --tags --prune
+            git checkout main || git checkout "$GIT_REF"
+            git reset --hard "origin/main" || git reset --hard "origin/$GIT_REF"
+          else
+            git clone "$REPO_URL" "$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+            git checkout main || git checkout "$GIT_REF"
+          fi
+
+          if [ -f ".env.example" ] && [ ! -f ".env" ]; then
+            cp .env.example .env
+          fi
+
+          chmod +x ./scripts/rolling_update_backends.sh
+          ./scripts/rolling_update_backends.sh
+          EOS
+
+      - name: Deployment summary
+        run: |
+          echo "## Auto-deploy complete" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Target: ${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"

@@ -15,6 +15,13 @@ Kërkon variablat e mjedisit:
     STRIPE_PRICE_ID        - ID e price-it "One-off" 1 EUR (price_...)
     STRIPE_SUCCESS_URL     - URL ku ridrejtohet përdoruesi pas pagesës
     STRIPE_CANCEL_URL      - URL ku ridrejtohet nëse anulon
+
+Shënim (multi-destination webhooks): Stripe lejon disa "event destinations"
+mbi të njëjtin endpoint URL (p.sh. një me payload "snapshot" dhe një me
+payload "thin"), secili me sekretin e vet unik. STRIPE_WEBHOOK_SECRET
+kontrollohet i pari për kompatibilitet mbrapsht; çdo sekret shtesë i
+vendosur në STRIPE_WEBHOOK_SECRET_SNAPSHOT / STRIPE_WEBHOOK_SECRET_THIN
+provohet gjithashtu kundrejt nënshkrimit hyrës.
 """
 
 from __future__ import annotations
@@ -47,11 +54,24 @@ class NeurosonicPayments:
         return price_id
 
     @property
-    def _webhook_secret(self) -> str:
-        secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-        if not secret:
+    def _webhook_secrets(self) -> list[str]:
+        """Kthen listën e sekreteve webhook për t'u provuar (radhazi).
+
+        Mbështet disa "event destinations" Stripe mbi të njëjtin endpoint URL
+        (p.sh. snapshot + thin), secili me sekretin e vet. STRIPE_WEBHOOK_SECRET
+        provohet i pari (kompatibilitet mbrapsht), pastaj çdo variant shtesë
+        i vendosur (_SNAPSHOT, _THIN) nëse ekziston.
+        """
+        names = (
+            "STRIPE_WEBHOOK_SECRET",
+            "STRIPE_WEBHOOK_SECRET_SNAPSHOT",
+            "STRIPE_WEBHOOK_SECRET_THIN",
+        )
+        secrets = [os.environ.get(name, "").strip() for name in names]
+        secrets = [s for s in secrets if s]
+        if not secrets:
             raise PaymentsError("STRIPE_WEBHOOK_SECRET nuk është konfiguruar")
-        return secret
+        return secrets
 
     def create_checkout_session(self, email: str) -> dict[str, Any]:
         """Krijon një Checkout Session one-time prej 1 EUR për `email`."""
@@ -82,14 +102,25 @@ class NeurosonicPayments:
 
     def handle_webhook(self, payload: bytes, signature_header: str) -> dict[str, Any]:
         """Verifikon nënshkrimin e webhook-ut dhe aktivizon entitlement nëse pagesa u krye."""
-        try:
-            event = stripe.Webhook.construct_event(
-                payload, signature_header, self._webhook_secret
-            )
-        except ValueError as exc:
-            raise PaymentsError("Payload i pavlefshëm") from exc
-        except stripe.SignatureVerificationError as exc:
-            raise PaymentsError("Nënshkrim i pavlefshëm") from exc
+        event = None
+        last_error: Exception | None = None
+        for secret in self._webhook_secrets:
+            try:
+                event = stripe.Webhook.construct_event(
+                    payload, signature_header, secret
+                )
+                break
+            except ValueError as exc:
+                last_error = exc
+                break  # payload i pavlefshëm, s'ka kuptim të provohen sekretet e tjera
+            except stripe.SignatureVerificationError as exc:
+                last_error = exc
+                continue  # provo sekretin tjetër (destinacion tjetër)
+
+        if event is None:
+            if isinstance(last_error, ValueError):
+                raise PaymentsError("Payload i pavlefshëm") from last_error
+            raise PaymentsError("Nënshkrim i pavlefshëm") from last_error
 
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]

@@ -28,6 +28,7 @@ sys.path.insert(0, _project_root)
 os.chdir(_project_root)
 
 from neurosonic_auth import AuthError, NeurosonicAuth
+from neurosonic_payments import NeurosonicPayments, PaymentsError, is_entitlement_active
 from neurosonic_compatibility import NeurosonicCompatibilityMatrix
 from neurosonic_data_intelligence import (
     PlirisDatenFilter,
@@ -78,6 +79,7 @@ self_learning = SelfLearningCycleManager()
 ui_designer = UIDesignEngine()
 personal_node_store = PersonalNodeStore(root_dir=os.path.join(_project_root, "personal_node", "profiles"))
 auth = NeurosonicAuth(root_dir=os.path.join(_project_root, "personal_node", "auth"))
+payments = NeurosonicPayments(auth=auth)
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
@@ -474,6 +476,57 @@ async def auth_me(request: Request):
     if not user:
         raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
     return user
+
+
+def _require_user(request: Request) -> dict[str, Any]:
+    """Verifikon Bearer token dhe kthen profilin e përdoruesit të loguar."""
+    authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Mungon token i autorizimit")
+    token = authorization[7:].strip()
+    try:
+        claims = auth.verify_token(token)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    user = auth.get_user_by_email(claims["email"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
+    return user
+
+
+@app.post("/api/billing/checkout")
+async def billing_checkout(request: Request):
+    """Krijon një Stripe Checkout Session (1 EUR, one-time) për përdoruesin e loguar."""
+    user = _require_user(request)
+    try:
+        result = payments.create_checkout_session(email=user["email"])
+    except PaymentsError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return result
+
+
+@app.get("/api/billing/status")
+async def billing_status(request: Request):
+    """Kthen nëse përdoruesi i loguar ka akses aktiv (entitlement jo i skaduar)."""
+    user = _require_user(request)
+    entitlement = user.get("entitlement")
+    return {
+        "active": is_entitlement_active(entitlement),
+        "entitlement": entitlement,
+    }
+
+
+@app.post("/api/billing/webhook")
+async def billing_webhook(request: Request):
+    """Endpoint-i Stripe webhook. Verifikon nënshkrimin dhe aktivizon entitlement."""
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature", "")
+    try:
+        result = payments.handle_webhook(payload, signature)
+    except PaymentsError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return result
 
 
 @app.get("/api/dna")

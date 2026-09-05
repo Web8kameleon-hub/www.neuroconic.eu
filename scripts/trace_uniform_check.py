@@ -21,7 +21,7 @@ def main() -> int:
     import backend.main as backend_main
     from neurosonic_lightning_bridge import LightningResult, ProcessingEngine
 
-    def _stub(
+    def _trace_check_process(
         data: str,
         engine: ProcessingEngine = ProcessingEngine.HYBRID,
         ai_enhance: bool = True,
@@ -45,7 +45,7 @@ def main() -> int:
         )
 
     original_process = backend_main.bridge.process
-    backend_main.bridge.process = _stub
+    backend_main.bridge.process = _trace_check_process
 
     try:
         client = TestClient(backend_main.app)

@@ -3,3 +3,4 @@ backend
 web
 ollama
 ollama-pull
+pingpong-warmup

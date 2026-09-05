@@ -30,6 +30,37 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command: ["ollama pull ${OLLAMA_MODEL:-qwen2.5:7b}"]
 
+  pingpong-warmup:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      WARMUP_INTERVAL_SECONDS: "${WARMUP_INTERVAL_SECONDS:-600}"
+      WARMUP_KEEP_ALIVE: "${WARMUP_KEEP_ALIVE:-24h}"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "[pingpong-warmup] keeping $${OLLAMA_MODEL} warm every $${WARMUP_INTERVAL_SECONDS}s (keep_alive=$${WARMUP_KEEP_ALIVE})"
+        while true; do
+          ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if curl -fsS -m 60 -X POST http://ollama:11434/api/generate \
+            -H 'Content-Type: application/json' \
+            -d "{\"model\":\"$${OLLAMA_MODEL}\",\"prompt\":\"ping\",\"stream\":false,\"keep_alive\":\"$${WARMUP_KEEP_ALIVE}\"}" \
+            >/dev/null 2>&1; then
+            echo "[pingpong-warmup] $${ts} ping OK"
+          else
+            echo "[pingpong-warmup] $${ts} ping FAILED"
+          fi
+          sleep "$${WARMUP_INTERVAL_SECONDS}"
+        done
+    security_opt:
+      - no-new-privileges:true
+
   lightning-spp:
     build:
       context: ./repos/Lightning-SPP-3.14

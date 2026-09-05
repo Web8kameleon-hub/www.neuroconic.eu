@@ -2,6 +2,6 @@
   "ok": true,
   "checked_at": "runtime",
   "compose": "docker-compose.yml",
-  "service_count": 5,
+  "service_count": 6,
   "failures": []
 }

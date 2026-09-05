@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:80/api/health}"
-THINK_URL="${THINK_URL:-http://127.0.0.1:80/api/shell/think}"
+HEALTH_URL="${HEALTH_URL:-https://127.0.0.1/api/health}"
+THINK_URL="${THINK_URL:-https://127.0.0.1/api/shell/think}"
 HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-90}"
 POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-2}"
 BUILD_FIRST="${BUILD_FIRST:-0}"
@@ -21,7 +21,7 @@ wait_http_200() {
   local deadline=$((SECONDS + timeout))
 
   while (( SECONDS < deadline )); do
-    if curl -fsS --max-time 5 "$url" >/dev/null 2>&1; then
+    if curl -fsS -k --max-time 5 "$url" >/dev/null 2>&1; then
       return 0
     fi
     sleep "$poll"
@@ -59,7 +59,7 @@ invoke_think_smoke() {
   local body='{"prompt":"rolling update smoke check","task_type":"reasoning"}'
   local response
 
-  response="$(curl -fsS -X POST -H 'Content-Type: application/json' --data "$body" --max-time 15 "$url")" || return 1
+  response="$(curl -fsS -k -X POST -H 'Content-Type: application/json' --data "$body" --max-time 15 "$url")" || return 1
 
   python3 - "$response" <<'PY'
 import json, sys
@@ -94,7 +94,7 @@ if [[ "$BUILD_FIRST" == "1" ]]; then
 fi
 
 echo "[1/3] Ensuring service topology is up..."
-docker compose -f "$COMPOSE_FILE" up -d --no-deps backend web
+docker compose -f "$COMPOSE_FILE" up -d --no-deps --remove-orphans backend web
 
 if ! wait_http_200 "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then
   echo "API health did not become 200 in time: $HEALTH_URL" >&2

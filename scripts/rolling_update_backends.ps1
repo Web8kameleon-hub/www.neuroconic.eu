@@ -6,8 +6,8 @@
 param(
     [string]$ComposeFile = (Join-Path (Split-Path -Parent $PSScriptRoot) "docker-compose.yml"),
     [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
-    [string]$HealthUrl = "http://127.0.0.1:80/api/health",
-    [string]$ThinkUrl = "http://127.0.0.1:80/api/shell/think",
+    [string]$HealthUrl = "https://127.0.0.1/api/health",
+    [string]$ThinkUrl = "https://127.0.0.1/api/shell/think",
     [int]$HealthTimeoutSeconds = 90,
     [int]$PollIntervalSeconds = 2,
     [switch]$BuildFirst,
@@ -27,7 +27,7 @@ function Wait-Http200 {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         try {
-            $resp = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5
+            $resp = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5 -SkipCertificateCheck
             if ($resp.StatusCode -eq 200) {
                 return $true
             }
@@ -74,7 +74,7 @@ function Invoke-ThinkSmoke {
     param([string]$Url)
 
     $body = @{ prompt = "rolling update smoke check"; task_type = "reasoning" } | ConvertTo-Json
-    $response = Invoke-RestMethod -Uri $Url -Method Post -ContentType "application/json" -Body $body -TimeoutSec 10
+    $response = Invoke-RestMethod -Uri $Url -Method Post -ContentType "application/json" -Body $body -TimeoutSec 10 -SkipCertificateCheck
 
     if ($null -eq $response -or -not $response.PSObject.Properties.Name.Contains("status")) {
         throw "Think smoke response is invalid."

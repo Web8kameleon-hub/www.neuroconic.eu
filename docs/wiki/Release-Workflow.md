@@ -25,6 +25,10 @@ bumping itself.
 
 ### Required setup: `RELEASE_PAT` (branch protection)
 
+**Status: configured** (as of 2026-09-06). The secret is set; the
+`auto-release` job authenticates with it and can push past `main`'s
+branch protection.
+
 `main` is protected by a repository ruleset that blocks direct pushes
 except from explicit bypass actors (currently the `LedjanAhmati` and
 `Web8kameleon-hub` user accounts). GitHub's default per-workflow

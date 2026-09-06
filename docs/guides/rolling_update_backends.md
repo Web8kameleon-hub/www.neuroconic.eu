@@ -1,6 +1,6 @@
-# Rolling Update: `backend`
+# Rolling Update: `backend` + `backend_b`
 
-Use this script to recreate the backend service while checking API health through Nginx.
+Use this script to recreate backend services one-by-one while checking API health through Nginx.
 
 ## Script
 
@@ -27,7 +27,8 @@ pwsh -File .\scripts\rolling_update_backends.ps1 -BuildFirst
 
 ## Expected Behavior
 
-- Starts/ensures `backend`, `web`.
+- Starts/ensures `backend`, `backend_b`, `web`.
 - Recreates `backend`, waits for healthy + health endpoint `200`.
+- Recreates `backend_b`, waits for healthy + health endpoint `200`.
 - Runs `shell/think` smoke check unless skipped.
 - Prints final `docker compose ps` and success message.

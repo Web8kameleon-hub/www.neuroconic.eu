@@ -25,8 +25,11 @@ jobs:
             -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" | jq '.'
           echo "== All zones visible to this token =="
           curl -s -X GET "https://api.cloudflare.com/client/v4/zones?per_page=50" \
-            -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" \
-            | jq '.result[] | {id, name, status}'
+            -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" > /tmp/zones_raw.json
+          cat /tmp/zones_raw.json
+          echo ""
+          echo "== Parsed (id/name/status) =="
+          jq '.result[]? | {id, name, status}' /tmp/zones_raw.json || true
 
       - name: Resolve Zone ID
         id: zone

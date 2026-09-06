@@ -1,6 +1,6 @@
 param(
     [string]$Org = "Web8kameleon-hub",
-    [string]$WebsiteRepo = "www.neurosonic.eu",
+    [string]$WebsiteRepo = "www.neuroconic.eu",
     [string]$OutputMarkdown = "docs/community/WEB8KAMELEON_REPOS.md",
     [string]$OutputJson = "docs/community/web8kameleon_repos.json",
     [string]$Token = $env:GITHUB_TOKEN

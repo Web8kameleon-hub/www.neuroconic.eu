@@ -32,11 +32,12 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://neurosonic.eu"
-"Repository" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu"
-"Documentation" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/tree/main/docs"
+"Repository" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu"
+"Central Repository" = "https://github.com/LedjanAhmati/www.neuroconic.eu"
+"Documentation" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu/tree/main/docs"
 "Funding" = "https://www.paypal.com/paypalme/ahmatibau"
-"Bug Reports" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/issues"
-"Changelog" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/blob/main/CHANGELOG.md"
+"Bug Reports" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu/issues"
+"Changelog" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu/blob/main/CHANGELOG.md"
 "Sitemap" = "https://neurosonic.eu/sitemap.xml"
 
 [project.scripts]

@@ -6,12 +6,18 @@
 [![License](https://img.shields.io/badge/License-Neurosonic-green?style=flat-square)](LICENSE)
 [![Core Stdlib](https://img.shields.io/badge/core-stdlib%20mode-success?style=flat-square)](PUBLIC_USAGE.md)
 [![No Fake](https://img.shields.io/badge/NO%20FAKE-PASSING-ff69b4?style=flat-square)](NO_FAKE_POLICY.md)
-[![GitHub Stars](https://img.shields.io/github/stars/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu)
-[![GitHub Issues](https://img.shields.io/github/issues/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu/issues)
-[![GitHub Last Commit](https://img.shields.io/github/last-commit/LedjanAhmati/www.neurosonic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neurosonic.eu)
+[![GitHub Stars](https://img.shields.io/github/stars/LedjanAhmati/www.neuroconic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neuroconic.eu)
+[![GitHub Issues](https://img.shields.io/github/issues/LedjanAhmati/www.neuroconic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neuroconic.eu/issues)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/LedjanAhmati/www.neuroconic.eu?style=flat-square&logo=github)](https://github.com/LedjanAhmati/www.neuroconic.eu)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](docs/deployment/RELEASE_CHECKLIST.md)
 [![Guardrails CI](https://img.shields.io/badge/guardrails-CI%20enforced-0ea5e9?style=flat-square)](https://github.com/Web8kameleon-hub/www.neuroconic.eu/actions/workflows/ci.yml)
 [![Sovereign AI](https://img.shields.io/badge/Sovereign-AI-8b5cf6?style=flat-square)](docs/Constitution.md)
+
+> **Repository note:** [`LedjanAhmati/www.neuroconic.eu`](https://github.com/LedjanAhmati/www.neuroconic.eu)
+> is the original/central repository where this project started.
+> [`Web8kameleon-hub/www.neuroconic.eu`](https://github.com/Web8kameleon-hub/www.neuroconic.eu)
+> is a fork of it used for active development, CI/CD, releases, and production
+> deployment. Star/issue counts above reflect the central repository.
 
 ---
 
@@ -86,8 +92,8 @@ Pretendimet në këtë README janë të lidhura me artefakte testimi, benchmark 
 
 ```bash
 # Clone
-git clone https://github.com/LedjanAhmati/www.neurosonic.eu
-cd www.neurosonic.eu
+git clone https://github.com/LedjanAhmati/www.neuroconic.eu
+cd www.neuroconic.eu
 
 # Core shell mode (stdlib-first)
 python neurosonic.py
@@ -472,7 +478,8 @@ Neurosonic License - Shih [LICENSE](LICENSE) për detaje.
 ## 🌍 Lidhjet
 
 - 🌐 [neurosonic.eu](https://www.neurosonic.eu)
-- 🐙 [GitHub](https://github.com/LedjanAhmati/www.neurosonic.eu)
+- 🐙 [GitHub (central)](https://github.com/LedjanAhmati/www.neuroconic.eu)
+- 🍴 [GitHub (fork, releases/deploy)](https://github.com/Web8kameleon-hub/www.neuroconic.eu)
 - 📖 [Dokumentacioni](docs/Architecture.md)
 - 🧬 [Kushtetuta](docs/Constitution.md)
 - 🗺️ [Wiki Home](docs/wiki/Home.md)

@@ -2,7 +2,8 @@
 
 Generated: 2026-09-02 09:19:25 UTC
 
-Primary site repository: [www.neurosonic.eu](https://github.com/Web8kameleon-hub/www.neurosonic.eu)
+Primary site repository: [www.neuroconic.eu](https://github.com/Web8kameleon-hub/www.neuroconic.eu)
+(fork of [LedjanAhmati/www.neuroconic.eu](https://github.com/LedjanAhmati/www.neuroconic.eu), the central/original repository)
 
 | Repository | Description | Homepage | Last Push |
 |---|---|---|---|

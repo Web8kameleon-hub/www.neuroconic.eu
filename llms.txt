@@ -5,12 +5,12 @@
 ## Primary resources
 
 - [Website](https://www.neurosonic.eu/): Product interface and overview.
-- [Source repository](https://github.com/LedjanAhmati/www.neurosonic.eu): Source code and project information.
-- [Architecture](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/Architecture.md): System architecture.
-- [Constitution](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/Constitution.md): Governance principles.
-- [Unified Data Model](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/CUDM.md): Data-model documentation.
-- [Privacy policy](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/docs/legal/PRIVACY.md): Privacy information.
-- [Security policy](https://github.com/LedjanAhmati/www.neurosonic.eu/blob/main/SECURITY.md): Security reporting and policy.
+- [Source repository](https://github.com/LedjanAhmati/www.neuroconic.eu): Source code and project information (central repository; also maintained as a fork at [Web8kameleon-hub/www.neuroconic.eu](https://github.com/Web8kameleon-hub/www.neuroconic.eu) for CI/CD, releases, and deployment).
+- [Architecture](https://github.com/LedjanAhmati/www.neuroconic.eu/blob/main/docs/Architecture.md): System architecture.
+- [Constitution](https://github.com/LedjanAhmati/www.neuroconic.eu/blob/main/docs/Constitution.md): Governance principles.
+- [Unified Data Model](https://github.com/LedjanAhmati/www.neuroconic.eu/blob/main/docs/CUDM.md): Data-model documentation.
+- [Privacy policy](https://github.com/LedjanAhmati/www.neuroconic.eu/blob/main/docs/legal/PRIVACY.md): Privacy information.
+- [Security policy](https://github.com/LedjanAhmati/www.neuroconic.eu/blob/main/SECURITY.md): Security reporting and policy.
 
 ## Terminology
 

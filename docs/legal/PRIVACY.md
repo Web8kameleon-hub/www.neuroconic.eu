@@ -26,6 +26,7 @@ Under GDPR (General Data Protection Regulation - EU), you have:
 ## Contact for Privacy Issues
 **ABA GmbH - HRB 21069 Bochum**
 **Email:** clisonix@pm.me
+Full legal notice: [Impressum](IMPRESSUM.md)
 
 ## Compliance
 - ✅ GDPR (EU)

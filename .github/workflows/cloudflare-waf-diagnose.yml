@@ -39,7 +39,7 @@ jobs:
           echo "$resp" | jq '.'
           zone_id=$(echo "$resp" | jq -r '.result[0].id')
           if [ -z "$zone_id" ] || [ "$zone_id" == "null" ]; then
-            echo "::error::Could not resolve zone id for neurosonic.eu"
+            echo "::error::Could not resolve zone id for neurosonic.eu. This almost always means CLOUDFLARE_API_TOKEN is valid/active but lacks 'Zone -> Zone -> Read' permission scoped to this zone (see the 'All zones visible to this token' debug step above -- if that list is also empty, the token has zero zone access configured). Fix in the Cloudflare dashboard: My Profile -> API Tokens -> edit/recreate the token with Zone Resources including neurosonic.eu and permission Zone:Read (plus Zone WAF:Edit if you want the 'disable' action to work), then update the GitHub secret with 'gh secret set CLOUDFLARE_API_TOKEN'."
             exit 1
           fi
           echo "zone_id=$zone_id" >> "$GITHUB_OUTPUT"

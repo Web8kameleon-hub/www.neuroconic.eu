@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.17 - 2026-09-06
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.16`. See
+`docs/releases/v1.0.17.md` for full detail.
+
+### Commits included (v1.0.17)
+
+- `f5da25f feat: add Android TWA + automate PyPI/npm/crates publishing, auto-release pipeline`
+
+### Validation (v1.0.17)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.17)
+
+- Git tag: `v1.0.17`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
 ## v1.0.16 - 2026-09-06
 
 Backend pool integrity fix: reverts an accidental removal of the `backend_b`

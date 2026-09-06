@@ -23,11 +23,23 @@ jobs:
     outputs:
       skip: ${{ steps.cut.outputs.skip }}
       version: ${{ steps.cut.outputs.version }}
+      published: ${{ steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true' }}
     steps:
+      - name: Check for release PAT (required to push past branch protection)
+        id: pat_check
+        run: |
+          if [ -n "${{ secrets.RELEASE_PAT }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::RELEASE_PAT secret is not set; this job will use the default GITHUB_TOKEN, which cannot push past main's branch protection ruleset (only the User bypass actors LedjanAhmati/Web8kameleon-hub can). See docs/wiki/Release-Workflow.md for setup."
+          fi
+
       - name: Checkout (full history + tags)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT || github.token }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -62,7 +74,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Commit, tag, and push
-        if: steps.cut.outputs.skip == 'false'
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true'
         env:
           VERSION: ${{ steps.cut.outputs.version }}
         run: |
@@ -84,7 +96,7 @@ jobs:
           git push origin "v${VERSION}"
 
       - name: Publish GitHub Release
-        if: steps.cut.outputs.skip == 'false'
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.cut.outputs.version }}
@@ -94,7 +106,7 @@ jobs:
             --notes-file "docs/releases/v${VERSION}.md"
 
       - name: Summary
-        if: steps.cut.outputs.skip == 'false'
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true'
         env:
           VERSION: ${{ steps.cut.outputs.version }}
         run: |
@@ -103,10 +115,21 @@ jobs:
           echo "- Release note: docs/releases/v${VERSION}.md" >> "$GITHUB_STEP_SUMMARY"
           echo "- CHANGELOG.md updated" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Summary (blocked, no RELEASE_PAT)
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'false'
+        env:
+          VERSION: ${{ steps.cut.outputs.version }}
+        run: |
+          echo "## Auto Release v${VERSION} - NOT PUBLISHED" >> "$GITHUB_STEP_SUMMARY"
+          echo "All validation checks passed, but RELEASE_PAT is not configured, so" >> "$GITHUB_STEP_SUMMARY"
+          echo "the commit/tag/push/release steps were skipped (the default" >> "$GITHUB_STEP_SUMMARY"
+          echo "GITHUB_TOKEN cannot push past main's branch protection ruleset)." >> "$GITHUB_STEP_SUMMARY"
+          echo "See docs/wiki/Release-Workflow.md for how to configure RELEASE_PAT." >> "$GITHUB_STEP_SUMMARY"
+
   publish-packages:
     name: Publish packages (npm/crates/PyPI)
     needs: auto-release
-    if: needs.auto-release.outputs.skip == 'false'
+    if: needs.auto-release.outputs.published == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

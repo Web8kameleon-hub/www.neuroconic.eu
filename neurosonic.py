@@ -1737,6 +1737,12 @@ class NoiseFilter:
 def main():
     """Pika kryesore e hyrjes së sistemit"""
 
+    # Windows PowerShell can inherit a legacy cp1252 output encoding. Keep
+    # the banner/box-drawing characters below from crashing the console script.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     # Shfaq banner-in
     print("""
 ╔══════════════════════════════════════════════════════╗

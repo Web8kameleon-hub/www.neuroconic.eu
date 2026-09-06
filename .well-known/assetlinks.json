@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "eu.neurosonic.app",
+        "sha256_cert_fingerprints": ["76:70:32:B8:A1:10:A3:49:22:1E:D9:83:F2:15:7F:12:85:27:4D:40:5D:0D:60:05:C8:94:A7:95:4D:59:A1:B7"]
+      }
+    }]

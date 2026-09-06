@@ -261,17 +261,28 @@ Kontrata për shell + NodeDB Fluid (anti-konflikt cross-language):
 
 - `docs/governance/NODEDB_FLUID_SHELL_CONTRACT.md`
 
-## 📦 Publishing (PyPI + npm + crates)
+## 📦 Publishing (PyPI + npm + crates + Android TWA)
 
-Multi-ecosystem publishing is now prepared:
+Multi-ecosystem publishing is automated end-to-end:
 
-- PyPI package and CLI entrypoint `neurosonic-shell`
+- Every push to `main` runs `.github/workflows/auto-release.yml`, which
+  bumps the version, cuts a GitHub Release, then publishes to PyPI, npm,
+  and crates.io -- each registry is skipped gracefully if its secret
+  (`PYPI_API_TOKEN` / `NPM_TOKEN` / `CARGO_REGISTRY_TOKEN`) isn't
+  configured yet, never silently pretending to publish.
+- PyPI package and CLI entrypoints `neurosonic`, `neurosonic-dna`,
+  `neurosonic-no-fake-police`, `neurosonic-shell`
 - npm package `packages/npm/neurosonic-shell`
 - Rust crate `packages/crates/neurosonic-shell`
+- Android Trusted Web Activity `packages/android/neurosonic-twa`
+  (`eu.neurosonic.app`), wrapping `https://neurosonic.eu` for Play Store
+  distribution
 
-Full commands and release flow are documented in:
+Full commands, secrets required, and the manual fallback flow are
+documented in:
 
 - `docs/deployment/PUBLISHING.md`
+- `packages/android/neurosonic-twa/README.md` (TWA build/signing/Play Store)
 
 To sync/link all repositories under `Web8kameleon-hub` for `neurosonic.eu`:
 

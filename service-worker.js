@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neurosonic-pwa-v1';
+const CACHE_NAME = 'neurosonic-pwa-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -7,8 +7,9 @@ const APP_SHELL = [
   '/dna-ui',
   '/manifest.webmanifest',
   '/og-neurosonic.svg',
-  '/assets/neurosonic-pwa-icon.svg',
-  '/assets/neurosonic-pwa-maskable.svg'
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-512-maskable.png'
 ];
 
 self.addEventListener('install', (event) => {

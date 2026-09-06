@@ -19,6 +19,9 @@ target/
 packages/crates/**/target/
 package-lock.json
 node_modules/
+.gradle/
+*.keystore
+*.jks
 .DS_Store
 Thumbs.db
 *.log

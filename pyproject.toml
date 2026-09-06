@@ -64,6 +64,9 @@ public = [
     "httpx2",
 ]
 
+[tool.setuptools]
+py-modules = ["neurosonic", "neurosonic_core", "neurosonic_no_fake_police", "neurosonic_shell"]
+
 [tool.setuptools.packages.find]
 include = ["neurosonic*"]
 

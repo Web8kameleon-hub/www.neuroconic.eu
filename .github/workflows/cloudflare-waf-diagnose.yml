@@ -16,6 +16,18 @@ jobs:
   waf:
     runs-on: ubuntu-latest
     steps:
+      - name: Verify token + list all visible zones (debug)
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "== Token verify =="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" | jq '.'
+          echo "== All zones visible to this token =="
+          curl -s -X GET "https://api.cloudflare.com/client/v4/zones?per_page=50" \
+            -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" \
+            | jq '.result[] | {id, name, status}'
+
       - name: Resolve Zone ID
         id: zone
         env:
@@ -24,7 +36,7 @@ jobs:
           resp=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=neurosonic.eu" \
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json")
-          echo "$resp" | jq -r '.success, .errors'
+          echo "$resp" | jq '.'
           zone_id=$(echo "$resp" | jq -r '.result[0].id')
           if [ -z "$zone_id" ] || [ "$zone_id" == "null" ]; then
             echo "::error::Could not resolve zone id for neurosonic.eu"

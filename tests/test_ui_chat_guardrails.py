@@ -46,7 +46,7 @@ def test_sanitize_chat_reply_keeps_short_text_unchanged() -> None:
 
 
 def test_sanitize_chat_reply_truncates_long_text() -> None:
-    long_text = "word " * 300
+    long_text = "word " * (backend_main._UI_CHAT_MAX_REPLY_CHARS // 5 + 200)
     result = backend_main._sanitize_chat_reply(long_text)
     assert len(result) <= backend_main._UI_CHAT_MAX_REPLY_CHARS + 1
     assert result.endswith("…")

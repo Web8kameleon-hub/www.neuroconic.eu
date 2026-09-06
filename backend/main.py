@@ -342,6 +342,28 @@ def _resolve_processing_engine(
     return routing.get(normalized, ProcessingEngine.HYBRID)
 
 
+# Per-engine generation parameters. Engine selection (see
+# _resolve_processing_engine above) previously had zero effect on actual
+# generation - every engine silently shared the same Ollama sampling
+# settings. XCL is Neurosonic's designated code engine and must behave
+# deterministically (temperature=0, top_p=1 -> greedy/argmax decoding.
+# same input, same output every time), which matters for reproducible code
+# generation/refactoring. CLX (reasoning) and CLI_I (vision) get a small
+# amount of temperature for well-formed-but-not-rigid analysis. HYBRID and
+# CLISONIC (general/creative conversation) use the bridge's own
+# OLLAMA_TEMPERATURE/OLLAMA_TOP_P defaults (see neurosonic_llm_bridge.py).
+_ENGINE_GENERATION_PARAMS: dict[ProcessingEngine, dict[str, float]] = {
+    ProcessingEngine.XCL: {"temperature": 0.0, "top_p": 1.0},
+    ProcessingEngine.CLX: {"temperature": 0.3, "top_p": 0.9},
+    ProcessingEngine.CLI_I: {"temperature": 0.3, "top_p": 0.9},
+}
+
+
+def _generation_params_for_engine(engine: ProcessingEngine) -> dict[str, float | None]:
+    params = _ENGINE_GENERATION_PARAMS.get(engine, {})
+    return {"temperature": params.get("temperature"), "top_p": params.get("top_p")}
+
+
 # ========================================================================
 # Endpoints
 # ========================================================================
@@ -687,7 +709,7 @@ what personal dashboard/panel they want. Never mention JSON, schemas, APIs, or c
 
 You must reply with ONLY a single JSON object (no markdown fences, no extra text) with this shape:
 {
-  "reply": "a short, warm, conversational reply IN ENGLISH explaining what you built or asking one simple follow-up question",
+  "reply": "a conversational reply IN ENGLISH explaining what you built or asking a smart follow-up question",
   "title": "a short friendly title for the panel",
   "widgets": [
     {"type": "hero|timeline|status|markdown|list|counter|calendar|weather|console|image-dropzone|policy-grid|chat|links|table|chart",
@@ -697,9 +719,14 @@ You must reply with ONLY a single JSON object (no markdown fences, no extra text
 
 Always reply in English, regardless of what language the user writes in - this
 product is used by a global, English-speaking audience.
-Keep "reply" human, encouraging and creative - like a helpful designer friend, never robotic.
-If the request is vague, still produce a reasonable first draft of widgets and ask one clarifying
-question in "reply". Always output valid JSON and nothing else."""
+Be genuinely thoughtful, not generic: notice specifics in what the user said and
+reflect them back, suggest a widget combination that actually fits their stated
+goal (not just a default set), and when useful, briefly explain *why* a widget
+helps them. Keep "reply" warm, creative and human - like a sharp, attentive
+designer friend who's actually listening, never a robotic template.
+If the request is vague, still produce a reasonable first draft of widgets and ask one smart,
+specific clarifying question in "reply" (not a generic "what would you like?").
+Always output valid JSON and nothing else."""
 
 
 def _extract_json_object(text: str) -> dict[str, Any] | None:
@@ -723,8 +750,11 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
 # Chat quality guardrails: local models occasionally degrade into repetitive
 # or truncated "noise" instead of a coherent answer. These are deterministic,
 # measurable heuristics (not another LLM call) applied before trusting output.
-_UI_CHAT_MAX_REPLY_CHARS = 600
+# Bounded generously (not a hard "keep it short" constraint) so a genuinely
+# thoughtful, detailed reply isn't chopped mid-explanation.
+_UI_CHAT_MAX_REPLY_CHARS = 2000
 _UI_CHAT_MAX_RETRIES = 1
+_UI_CHAT_HISTORY_TURNS = 12
 
 
 def _is_reply_noisy(text: str, min_unique_ratio: float = 0.5, min_words: int = 8) -> bool:
@@ -787,7 +817,9 @@ async def ui_chat(req: UIChatRequest, request: Request):
     existing = personal_node_store.load_profile(req.profile_id)
     existing_schema = existing.get("schema") if isinstance(existing, dict) else None
 
-    history_text = "\n".join(f"{item.role}: {item.content}" for item in req.history[-6:])
+    history_text = "\n".join(
+        f"{item.role}: {item.content}" for item in req.history[-_UI_CHAT_HISTORY_TURNS:]
+    )
     context_note = (
         f"\nExisting panel title: {existing_schema.get('title')}" if existing_schema else ""
     )
@@ -1197,6 +1229,21 @@ async def self_learning_cycles(limit: int = 20):
 
 
 _SHELL_THINK_SYSTEM_PROMPT = (
+    "You are Neurosonic's reasoning engine: a highly capable, thoughtful assistant. "
+    "Think carefully before answering. For non-trivial questions, reason step by "
+    "step internally, weigh alternatives, and check your own logic before giving "
+    "the final answer - but present only the polished conclusion and the "
+    "reasoning the user actually needs, not raw scratch notes. "
+    "Be substantive and specific rather than generic: give concrete details, "
+    "examples, edge cases, and trade-offs when they add real value, instead of "
+    "vague platitudes. When the request is creative (writing, brainstorming, "
+    "naming, storytelling), be genuinely imaginative and original - avoid the "
+    "most obvious or cliche answer. When the request is technical or factual, "
+    "prioritize correctness and precision over sounding impressive; if you are "
+    "not sure of something, say so plainly rather than inventing a confident "
+    "answer. Match the depth of your answer to the complexity of the question: "
+    "a quick question deserves a quick, clear answer; a hard problem deserves a "
+    "thorough one. "
     "Always reply in English, regardless of what language the user writes in - "
     "this product is used by a global, English-speaking audience."
 )
@@ -1409,7 +1456,13 @@ async def shell_think(req: ShellThinkRequest):
             "sources": [bridge.base_url],
         }
 
-    llm_result = llm_bridge.generate(prompt, system=_SHELL_THINK_SYSTEM_PROMPT)
+    _engine_gen_params = _generation_params_for_engine(selected_engine)
+    llm_result = llm_bridge.generate(
+        prompt,
+        system=_SHELL_THINK_SYSTEM_PROMPT,
+        temperature=_engine_gen_params["temperature"],
+        top_p=_engine_gen_params["top_p"],
+    )
     llm_output_hash = hashlib.sha256(llm_result.text.encode("utf-8")).hexdigest() if llm_result.text else ""
     pipeline_trace.append(
         _trace_step(

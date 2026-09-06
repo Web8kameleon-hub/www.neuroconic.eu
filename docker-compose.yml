@@ -104,6 +104,11 @@ services:
       LIGHTNING_SPP_URL: http://lightning-spp:8080
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
+      OLLAMA_TEMPERATURE: ${OLLAMA_TEMPERATURE:-0.75}
+      OLLAMA_TOP_P: ${OLLAMA_TOP_P:-0.9}
+      OLLAMA_REPEAT_PENALTY: ${OLLAMA_REPEAT_PENALTY:-1.15}
+      OLLAMA_NUM_PREDICT: ${OLLAMA_NUM_PREDICT:--1}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://neurosonic.eu,https://www.neurosonic.eu}
       PYTHONUNBUFFERED: "1"
       PYTHONUTF8: "1"
@@ -139,6 +144,11 @@ services:
       LIGHTNING_SPP_URL: http://lightning-spp:8080
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
+      OLLAMA_TEMPERATURE: ${OLLAMA_TEMPERATURE:-0.75}
+      OLLAMA_TOP_P: ${OLLAMA_TOP_P:-0.9}
+      OLLAMA_REPEAT_PENALTY: ${OLLAMA_REPEAT_PENALTY:-1.15}
+      OLLAMA_NUM_PREDICT: ${OLLAMA_NUM_PREDICT:--1}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://neurosonic.eu,https://www.neurosonic.eu}
       PYTHONUNBUFFERED: "1"
       PYTHONUTF8: "1"

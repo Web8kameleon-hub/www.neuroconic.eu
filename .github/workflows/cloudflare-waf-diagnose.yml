@@ -111,7 +111,7 @@ jobs:
           fi
           echo "Rule updated successfully. /api/* (all paths) now skip WAF/rate-limit/managed challenge phases."
 
-
+      - name: Disable rule blocking /api paths
         if: ${{ inputs.action == 'disable' }}
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

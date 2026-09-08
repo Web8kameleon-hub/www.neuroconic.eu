@@ -646,6 +646,11 @@ async def get_dna():
 
 @app.get("/api/genome")
 async def get_genome():
+    return _genome_runtime_payload()
+
+
+def _genome_runtime_payload() -> dict[str, Any]:
+    """Build the installed-package registry used by API and runtime UI."""
     packages = genome.list_packages()
     categories = genome.get_packages_by_category()
     cat_map = {}
@@ -661,6 +666,17 @@ async def get_genome():
         },
         "packages": packages,
         "stats": genome.get_stats(),
+    }
+
+
+@app.get("/api/ui/runtime")
+async def ui_runtime():
+    """Return one live, source-backed snapshot for the Neurosonic shell."""
+    return {
+        "timestamp": time.time(),
+        "health": await health(),
+        "lightning": bridge.get_statistics(),
+        "genome": _genome_runtime_payload(),
     }
 
 

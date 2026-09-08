@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import backend.main as backend_main
@@ -31,3 +32,13 @@ def test_gram_adapter_reports_missing_configuration_without_fallback() -> None:
     assert status["configured"] is False
     assert status["available"] is False
     assert "not configured" in status["reason"]
+
+
+def test_pwa_starts_in_live_shell_without_cached_html_routes() -> None:
+    """Installed PWA opens the live shell and never substitutes cached page HTML."""
+    manifest = json.loads(Path("manifest.webmanifest").read_text(encoding="utf-8"))
+    worker = Path("service-worker.js").read_text(encoding="utf-8")
+
+    assert manifest["start_url"] == "/dna-ui"
+    assert "event.request.mode === 'navigate'" in worker
+    assert "'/ui-composer'" not in worker

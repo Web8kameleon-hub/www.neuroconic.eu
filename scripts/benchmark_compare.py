@@ -12,8 +12,16 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Compare two benchmark outputs and publish evidence artifacts."
     )
-    parser.add_argument("--baseline", default=None, help="Path to baseline benchmark JSON.")
-    parser.add_argument("--candidate", default=None, help="Path to candidate benchmark JSON.")
+    parser.add_argument(
+        "--baseline",
+        default=None,
+        help="Path to baseline benchmark JSON.",
+    )
+    parser.add_argument(
+        "--candidate",
+        default=None,
+        help="Path to candidate benchmark JSON.",
+    )
     parser.add_argument(
         "--benchmarks-dir",
         default="logs/benchmarks",
@@ -29,7 +37,11 @@ def _parse_args() -> argparse.Namespace:
         default="docs/production/evidence/benchmark_compare_latest.md",
         help="Output Markdown report path.",
     )
-    parser.add_argument("--pretty", action="store_true", help="Pretty print JSON output.")
+    parser.add_argument(
+        "--pretty",
+        action="store_true",
+        help="Pretty print JSON output.",
+    )
     return parser.parse_args()
 
 
@@ -46,10 +58,14 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 def _pick_latest_two(benchmarks_dir: Path) -> tuple[Path, Path]:
     files = sorted(
-        benchmarks_dir.glob("live-benchmark-*.json"), key=lambda item: item.stat().st_mtime
+        benchmarks_dir.glob("live-benchmark-*.json"),
+        key=lambda item: item.stat().st_mtime,
     )
     if len(files) < 2:
-        raise ValueError("Need at least two live benchmark files in logs/benchmarks to compare.")
+        raise ValueError(
+            "Need at least two live benchmark files "
+            "in logs/benchmarks to compare."
+        )
     return files[-2], files[-1]
 
 
@@ -72,7 +88,12 @@ def _delta_percent(candidate: float, baseline: float) -> float:
     return round(((candidate - baseline) / baseline) * 100.0, 2)
 
 
-def _compare(baseline: dict[str, Any], candidate: dict[str, Any], baseline_path: Path, candidate_path: Path) -> dict[str, Any]:
+def _compare(
+    baseline: dict[str, Any],
+    candidate: dict[str, Any],
+    baseline_path: Path,
+    candidate_path: Path,
+) -> dict[str, Any]:
     base_scenarios = _scenario_map(baseline)
     cand_scenarios = _scenario_map(candidate)
 
@@ -147,7 +168,10 @@ def _to_markdown(report: dict[str, Any]) -> str:
         f"- Shared scenarios: `{report['totals']['shared_scenarios']}`",
         f"- Overall pass-rate delta: `{report['totals']['overall_pass_rate_delta']}`",
         "",
-        "| Scenario | Δ p95 (ms) | Δ p95 (%) | Δ Throughput (rps) | Δ Throughput (%) | Δ Pass Rate |",
+        (
+            "| Scenario | Δ p95 (ms) | Δ p95 (%) | "
+            "Δ Throughput (rps) | Δ Throughput (%) | Δ Pass Rate |"
+        ),
         "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
 

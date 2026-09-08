@@ -24,7 +24,11 @@ def _parse_args() -> argparse.Namespace:
         default="docs/production/evidence",
         help="Directory where evidence artifacts are written.",
     )
-    parser.add_argument("--pretty", action="store_true", help="Pretty print JSON outputs.")
+    parser.add_argument(
+        "--pretty",
+        action="store_true",
+        help="Pretty print JSON outputs.",
+    )
     return parser.parse_args()
 
 
@@ -55,8 +59,14 @@ def _read_benchmark_points(benchmarks_dir: Path) -> list[dict[str, Any]]:
             created_at = path.stat().st_mtime
 
         results = data.get("results", [])
-        p50_values = [_safe_float(item.get("latency_ms", {}).get("p50")) for item in results]
-        p95_values = [_safe_float(item.get("latency_ms", {}).get("p95")) for item in results]
+        p50_values = [
+            _safe_float(item.get("latency_ms", {}).get("p50"))
+            for item in results
+        ]
+        p95_values = [
+            _safe_float(item.get("latency_ms", {}).get("p95"))
+            for item in results
+        ]
 
         p50_values = [item for item in p50_values if item > 0]
         p95_values = [item for item in p95_values if item > 0]
@@ -69,7 +79,9 @@ def _read_benchmark_points(benchmarks_dir: Path) -> list[dict[str, Any]]:
         points.append(
             {
                 "timestamp": created_at,
-                "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(created_at)),
+                "date_utc": time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ", time.gmtime(created_at)
+                ),
                 "file": str(path).replace("\\", "/"),
                 "profile": data.get("profile", {}).get("name", "unknown"),
                 "scenario_count": len(results),
@@ -105,7 +117,10 @@ def _build_availability_trend(points: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "metric": "scenario_contract_pass_rate",
         "unit": "percent",
-        "definition": "Derived from live benchmark scenario contract pass rates; not service availability.",
+        "definition": (
+            "Derived from live benchmark scenario contract pass rates; "
+            "not service availability."
+        ),
         "series": [
             {
                 "date_utc": item["date_utc"],
@@ -130,7 +145,14 @@ def _write_json(path: Path, payload: dict[str, Any], pretty: bool) -> None:
 def _ensure_incident_log(path: Path) -> None:
     if path.exists():
         return
-    content = """# Incident Log\n\nTrack only real incidents with timestamps, impact, root cause, and corrective actions.\n\n| Date (UTC) | Severity | Summary | Impact | Root Cause | Corrective Action | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| _pending_ | _n/a_ | No production incident recorded yet | _n/a_ | _n/a_ | _n/a_ | Open |\n"""
+    content = """# Incident Log
+
+Track only real incidents with timestamps, impact, root cause, and corrective actions.
+
+| Date (UTC) | Severity | Summary | Impact | Root Cause | Corrective Action | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| _pending_ | _n/a_ | No incident yet | _n/a_ | _n/a_ | _n/a_ | Open |
+"""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
@@ -138,7 +160,14 @@ def _ensure_incident_log(path: Path) -> None:
 def _ensure_rollback_drills(path: Path) -> None:
     if path.exists():
         return
-    content = """# Rollback Drills\n\nTrack controlled rollback exercises for deploy confidence.\n\n| Date (UTC) | Release | Trigger | RTO (min) | Data Loss | Result | Notes |\n| --- | --- | --- | --- | --- | --- | --- |\n| _pending_ | _n/a_ | _n/a_ | _n/a_ | _n/a_ | Not run | Schedule first drill |\n"""
+    content = """# Rollback Drills
+
+Track controlled rollback exercises for deploy confidence.
+
+| Date (UTC) | Release | Trigger | RTO (min) | Data Loss | Result | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| _pending_ | _n/a_ | _n/a_ | _n/a_ | _n/a_ | Not run | Schedule first drill |
+"""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
@@ -156,7 +185,11 @@ def main() -> int:
     rollback_path = evidence_dir / "rollback_drills.md"
 
     _write_json(latency_path, _build_latency_trend(points), pretty=args.pretty)
-    _write_json(availability_path, _build_availability_trend(points), pretty=args.pretty)
+    _write_json(
+        availability_path,
+        _build_availability_trend(points),
+        pretty=args.pretty,
+    )
     _ensure_incident_log(incident_log_path)
     _ensure_rollback_drills(rollback_path)
 

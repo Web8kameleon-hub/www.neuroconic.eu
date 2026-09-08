@@ -51,7 +51,7 @@ Pretendimet në këtë README janë të lidhura me artefakte testimi, benchmark 
   - [🌐 Production Hosting](#-production-hosting)
   - [📦 Public Installation Packs](#-public-installation-packs)
   - [⚡ First Benchmark (baseline + tuning + edge cases)](#-first-benchmark-baseline--tuning--edge-cases)
-  - [📦 Publishing (PyPI + npm + crates)](#-publishing-pypi--npm--crates)
+  - [📦 Publishing (PyPI + npm + crates + Android TWA)](#-publishing-pypi--npm--crates--android-twa)
   - [🧭 OS-CLX Policy (lightweight) + Cross-Repo Acceleration](#-os-clx-policy-lightweight--cross-repo-acceleration)
   - [📈 Production Evidence Pack](#-production-evidence-pack)
   - [📡 Full Observability Pack](#-full-observability-pack)

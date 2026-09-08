@@ -12,7 +12,13 @@ from typing import Any
 
 REQUIRED_TOP_LEVEL = ("trace", "verification")
 REQUIRED_TRACE_FIELDS = ("trace_id", "input_hash", "output_hash", "pipeline")
-REQUIRED_STEP_FIELDS = ("component", "status", "duration_ms", "input_hash", "output_hash")
+REQUIRED_STEP_FIELDS = (
+    "component",
+    "status",
+    "duration_ms",
+    "input_hash",
+    "output_hash",
+)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -89,7 +95,10 @@ def main() -> int:
     }
     path = Path(args.output)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     if failures:
         print("FAIL: trace uniform contract check failed")
         for failure in failures:

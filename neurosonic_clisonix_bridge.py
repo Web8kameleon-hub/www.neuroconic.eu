@@ -23,12 +23,15 @@ class ClisonixAuthBillingBridge:
     """Adapter i konfigurueshëm për auth dhe billing cloud."""
 
     def __init__(self, base_url: str | None = None, timeout_seconds: float = 8.0):
-        configured_url = (
-            base_url if base_url is not None else os.environ.get("NEUROSONIC_CLOUD_BASE_URL", "")
-        )
+        configured_url = base_url
+        if configured_url is None:
+            configured_url = os.environ.get("NEUROSONIC_CLOUD_BASE_URL", "")
         self.base_url = configured_url.strip().rstrip("/")
         self.timeout_seconds = timeout_seconds
-        self.service_name = os.environ.get("NEUROSONIC_CLOUD_SERVICE", "clisonix-cloud").strip() or "clisonix-cloud"
+        self.service_name = (
+            os.environ.get("NEUROSONIC_CLOUD_SERVICE", "clisonix-cloud").strip()
+            or "clisonix-cloud"
+        )
         self.auth_token = os.environ.get("NEUROSONIC_CLOUD_TOKEN", "").strip()
         self._validate_base_url()
 
@@ -46,7 +49,10 @@ class ClisonixAuthBillingBridge:
             }
 
         try:
-            payload = self._request_json(self._path("NEUROSONIC_CLOUD_HEALTH_PATH", "/api/health"), "GET")
+            payload = self._request_json(
+                self._path("NEUROSONIC_CLOUD_HEALTH_PATH", "/api/health"),
+                "GET",
+            )
         except ClisonixBridgeError as exc:
             return {
                 "configured": True,
@@ -87,7 +93,10 @@ class ClisonixAuthBillingBridge:
 
     def billing_checkout(self, authorization_header: str) -> dict[str, Any]:
         return self._request_json(
-            self._path("NEUROSONIC_CLOUD_BILLING_CHECKOUT_PATH", "/api/billing/checkout"),
+            self._path(
+                "NEUROSONIC_CLOUD_BILLING_CHECKOUT_PATH",
+                "/api/billing/checkout",
+            ),
             "POST",
             {},
             authorization_header=authorization_header,
@@ -117,10 +126,19 @@ class ClisonixAuthBillingBridge:
             return
         parsed = urlparse(self.base_url)
         if parsed.scheme not in {"https", "http"} or not parsed.netloc:
-            raise ValueError("NEUROSONIC_CLOUD_BASE_URL must be an absolute HTTP(S) URL")
-        insecure_allowed = os.environ.get("NEUROSONIC_CLOUD_ALLOW_INSECURE_HTTP", "false").lower() == "true"
+            raise ValueError(
+                "NEUROSONIC_CLOUD_BASE_URL must be an absolute HTTP(S) URL"
+            )
+        insecure_allowed = (
+            os.environ.get("NEUROSONIC_CLOUD_ALLOW_INSECURE_HTTP", "false")
+            .lower()
+            == "true"
+        )
         if parsed.scheme != "https" and not insecure_allowed:
-            raise ValueError("NEUROSONIC_CLOUD_BASE_URL must use HTTPS unless NEUROSONIC_CLOUD_ALLOW_INSECURE_HTTP=true")
+            raise ValueError(
+                "NEUROSONIC_CLOUD_BASE_URL must use HTTPS unless "
+                "NEUROSONIC_CLOUD_ALLOW_INSECURE_HTTP=true"
+            )
 
     def _request_json(
         self,
@@ -165,7 +183,9 @@ class ClisonixAuthBillingBridge:
             raise ClisonixBridgeError(str(exc)) from exc
 
         if not isinstance(decoded, dict):
-            raise ClisonixBridgeError("Cloud service returned a non-object JSON response")
+            raise ClisonixBridgeError(
+                "Cloud service returned a non-object JSON response"
+            )
         return decoded
 
     @staticmethod

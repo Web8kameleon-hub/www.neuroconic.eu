@@ -80,6 +80,7 @@
       padding: 22px 24px;
       margin-bottom: 18px;
       box-shadow: 0 22px 50px var(--shadow);
+      -webkit-backdrop-filter: blur(14px);
       backdrop-filter: blur(14px);
     }
 
@@ -337,6 +338,7 @@
     .label-inline { margin: 0; }
     .result { white-space: pre-wrap; background: #0a122a; border: 1px solid #253569; border-radius: 10px; padding: 12px; max-height: 260px; overflow: auto; font-size: 12px; }
     .top-gap-sm { margin-top: 10px; }
+    .is-hidden { display: none; }
 
     @media (max-width: 900px) {
       .workspace-grid { grid-template-columns: 1fr; }
@@ -444,7 +446,7 @@
           <button class="secondary" onclick="clearMockMagicApproval()">Discard</button>
         </div>
         <div id="mockMagicResult" class="result top-gap-sm">No mock concept generated yet.</div>
-        <div id="mockMagicApproval" class="result top-gap-sm" style="display:none;">No approval pending.</div>
+        <div id="mockMagicApproval" class="result top-gap-sm is-hidden">No approval pending.</div>
       </div>
 
       <div class="card">

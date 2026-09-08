@@ -9,7 +9,9 @@ from typing import Any
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate SLO snapshot and error-budget status.")
+    parser = argparse.ArgumentParser(
+        description="Generate SLO snapshot and error-budget status."
+    )
     parser.add_argument(
         "--availability",
         default="docs/production/evidence/availability_trend.json",
@@ -46,7 +48,9 @@ def _latest(series: list[dict[str, Any]]) -> dict[str, Any]:
     return series[-1]
 
 
-def _error_budget_burn(observed_availability_percent: float, target_percent: float) -> float:
+def _error_budget_burn(
+    observed_availability_percent: float, target_percent: float
+) -> float:
     budget = max(0.000001, 100.0 - target_percent)
     consumed = max(0.0, target_percent - observed_availability_percent)
     return round(consumed / budget, 4)

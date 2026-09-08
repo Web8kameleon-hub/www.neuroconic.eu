@@ -10,7 +10,7 @@ name: "Pulse - Bridge & Heartbeat"
 
 on:
   push:
-    branches: [ main, develop, master ]
+    branches: [ main ]
   schedule:
     - cron: '*/5 * * * *'  # Heartbeat cdo 5 minuta
   workflow_dispatch:         # Manual trigger

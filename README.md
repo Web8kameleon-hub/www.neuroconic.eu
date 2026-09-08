@@ -51,6 +51,7 @@ Pretendimet në këtë README janë të lidhura me artefakte testimi, benchmark 
   - [🌐 Production Hosting](#-production-hosting)
   - [📦 Public Installation Packs](#-public-installation-packs)
   - [⚡ First Benchmark (baseline + tuning + edge cases)](#-first-benchmark-baseline--tuning--edge-cases)
+  - [🧪 Dedicated Edge-Case Benchmark](#-dedicated-edge-case-benchmark)
   - [📦 Publishing (PyPI + npm + crates + Android TWA)](#-publishing-pypi--npm--crates--android-twa)
   - [🧭 OS-CLX Policy (lightweight) + Cross-Repo Acceleration](#-os-clx-policy-lightweight--cross-repo-acceleration)
   - [📈 Production Evidence Pack](#-production-evidence-pack)
@@ -263,6 +264,23 @@ What it measures in one run:
 - plugin attach success baseline
 
 Output is written to `logs/benchmarks/live-benchmark-<timestamp>.json` with latency (`min`, `p50`, `p95`, `max`, `mean`, `stdev`), throughput (`rps`), and pass-rate per live scenario. The backend URL is required; unavailable services fail the run.
+
+## 🧪 Dedicated Edge-Case Benchmark
+
+Run edge scenarios only (no baseline success paths):
+
+```bash
+python scripts/benchmark_edge_cases.py --base-url http://127.0.0.1:8000 --iterations 12 --warmup 2 --pretty
+```
+
+Default outputs:
+
+- `logs/benchmarks/live-edge-benchmark-<timestamp>.json`
+- `docs/production/evidence/edge_benchmark_latest.md`
+
+This runner validates shell/plugin edge contracts (`Prompt is empty`,
+`liability_ack must be true`, private-network rejection, sensitive-metadata
+rejection) and exits non-zero when overall pass-rate is lower than `100%`.
 
 Kontrata për shell + NodeDB Fluid (anti-konflikt cross-language):
 

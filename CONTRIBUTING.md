@@ -45,7 +45,19 @@ python test_architecture.py
 
 # Run NO FAKE police
 python neurosonic_no_fake_police.py --ci
+
+# Run benchmark contract tests
+python -m pytest -q tests/test_benchmark_first.py tests/test_benchmark_edge_cases.py
 ```
+
+## 🌊 Single-Branch Production Rule
+
+Ky repo ndjek **main-only production flow**:
+
+- Vetëm dega `main` konsiderohet dega e zhvilluar dhe e deploy-ueshme.
+- Nuk mbahen degë dekorative/sterile si strategji standarde release.
+- CI/CD dhe guardrails targetojnë `main` për konsistencë prodhimi.
+- Çdo ndryshim duhet të përfundojë i testuar me benchmark contract tests.
 
 ## 📁 Project Structure
 
@@ -61,13 +73,13 @@ neurosonic.eu/
 ## 🧬 Contribution Workflow
 
 1. Fork the repo
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+2. Sync with `main`
 3. Make changes (zero dependencies only!)
 4. Run `python neurosonic_no_fake_police.py --ci` (must pass)
-5. Run `python test_architecture.py` (all tests must pass)
-6. Commit (`git commit -m 'Add amazing feature'`)
-7. Push (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+5. Run `python test_architecture.py` (must pass)
+6. Run `python -m pytest -q tests/test_benchmark_first.py tests/test_benchmark_edge_cases.py` (must pass)
+7. Commit (`git commit -m 'Your change'`)
+8. Push to `main` and verify CI green
 
 ## ✅ Pull Request Checklist
 

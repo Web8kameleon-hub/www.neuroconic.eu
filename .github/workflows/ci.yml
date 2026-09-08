@@ -2,7 +2,7 @@ name: Neurosonic CI - Zero Fake Enforcement
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -30,6 +30,10 @@ jobs:
         run: python scripts/guardrails/routes_history_guard.py
       - name: Run Architecture Tests
         run: python test_architecture.py
+      - name: Run benchmark contract tests
+        run: python -m pytest -q tests/test_benchmark_first.py tests/test_benchmark_edge_cases.py
+      - name: Run assessment scorecard contract tests
+        run: python -m pytest -q tests/test_assessment_scorecard.py
       - name: Run pytest suite
         run: python -m pytest -q
 

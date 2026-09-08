@@ -48,6 +48,9 @@ python neurosonic_no_fake_police.py --ci
 
 # Run benchmark contract tests
 python -m pytest -q tests/test_benchmark_first.py tests/test_benchmark_edge_cases.py
+
+# Enforce minimum test inventory
+python scripts/assert_min_test_count.py --minimum 64
 ```
 
 ## 🌊 Single-Branch Production Rule

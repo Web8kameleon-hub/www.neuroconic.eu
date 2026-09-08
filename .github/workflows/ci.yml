@@ -30,10 +30,12 @@ jobs:
         run: python scripts/guardrails/routes_history_guard.py
       - name: Run Architecture Tests
         run: python test_architecture.py
+      - name: Enforce minimum test inventory
+        run: python scripts/assert_min_test_count.py --minimum 64
       - name: Run benchmark contract tests
         run: python -m pytest -q tests/test_benchmark_first.py tests/test_benchmark_edge_cases.py
       - name: Run assessment scorecard contract tests
-        run: python -m pytest -q tests/test_assessment_scorecard.py
+        run: python -m pytest -q tests/test_assessment_scorecard.py tests/test_assessment_scorecard_contracts.py
       - name: Run pytest suite
         run: python -m pytest -q
 

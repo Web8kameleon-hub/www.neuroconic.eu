@@ -459,10 +459,13 @@ Për hartën aktuale të moduleve dhe planin e konsolidimit pa refaktor destrukt
 ## 🔬 Testet
 
 ```bash
+python scripts/assert_min_test_count.py --minimum 64
 python test_architecture.py
 ```
 
-Sistemi përfshin 13+ teste automatike që verifikojnë:
+CI enforce-on që inventari i testeve të jetë `>=64` para merge/deploy.
+
+Sistemi përfshin test suite automatike që verifikojnë:
 
 - ✅ Kushtetutën (DNA)
 - ✅ HVO Memory (6 lloje)

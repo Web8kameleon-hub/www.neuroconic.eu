@@ -5,6 +5,7 @@ NEUROSONIC CORE - Bërthama Kryesore e Sistemit
 Neurosonic / Clisonix Trinity+ASI
 """
 
+import sys
 import time
 import datetime
 from typing import Dict, Any
@@ -42,7 +43,18 @@ class NeurosonicCore:
         print("✅ Neurosonic gati për përdorim!")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point for the `neurosonic-dna` console script."""
+    # Windows PowerShell can inherit a legacy cp1252 output encoding. Keep
+    # the emoji status symbols below from crashing the console script.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     core = NeurosonicCore()
     core.run()
     print(core.status())
+
+
+if __name__ == "__main__":
+    main()

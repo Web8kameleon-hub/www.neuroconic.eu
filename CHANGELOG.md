@@ -27,6 +27,156 @@ All notable changes to this project are documented in this file.
 - Git tag: `v1.0.14`
 - Release scope: verified release readiness, live HTTP benchmark harness,
   guarded production autodeploy, and policy-aligned runtime contract tests.
+## v1.0.18 - 2026-09-08
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.17`. See
+`docs/releases/v1.0.18.md` for full detail.
+
+### Commits included (v1.0.18)
+
+- `23f5da0 feat: make chat/reasoning smarter+more creative, keep XCL (code) fully deterministic`
+- `cc4b9c5 fix: duplicate if/env/run block from previous edit broke workflow YAML`
+- `270afe2 feat: add expand-api-rule action to fix root cause of chat 403s`
+- `32a2422 fix: broken GitHub repo links (www.neurosonic.eu -> www.neuroconic.eu) + central-repo attribution`
+- `145a070 debug: print raw /zones response body before jq parsing`
+- `a224114 fix: actionable error message for Cloudflare WAF diagnose zone-lookup failure`
+- `c814f94 debug: add token-verify + full-zone-list step to Cloudflare WAF diagnose workflow`
+- `3540240 docs: mark RELEASE_PAT as configured in Release-Workflow.md`
+- `478aed4 fix: auto-release cannot push past new main branch protection without RELEASE_PAT`
+- `48a78ae docs(legal): add Impressum (DDG/TMG statutory notice) for ABA GmbH`
+
+### Validation (v1.0.18)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.18)
+
+- Git tag: `v1.0.18`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
+## v1.0.17 - 2026-09-06
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.16`. See
+`docs/releases/v1.0.17.md` for full detail.
+
+### Commits included (v1.0.17)
+
+- `f5da25f feat: add Android TWA + automate PyPI/npm/crates publishing, auto-release pipeline`
+
+### Validation (v1.0.17)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.17)
+
+- Git tag: `v1.0.17`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
+## v1.0.16 - 2026-09-06
+
+Backend pool integrity fix: reverts an accidental removal of the `backend_b`
+failover service from yesterday's refactor and restores the two-backend
+topology across compose, Nginx, guardrails, rolling-update scripts, and docs.
+
+### Fixed (v1.0.16)
+
+- Restore `backend_b` service in `docker-compose.yml` (build, healthcheck,
+  `depends_on: lightning-spp, ollama`) that was dropped by commit `2a4c94d`.
+- Restore `web` service's `depends_on: backend_b` gate.
+- Restore Nginx `least_conn` + `server backend_b:8000` in the
+  `neurosonic_backend_pool` upstream in `deploy/nginx.conf`.
+- Restore `backend_b` in the canonical service list
+  `scripts/guardrails/compose.services.txt` and in the `required_services` /
+  `health_required` checks of `scripts/guardrails/repo_integrity_guard.py`
+  (both had been silently relaxed in the same faulty commit, so the guard
+  passed even after the service was removed).
+- Restore two-backend rolling-update behavior in
+  `scripts/rolling_update_backends.ps1` and `scripts/rolling_update_backends.sh`
+  (build/up/recreate/health-check loop now covers `backend` and `backend_b`
+  again), keeping the nginx-reload-after-recreate fix from `bc55c3a`.
+- Restore `docs/guides/rolling_update_backends.md` wording to reflect both
+  backends.
+
+### Edge cases covered (v1.0.16)
+
+- `docker compose config` validity with the restored `backend_b` block
+  (verified locally, exit code 0).
+- Guardrail no longer silently agrees with a single-backend topology: with
+  `backend_b` present again, `repo_integrity_guard.py` requires it explicitly.
+- Rolling update step counters (`[n/4]`) resynced for the 4-step flow
+  (build, ensure-up, recreate x2, final status) instead of the reduced
+  3-step flow.
+- `web` no longer starts before `backend_b` is healthy (dependency ordering).
+
+### Validation (v1.0.16)
+
+- `docker compose -f docker-compose.yml config --quiet` -> PASS (exit 0)
+- `python scripts/guardrails/repo_integrity_guard.py` -> PASS (7 services)
+- `python scripts/guardrails/routes_history_guard.py` -> PASS
+- `python scripts/os_clx_policy_guard.py --strict` -> PASS (0 errors, 0 warnings)
+- `python neurosonic_no_fake_police.py --ci` -> PASS (74/74 files clean)
+- `python test_architecture.py` -> PASS (all levels)
+- `python -m pytest -q` -> `32 passed`
+- `python -m py_compile __init__.py neurosonic.py neurosonic_core.py backend/main.py src/__init__.py` -> PASS
+
+### Notes (v1.0.16)
+
+- No performance-sensitive code changed in this fix; the existing benchmark
+  evidence in `docs/production/evidence/benchmark_compare_latest.md` remains
+  the current reference and was not re-run for this patch.
+- Root cause and timeline recorded in
+  `docs/production/evidence/incident_log.md`.
+
+### Release Sync (v1.0.16)
+
+- Git tag: `v1.0.16`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+## v1.0.15 - 2026-09-04
+
+Personal UI Composer release focused on human-friendly chat flows, safer widget generation, and hardened backend guardrails for malformed and noisy AI output.
+
+### Added (v1.0.15)
+
+- Add user-friendly personal UI composer flow for non-technical users.
+- Add safer fallback behavior for empty, invalid, or malformed UI requests.
+- Add stronger guardrails for noisy, repetitive, or empty LLM output across `/api/ui/chat`.
+- Add release metadata alignment for package, runtime API, and public release documentation.
+
+### Changed (v1.0.15)
+
+- Simplify the visible conversation-first UX without exposing technical runtime labels.
+- Improve widget generation so default fallback schemas remain stable and safe.
+- Harden API logic to sanitize noisy text and preserve a consistent user experience.
+- Align the release notes and version metadata with the 1.0.15 line.
+
+### Validation (v1.0.15)
+
+- `python -m py_compile __init__.py neurosonic.py neurosonic_core.py backend/main.py src/__init__.py` → PASS
+- `pytest -q` → final repo verification in CI
+
+### Release Sync (v1.0.15)
+
+- Git tag: `v1.0.15`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
 
 ## v1.0.13 - 2026-09-02
 

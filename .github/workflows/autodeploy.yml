@@ -1,0 +1,153 @@
+name: Neurosonic AutoDeploy
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autodeploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci-gate:
+    name: CI gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Run NO FAKE Police
+        run: python neurosonic_no_fake_police.py --ci
+
+      - name: Run OS-CLX guard
+        run: python scripts/os_clx_policy_guard.py --strict
+
+      - name: Run repo integrity guard
+        run: python scripts/guardrails/repo_integrity_guard.py
+
+      - name: Run routes history guard
+        run: python scripts/guardrails/routes_history_guard.py
+
+  deploy:
+    name: Zero-downtime deploy
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Check deploy secrets
+        id: check
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -n "$DEPLOY_HOST" ] && [ -n "$DEPLOY_SSH_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DEPLOY_HOST or DEPLOY_SSH_KEY secret is not set; skipping deploy step."
+          fi
+
+      - name: Checkout
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Configure ssh
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy via SSH
+        if: steps.check.outputs.ready == 'true'
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || 22 }}
+          REPO: ${{ github.repository }}
+          GIT_REF: ${{ github.ref_name }}
+          SECRET_NEUROSONIC_AUTH_SECRET: ${{ secrets.NEUROSONIC_AUTH_SECRET }}
+          SECRET_STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          SECRET_STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          SECRET_STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- "$DEPLOY_PATH" "$REPO" "$GIT_REF" \
+              "$SECRET_NEUROSONIC_AUTH_SECRET" "$SECRET_STRIPE_SECRET_KEY" "$SECRET_STRIPE_WEBHOOK_SECRET" "$SECRET_STRIPE_PRICE_ID" <<'EOS'
+          set -Eeuo pipefail
+          DEPLOY_PATH="${1:-/opt/www.neuroconic.eu}"
+          REPO="$2"
+          GIT_REF="$3"
+          SEC_AUTH="${4:-}"
+          SEC_STRIPE_KEY="${5:-}"
+          SEC_STRIPE_WEBHOOK="${6:-}"
+          SEC_STRIPE_PRICE="${7:-}"
+          REPO_URL="https://github.com/${REPO}.git"
+
+          mkdir -p "$DEPLOY_PATH"
+          if [ -d "$DEPLOY_PATH/.git" ]; then
+            cd "$DEPLOY_PATH"
+            git fetch --all --tags --prune
+            git checkout main || git checkout "$GIT_REF"
+            git reset --hard "origin/main" || git reset --hard "origin/$GIT_REF"
+          else
+            git clone "$REPO_URL" "$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+            git checkout main || git checkout "$GIT_REF"
+          fi
+
+          if [ -f ".env.example" ] && [ ! -f ".env" ]; then
+            cp .env.example .env
+          fi
+
+          # Sinkronizon secret-at nga GitHub Actions te .env i prodhimit,
+          # vetëm nëse secret-i është dhënë (jo bosh) dhe skedari .env ekziston.
+          # Vlerat nuk shfaqen kurrë në log (GitHub maskon automatikisht secrets.*).
+          sync_env_var() {
+            local key="$1" value="$2"
+            [ -z "$value" ] && return 0
+            [ -f ".env" ] || return 0
+            if grep -q "^${key}=" .env; then
+              sed -i "s|^${key}=.*|${key}=${value}|" .env
+            else
+              printf '%s=%s\n' "$key" "$value" >> .env
+            fi
+          }
+          sync_env_var "NEUROSONIC_AUTH_SECRET" "$SEC_AUTH"
+          sync_env_var "STRIPE_SECRET_KEY" "$SEC_STRIPE_KEY"
+          sync_env_var "STRIPE_WEBHOOK_SECRET" "$SEC_STRIPE_WEBHOOK"
+          sync_env_var "STRIPE_PRICE_ID" "$SEC_STRIPE_PRICE"
+
+          chmod +x ./scripts/rolling_update_backends.sh
+          ./scripts/rolling_update_backends.sh
+          EOS
+
+      - name: Deployment summary
+        run: |
+          if [ "${{ steps.check.outputs.ready }}" = "true" ]; then
+            echo "## Auto-deploy complete" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Target: ${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Auto-deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Reason: DEPLOY_HOST/DEPLOY_SSH_KEY secrets not configured." >> "$GITHUB_STEP_SUMMARY"
+          fi

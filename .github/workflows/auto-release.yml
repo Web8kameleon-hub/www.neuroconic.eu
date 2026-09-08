@@ -1,0 +1,226 @@
+name: Auto Release
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  auto-release:
+    name: Auto-cut patch release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Defense in depth: GITHUB_TOKEN-authored pushes/tags already do not
+    # re-trigger workflow runs, but this also guards the (unlikely) case of
+    # someone manually re-pushing a bot commit.
+    if: ${{ !contains(github.event.head_commit.message, 'chore(release):') }}
+    outputs:
+      skip: ${{ steps.cut.outputs.skip }}
+      version: ${{ steps.cut.outputs.version }}
+      published: ${{ steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true' }}
+    steps:
+      - name: Check for release PAT (required to push past branch protection)
+        id: pat_check
+        run: |
+          if [ -n "${{ secrets.RELEASE_PAT }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::RELEASE_PAT secret is not set; this job will use the default GITHUB_TOKEN, which cannot push past main's branch protection ruleset (only the User bypass actors LedjanAhmati/Web8kameleon-hub can). See docs/wiki/Release-Workflow.md for setup."
+          fi
+
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT || github.token }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Run release-cut pipeline (real checks, real commit history)
+        id: cut
+        run: |
+          set +e
+          python scripts/release/auto_release.py --write | tee /tmp/auto_release.log
+          status=$?
+          set -e
+          if [ "$status" -eq 3 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No new commits since last tag; skipping release." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "## Auto-release ABORTED" >> "$GITHUB_STEP_SUMMARY"
+            echo "One or more real validation checks failed. No version bump," >> "$GITHUB_STEP_SUMMARY"
+            echo "changelog entry, release note, tag, or GitHub Release was created." >> "$GITHUB_STEP_SUMMARY"
+            exit "$status"
+          fi
+          version="$(grep -oP '^NEW_VERSION=\K.*' /tmp/auto_release.log)"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, tag, and push
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true'
+        env:
+          VERSION: ${{ steps.cut.outputs.version }}
+        run: |
+          git config user.name "neurosonic-release-bot"
+          git config user.email "223556219+Copilot@users.noreply.github.com"
+          git add CHANGELOG.md \
+            "docs/releases/v${VERSION}.md" \
+            __init__.py \
+            src/__init__.py \
+            pyproject.toml \
+            packages/npm/neurosonic-shell/package.json \
+            packages/crates/neurosonic-shell/Cargo.toml \
+            packages/crates/neurosonic-shell/Cargo.lock \
+            backend/main.py
+          git commit -m "chore(release): v${VERSION} [auto]" \
+            -m "Automated release cut by scripts/release/auto_release.py from real commit history and real validation results. See docs/releases/v${VERSION}.md."
+          git tag -a "v${VERSION}" -m "v${VERSION} (auto)"
+          git push origin HEAD:main
+          git push origin "v${VERSION}"
+
+      - name: Publish GitHub Release
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.cut.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --notes-file "docs/releases/v${VERSION}.md"
+
+      - name: Summary
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'true'
+        env:
+          VERSION: ${{ steps.cut.outputs.version }}
+        run: |
+          echo "## Auto Release v${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tag: v${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Release note: docs/releases/v${VERSION}.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "- CHANGELOG.md updated" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summary (blocked, no RELEASE_PAT)
+        if: steps.cut.outputs.skip == 'false' && steps.pat_check.outputs.ready == 'false'
+        env:
+          VERSION: ${{ steps.cut.outputs.version }}
+        run: |
+          echo "## Auto Release v${VERSION} - NOT PUBLISHED" >> "$GITHUB_STEP_SUMMARY"
+          echo "All validation checks passed, but RELEASE_PAT is not configured, so" >> "$GITHUB_STEP_SUMMARY"
+          echo "the commit/tag/push/release steps were skipped (the default" >> "$GITHUB_STEP_SUMMARY"
+          echo "GITHUB_TOKEN cannot push past main's branch protection ruleset)." >> "$GITHUB_STEP_SUMMARY"
+          echo "See docs/wiki/Release-Workflow.md for how to configure RELEASE_PAT." >> "$GITHUB_STEP_SUMMARY"
+
+  publish-packages:
+    name: Publish packages (npm/crates/PyPI)
+    needs: auto-release
+    if: needs.auto-release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout released tag
+        uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.auto-release.outputs.version }}"
+
+      # ---------------------------------------------------------------
+      # npm: @web8kameleon-hub/neurosonic-shell
+      # ---------------------------------------------------------------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check npm token
+        id: npm_check
+        run: |
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::NPM_TOKEN secret is not set; skipping npm publish."
+          fi
+
+      - name: Publish npm package
+        if: steps.npm_check.outputs.ready == 'true'
+        working-directory: packages/npm/neurosonic-shell
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
+
+      # ---------------------------------------------------------------
+      # crates.io: neurosonic-shell
+      # ---------------------------------------------------------------
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Check crates.io token
+        id: cargo_check
+        run: |
+          if [ -n "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CARGO_REGISTRY_TOKEN secret is not set; skipping crates.io publish."
+          fi
+
+      - name: Publish crate
+        if: steps.cargo_check.outputs.ready == 'true'
+        working-directory: packages/crates/neurosonic-shell
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish
+
+      # ---------------------------------------------------------------
+      # PyPI: neurosonic
+      # ---------------------------------------------------------------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check PyPI token
+        id: pypi_check
+        run: |
+          if [ -n "${{ secrets.PYPI_API_TOKEN }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::PYPI_API_TOKEN secret is not set; skipping PyPI publish."
+          fi
+
+      - name: Build and publish to PyPI
+        if: steps.pypi_check.outputs.ready == 'true'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          python -m twine check dist/*
+          python -m twine upload dist/*
+
+      - name: Summary
+        env:
+          VERSION: ${{ needs.auto-release.outputs.version }}
+        run: |
+          echo "## Package publish for v${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- npm: ${{ steps.npm_check.outputs.ready == 'true' && 'published' || 'skipped (no NPM_TOKEN)' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- crates.io: ${{ steps.cargo_check.outputs.ready == 'true' && 'published' || 'skipped (no CARGO_REGISTRY_TOKEN)' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- PyPI: ${{ steps.pypi_check.outputs.ready == 'true' && 'published' || 'skipped (no PYPI_API_TOKEN)' }}" >> "$GITHUB_STEP_SUMMARY"

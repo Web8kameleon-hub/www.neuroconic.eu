@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import backend.main as backend_main
+from neurosonic_lightning_bridge import ProcessingEngine
 
 
 def test_echo_normalization_detects_equivalent_text() -> None:
@@ -56,3 +57,9 @@ def test_trace_step_has_required_contract_fields() -> None:
         "output_hash": "output",
         "details": {"reasoning_validated": True},
     }
+
+
+def test_xcl_engine_generation_params_are_fully_deterministic() -> None:
+    params = backend_main._generation_params_for_engine(ProcessingEngine.XCL)
+
+    assert params == {"temperature": 0.0, "top_p": 1.0}

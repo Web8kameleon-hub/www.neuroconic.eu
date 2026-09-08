@@ -386,12 +386,17 @@ def _vocab_score(text: str) -> dict[str, int]:
     return scores
 
 
-def detect_language(text: str, default: str = "en") -> str:
+def detect_language(text: str, default: str = "en", *, force_english: bool = True) -> str:
+    """Detect the user's language but keep the product in English by default.
+
+    Product requirement: responses are always in English even if the user writes in
+    another language. This helper keeps the detection logic available for telemetry,
+    but enforces English for the agent's output unless a caller explicitly disables
+    the override.
     """
-    Detect ISO 639-1 language code from *text*.
-    Fast heuristic: script check → vocabulary lookup → word-signature scoring.
-    Returns *default* when confidence is too low.
-    """
+    if force_english:
+        return "en"
+
     if not text or len(text.strip()) < 2:
         return default
 
@@ -430,8 +435,15 @@ def detect_language(text: str, default: str = "en") -> str:
     return default
 
 
-def build_language_instruction(lang_code: str) -> str:
+def build_language_instruction(lang_code: str, *, force_english: bool = True) -> str:
     """Return a system-prompt snippet that tells the LLM which language to use."""
+    if force_english:
+        return (
+            "IMPORTANT: The user may write in any language, but this assistant must "
+            "respond entirely in English. Use clear, professional English only and "
+            "do not switch to the user's language."
+        )
+
     _names: dict[str, str] = {
         "sq": "Albanian (Shqip)", "en": "English", "de": "German (Deutsch)",
         "es": "Spanish (Español)", "fr": "French (Français)", "it": "Italian (Italiano)",

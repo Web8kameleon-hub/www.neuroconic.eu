@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosonic"
-version = "1.0.14"
+version = "1.0.18"
 description = "NEUROSONIC TRINITY+ASI - Sovereign AI Platform. Zero dependencies, zero fake, absolute independence."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -32,11 +32,12 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://neurosonic.eu"
-"Repository" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu"
-"Documentation" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/tree/main/docs"
+"Repository" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu"
+"Central Repository" = "https://github.com/LedjanAhmati/www.neuroconic.eu"
+"Documentation" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu/tree/main/docs"
 "Funding" = "https://www.paypal.com/paypalme/ahmatibau"
-"Bug Reports" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/issues"
-"Changelog" = "https://github.com/Web8kameleon-hub/www.neurosonic.eu/blob/main/CHANGELOG.md"
+"Bug Reports" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu/issues"
+"Changelog" = "https://github.com/Web8kameleon-hub/www.neuroconic.eu/blob/main/CHANGELOG.md"
 "Sitemap" = "https://neurosonic.eu/sitemap.xml"
 
 [project.scripts]
@@ -64,6 +65,9 @@ public = [
     "httpx>=0.28,<0.29",
 ]
 
+[tool.setuptools]
+py-modules = ["neurosonic", "neurosonic_core", "neurosonic_no_fake_police", "neurosonic_shell"]
+
 [tool.setuptools.packages.find]
 include = ["neurosonic*"]
 
@@ -73,6 +77,7 @@ neurosonic = ["docs/**/*", "memory/**/*"]
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 88

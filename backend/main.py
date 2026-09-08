@@ -13,10 +13,11 @@ import re
 import sys
 import time
 import uuid
+from collections import Counter
 from urllib.parse import urlparse
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -26,6 +27,8 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, _project_root)
 os.chdir(_project_root)
 
+from neurosonic_auth import AuthError, NeurosonicAuth
+from neurosonic_payments import NeurosonicPayments, PaymentsError, is_entitlement_active
 from neurosonic_compatibility import NeurosonicCompatibilityMatrix
 from neurosonic_data_intelligence import (
     PlirisDatenFilter,
@@ -47,7 +50,7 @@ from neurosonic_ui_designer import PersonalNodeStore, UIDesignEngine
 app = FastAPI(
     title="Neurosonic Trinity+ASI API",
     description="Backend API per Neurosonic - DNA, Genome, Compatibility, Evolution, Lightning SPP",
-    version="1.0.14",
+    version="1.0.18",
 )
 
 _cors_origins = [
@@ -75,6 +78,8 @@ pliris_filter = PlirisDatenFilter()
 self_learning = SelfLearningCycleManager()
 ui_designer = UIDesignEngine()
 personal_node_store = PersonalNodeStore(root_dir=os.path.join(_project_root, "personal_node", "profiles"))
+auth = NeurosonicAuth(root_dir=os.path.join(_project_root, "personal_node", "auth"))
+payments = NeurosonicPayments(auth=auth)
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
@@ -123,6 +128,16 @@ class PipelineRequest(BaseModel):
 
 class BatchRequest(BaseModel):
     sources: list[str]
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 
 class ShellThinkRequest(BaseModel):
@@ -376,6 +391,26 @@ def _trace_step(
         "output_hash": output_hash_value,
         "details": details or {},
     }
+# Per-engine generation parameters. Engine selection (see
+# _resolve_processing_engine above) previously had zero effect on actual
+# generation - every engine silently shared the same Ollama sampling
+# settings. XCL is Neurosonic's designated code engine and must behave
+# deterministically (temperature=0, top_p=1 -> greedy/argmax decoding.
+# same input, same output every time), which matters for reproducible code
+# generation/refactoring. CLX (reasoning) and CLI_I (vision) get a small
+# amount of temperature for well-formed-but-not-rigid analysis. HYBRID and
+# CLISONIC (general/creative conversation) use the bridge's own
+# OLLAMA_TEMPERATURE/OLLAMA_TOP_P defaults (see neurosonic_llm_bridge.py).
+_ENGINE_GENERATION_PARAMS: dict[ProcessingEngine, dict[str, float]] = {
+    ProcessingEngine.XCL: {"temperature": 0.0, "top_p": 1.0},
+    ProcessingEngine.CLX: {"temperature": 0.3, "top_p": 0.9},
+    ProcessingEngine.CLI_I: {"temperature": 0.3, "top_p": 0.9},
+}
+
+
+def _generation_params_for_engine(engine: ProcessingEngine) -> dict[str, float | None]:
+    params = _ENGINE_GENERATION_PARAMS.get(engine, {})
+    return {"temperature": params.get("temperature"), "top_p": params.get("top_p")}
 
 
 # ========================================================================
@@ -387,7 +422,7 @@ def _trace_step(
 async def root():
     return {
         "name": "Neurosonic Trinity+ASI",
-        "version": "1.0.14",
+        "version": "1.0.18",
         "status": "online",
         "modules": [
             "dna",
@@ -475,8 +510,94 @@ async def health():
         "lightning_service": lightning_service,
         "llm_service": llm_service,
         "llm_model": llm_bridge.model,
-        "api_version": "1.0.14",
+        "api_version": "1.0.18",
     }
+
+
+@app.post("/api/auth/register")
+async def auth_register(payload: RegisterRequest):
+    try:
+        result = auth.register(payload.email, payload.password)
+    except AuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return result
+
+
+@app.post("/api/auth/login")
+async def auth_login(payload: LoginRequest):
+    try:
+        result = auth.login(payload.email, payload.password)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    return result
+
+
+@app.get("/api/auth/me")
+async def auth_me(request: Request):
+    authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Mungon Bearer token")
+    token = authorization[7:].strip()
+    try:
+        claims = auth.verify_token(token)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    user = auth.get_user_by_email(claims["email"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
+    return user
+
+
+def _require_user(request: Request) -> dict[str, Any]:
+    """Verifikon Bearer token dhe kthen profilin e përdoruesit të loguar."""
+    authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Mungon token i autorizimit")
+    token = authorization[7:].strip()
+    try:
+        claims = auth.verify_token(token)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    user = auth.get_user_by_email(claims["email"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
+    return user
+
+
+@app.post("/api/billing/checkout")
+async def billing_checkout(request: Request):
+    """Krijon një Stripe Checkout Session (1 EUR, one-time) për përdoruesin e loguar."""
+    user = _require_user(request)
+    try:
+        result = payments.create_checkout_session(email=user["email"])
+    except PaymentsError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return result
+
+
+@app.get("/api/billing/status")
+async def billing_status(request: Request):
+    """Kthen nëse përdoruesi i loguar ka akses aktiv (entitlement jo i skaduar)."""
+    user = _require_user(request)
+    entitlement = user.get("entitlement")
+    return {
+        "active": is_entitlement_active(entitlement),
+        "entitlement": entitlement,
+    }
+
+
+@app.post("/api/billing/webhook")
+async def billing_webhook(request: Request):
+    """Endpoint-i Stripe webhook. Verifikon nënshkrimin dhe aktivizon entitlement."""
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature", "")
+    try:
+        result = payments.handle_webhook(payload, signature)
+    except PaymentsError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return result
 
 
 @app.get("/api/dna")
@@ -608,14 +729,23 @@ async def create_ui_design(req: UIDesignRequest, request: Request):
         preferences=req.preferences,
         owner_id=owner_id,
     )
+    film = ui_designer.build_experience_film(
+        req.prompt,
+        schema,
+        profile_id=req.profile_id,
+        owner_id=owner_id,
+    )
     save_meta = None
     if req.save:
         save_meta = personal_node_store.save_profile(req.profile_id, schema)
+        film_meta = personal_node_store.save_experience_film(req.profile_id, film)
+        save_meta["experience_film"] = film_meta
 
     return {
         "success": True,
         "profile_id": req.profile_id,
         "schema": schema,
+        "experience_film": film,
         "saved": req.save,
         "storage": save_meta,
         "timestamp": time.time(),
@@ -628,7 +758,7 @@ what personal dashboard/panel they want. Never mention JSON, schemas, APIs, or c
 
 You must reply with ONLY a single JSON object (no markdown fences, no extra text) with this shape:
 {
-  "reply": "a short, warm, conversational reply IN ENGLISH explaining what you built or asking one simple follow-up question",
+  "reply": "a conversational reply IN ENGLISH explaining what you built or asking a smart follow-up question",
   "title": "a short friendly title for the panel",
   "widgets": [
     {"type": "hero|timeline|status|markdown|list|counter|calendar|weather|console|image-dropzone|policy-grid|chat|links|table|chart",
@@ -638,9 +768,14 @@ You must reply with ONLY a single JSON object (no markdown fences, no extra text
 
 Always reply in English, regardless of what language the user writes in - this
 product is used by a global, English-speaking audience.
-Keep "reply" human, encouraging and creative - like a helpful designer friend, never robotic.
-If the request is vague, still produce a reasonable first draft of widgets and ask one clarifying
-question in "reply". Always output valid JSON and nothing else."""
+Be genuinely thoughtful, not generic: notice specifics in what the user said and
+reflect them back, suggest a widget combination that actually fits their stated
+goal (not just a default set), and when useful, briefly explain *why* a widget
+helps them. Keep "reply" warm, creative and human - like a sharp, attentive
+designer friend who's actually listening, never a robotic template.
+If the request is vague, still produce a reasonable first draft of widgets and ask one smart,
+specific clarifying question in "reply" (not a generic "what would you like?").
+Always output valid JSON and nothing else."""
 
 
 def _extract_json_object(text: str) -> dict[str, Any] | None:
@@ -659,6 +794,53 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
         return parsed if isinstance(parsed, dict) else None
     except (json.JSONDecodeError, ValueError):
         return None
+
+
+# Chat quality guardrails: local models occasionally degrade into repetitive
+# or truncated "noise" instead of a coherent answer. These are deterministic,
+# measurable heuristics (not another LLM call) applied before trusting output.
+# Bounded generously (not a hard "keep it short" constraint) so a genuinely
+# thoughtful, detailed reply isn't chopped mid-explanation.
+_UI_CHAT_MAX_REPLY_CHARS = 2000
+_UI_CHAT_MAX_RETRIES = 1
+_UI_CHAT_HISTORY_TURNS = 12
+
+
+def _is_reply_noisy(text: str, min_unique_ratio: float = 0.5, min_words: int = 8) -> bool:
+    """Detects repetitive/degraded LLM output using vocabulary diversity.
+
+    A coherent reply of any reasonable length uses mostly distinct words
+    (empirically >=0.65 unique-word ratio even for longer, naturally
+    repetitive text). Degraded/looping model output collapses onto a small
+    set of words and phrases repeated many times (observed ~0.25 ratio in
+    real garbled responses), which this catches regardless of language.
+    An absolute repeated-trigram count is used as a secondary signal for
+    shorter texts where the ratio alone is less reliable.
+    """
+    words = re.findall(r"[\w'-]+", text.lower())
+    if len(words) < min_words:
+        return False
+
+    unique_ratio = len(set(words)) / len(words)
+    if unique_ratio < min_unique_ratio:
+        return True
+
+    trigrams = [" ".join(words[i : i + 3]) for i in range(len(words) - 2)]
+    if trigrams:
+        _, top_trigram_count = Counter(trigrams).most_common(1)[0]
+        if top_trigram_count >= 4:
+            return True
+
+    return False
+
+
+def _sanitize_chat_reply(text: str) -> str:
+    """Trims an LLM reply to a bounded, UI-friendly length."""
+    text = text.strip()
+    if len(text) <= _UI_CHAT_MAX_REPLY_CHARS:
+        return text
+    truncated = text[:_UI_CHAT_MAX_REPLY_CHARS].rsplit(" ", 1)[0]
+    return truncated.rstrip(",.;: ") + "…"
 
 
 @app.post("/api/ui/chat")
@@ -684,7 +866,9 @@ async def ui_chat(req: UIChatRequest, request: Request):
     existing = personal_node_store.load_profile(req.profile_id)
     existing_schema = existing.get("schema") if isinstance(existing, dict) else None
 
-    history_text = "\n".join(f"{item.role}: {item.content}" for item in req.history[-6:])
+    history_text = "\n".join(
+        f"{item.role}: {item.content}" for item in req.history[-_UI_CHAT_HISTORY_TURNS:]
+    )
     context_note = (
         f"\nExisting panel title: {existing_schema.get('title')}" if existing_schema else ""
     )
@@ -693,8 +877,22 @@ async def ui_chat(req: UIChatRequest, request: Request):
         "Respond now with the JSON object described in your instructions."
     )
 
-    llm_result = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
-    plan = _extract_json_object(llm_result.text) if llm_result.text else None
+    llm_result = None
+    plan = None
+    for attempt in range(_UI_CHAT_MAX_RETRIES + 1):
+        candidate = llm_bridge.generate(llm_prompt, system=_UI_CHAT_SYSTEM_PROMPT)
+        candidate_plan = _extract_json_object(candidate.text) if candidate.text else None
+        llm_result = candidate
+        plan = candidate_plan
+
+        if candidate.error or not candidate_plan:
+            continue
+
+        candidate_reply = candidate_plan.get("reply")
+        if isinstance(candidate_reply, str) and not _is_reply_noisy(candidate_reply):
+            break
+        # Noisy/repetitive reply: retry once with the same prompt before
+        # accepting it (small local models sometimes recover on retry).
 
     if llm_result.error or not plan:
         # LLM didn't respond, or returned text that wasn't valid JSON: never
@@ -724,18 +922,33 @@ async def ui_chat(req: UIChatRequest, request: Request):
         schema["integrations"]["plugins"] = existing_schema["integrations"]["plugins"]
 
     save_meta = None
+    film = ui_designer.build_experience_film(
+        message,
+        schema,
+        profile_id=req.profile_id,
+        owner_id=owner_id,
+    )
     if req.save:
         save_meta = personal_node_store.save_profile(req.profile_id, schema)
+        film_meta = personal_node_store.save_experience_film(req.profile_id, film)
+        save_meta["experience_film"] = film_meta
 
     reply_text = plan.get("reply")
     if not isinstance(reply_text, str) or not reply_text.strip():
         reply_text = "Here's your new panel! Let me know what you'd like to change."
+    elif _is_reply_noisy(reply_text):
+        # Still noisy after retries: keep the (structurally valid) panel, but
+        # never show garbled text to the user.
+        reply_text = "Here's your new panel! (I had trouble phrasing a reply this time - let me know what you'd like to change.)"
+    else:
+        reply_text = _sanitize_chat_reply(reply_text)
 
     return {
         "success": True,
         "reply": reply_text.strip(),
         "profile_id": req.profile_id,
         "schema": schema,
+        "experience_film": film,
         "saved": req.save,
         "storage": save_meta,
         "provider": llm_result.provider,
@@ -1065,6 +1278,21 @@ async def self_learning_cycles(limit: int = 20):
 
 
 _SHELL_THINK_SYSTEM_PROMPT = (
+    "You are Neurosonic's reasoning engine: a highly capable, thoughtful assistant. "
+    "Think carefully before answering. For non-trivial questions, reason step by "
+    "step internally, weigh alternatives, and check your own logic before giving "
+    "the final answer - but present only the polished conclusion and the "
+    "reasoning the user actually needs, not raw scratch notes. "
+    "Be substantive and specific rather than generic: give concrete details, "
+    "examples, edge cases, and trade-offs when they add real value, instead of "
+    "vague platitudes. When the request is creative (writing, brainstorming, "
+    "naming, storytelling), be genuinely imaginative and original - avoid the "
+    "most obvious or cliche answer. When the request is technical or factual, "
+    "prioritize correctness and precision over sounding impressive; if you are "
+    "not sure of something, say so plainly rather than inventing a confident "
+    "answer. Match the depth of your answer to the complexity of the question: "
+    "a quick question deserves a quick, clear answer; a hard problem deserves a "
+    "thorough one. "
     "Always reply in English, regardless of what language the user writes in - "
     "this product is used by a global, English-speaking audience."
 )
@@ -1253,7 +1481,13 @@ async def shell_think(req: ShellThinkRequest):
             "sources": [bridge.base_url],
         }
 
-    llm_result = llm_bridge.generate(prompt, system=_SHELL_THINK_SYSTEM_PROMPT)
+    _engine_gen_params = _generation_params_for_engine(selected_engine)
+    llm_result = llm_bridge.generate(
+        prompt,
+        system=_SHELL_THINK_SYSTEM_PROMPT,
+        temperature=_engine_gen_params["temperature"],
+        top_p=_engine_gen_params["top_p"],
+    )
     llm_output_hash = hashlib.sha256(llm_result.text.encode("utf-8")).hexdigest() if llm_result.text else ""
     pipeline_trace.append(
         _trace_step(

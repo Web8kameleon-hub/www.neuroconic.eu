@@ -6,38 +6,328 @@
   <title>Neurosonic Personal UI Composer</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: "Segoe UI", sans-serif; background: #0b1020; color: #e8ecff; margin: 0; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
-    .card { background: #121933; border: 1px solid #24305f; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-    h1 { margin: 0 0 4px 0; color: #7dd3fc; }
-    .muted { color: #93a3d8; font-size: 13px; }
+    :root {
+      --bg: #070d1a;
+      --bg-2: #0d1630;
+      --panel: rgba(17, 25, 44, 0.82);
+      --panel-strong: rgba(13, 19, 35, 0.96);
+      --panel-alt: rgba(26, 35, 61, 0.9);
+      --border: rgba(160, 177, 255, 0.18);
+      --soft-border: rgba(167, 182, 255, 0.1);
+      --text: #edf4ff;
+      --text-soft: #a5b5d8;
+      --text-muted: #7f8db8;
+      --primary: #8b5cf6;
+      --primary-2: #4cc9f0;
+      --success: #7ef0c2;
+      --shadow: rgba(8, 13, 28, 0.42);
+    }
+
+    body {
+      font-family: "Segoe UI", "Inter", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.14), transparent 27%),
+        radial-gradient(circle at bottom right, rgba(76, 201, 240, 0.14), transparent 25%),
+        linear-gradient(180deg, var(--bg) 0%, #050b15 100%);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(182, 162, 255, 0.2);
+      border-radius: 999px;
+      color: #e6dcff;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      font-size: 11px;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .brand::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      box-shadow: 0 0 18px rgba(139, 92, 246, 0.7);
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(18, 28, 49, 0.92), rgba(11, 18, 31, 0.9));
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      box-shadow: 0 22px 50px var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 28px 26px 18px;
+      background:
+        linear-gradient(135deg, rgba(120, 90, 255, 0.12), rgba(35, 80, 140, 0.12)),
+        rgba(13, 20, 36, 0.88);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      line-height: 1.02;
+      color: var(--text);
+      letter-spacing: -0.06em;
+      font-weight: 700;
+    }
+
+    .muted {
+      color: var(--text-soft);
+      font-size: 13px;
+    }
+
+    .hero-sub {
+      margin-top: 12px;
+      max-width: 760px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #d1d9f5;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .chip {
+      background: rgba(148, 163, 255, 0.08);
+      border: 1px solid rgba(181, 191, 255, 0.18);
+      color: #ebf1ff;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .chip:hover {
+      transform: translateY(-1px);
+      background: rgba(107, 127, 255, 0.12);
+      border-color: rgba(185, 201, 255, 0.3);
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.9fr;
+      gap: 18px;
+      align-items: start;
+      margin-top: 18px;
+    }
 
     /* --- Chat --- */
-    .chat-log { display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto; padding: 4px; }
-    .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; line-height: 1.4; white-space: pre-wrap; }
-    .msg.user { align-self: flex-end; background: linear-gradient(135deg,#22d3ee,#6366f1); color: white; border-bottom-right-radius: 4px; }
-    .msg.assistant { align-self: flex-start; background: #0d1430; border: 1px solid #2b3b77; border-bottom-left-radius: 4px; }
-    .msg.system { align-self: center; color: #93a3d8; font-size: 12px; background: transparent; }
-    .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
-    .chat-input-row textarea { flex: 1; min-height: 52px; resize: vertical; background: #0d1430; color: #e8ecff; border: 1px solid #2b3b77; border-radius: 10px; padding: 12px; font-size: 15px; }
-    .send-btn { border: 0; border-radius: 10px; padding: 0 22px; background: linear-gradient(135deg,#22d3ee,#6366f1); color: white; font-weight: 700; cursor: pointer; font-size: 15px; }
+    .chat-shell {
+      background: linear-gradient(180deg, rgba(11, 17, 30, 0.96), rgba(10, 15, 27, 0.96));
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 20px 42px rgba(3, 7, 19, 0.35);
+    }
+
+    .chat-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(145, 168, 255, 0.12);
+      background: rgba(18, 27, 47, 0.7);
+    }
+
+    .tool-group { display: flex; align-items: center; gap: 8px; }
+    .mini-btn {
+      width: 32px; height: 32px; border-radius: 10px;
+      border: 1px solid rgba(171, 188, 255, 0.18);
+      background: rgba(255,255,255,0.02);
+      color: #dfe8ff;
+      cursor: pointer;
+      font-size: 16px;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .mini-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.04); }
+
+    .chat-log {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 18px 18px 10px;
+      background: linear-gradient(180deg, rgba(6, 11, 20, 0.18), rgba(11, 19, 31, 0.12));
+    }
+
+    .msg {
+      max-width: 78%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(123, 92, 255, 0.96), rgba(76, 201, 240, 0.92));
+      color: white;
+      border-bottom-right-radius: 7px;
+      box-shadow: 0 14px 28px rgba(92, 105, 255, 0.28);
+    }
+    .msg.assistant {
+      align-self: flex-start;
+      background: rgba(18, 27, 47, 0.95);
+      border: 1px solid rgba(140, 165, 255, 0.18);
+      border-bottom-left-radius: 7px;
+      color: #ebf1ff;
+    }
+    .msg.system {
+      align-self: center;
+      color: var(--text-soft);
+      font-size: 12px;
+      background: transparent;
+      padding: 4px 8px;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+      padding: 14px 18px 18px;
+      background: rgba(12,18,31,0.85);
+      border-top: 1px solid rgba(145, 168, 255, 0.12);
+    }
+    .chat-input-row textarea {
+      flex: 1;
+      min-height: 62px;
+      resize: vertical;
+      background: rgba(14, 20, 35, 0.92);
+      color: var(--text);
+      border: 1px solid rgba(147, 169, 255, 0.18);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .chat-input-row textarea:focus {
+      outline: none;
+      border-color: rgba(140, 165, 255, 0.38);
+      box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.12);
+    }
+    .send-btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 0 24px;
+      background: linear-gradient(135deg, #8b5cf6, #44c3f6);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+      min-width: 120px;
+      box-shadow: 0 12px 24px rgba(86, 88, 232, 0.2);
+    }
     .send-btn:disabled { opacity: 0.6; cursor: wait; }
     .typing { display: inline-flex; gap: 4px; align-items: center; }
-    .typing span { width: 6px; height: 6px; border-radius: 50%; background: #7dd3fc; animation: blink 1.2s infinite ease-in-out; }
+    .typing span { width: 6px; height: 6px; border-radius: 50%; background: #d9b4ff; animation: blink 1.2s infinite ease-in-out; }
     .typing span:nth-child(2) { animation-delay: .2s; }
     .typing span:nth-child(3) { animation-delay: .4s; }
     @keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
 
     /* --- Preview --- */
-    .widgets { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 10px; margin-top: 10px; }
-    .widget { background: #0b1430; border: 1px solid #2a3e80; border-radius: 10px; padding: 12px; }
-    .widget strong { color: #7dd3fc; }
-    .empty-hint { color: #93a3d8; font-size: 14px; padding: 20px; text-align: center; }
+    .space-card {
+      min-height: 100%;
+      background: linear-gradient(180deg, rgba(17, 25, 44, 0.92), rgba(11, 16, 28, 0.94));
+      border: 1px solid var(--border);
+    }
+    .preview-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .preview-head h3 {
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: -0.04em;
+      color: #f2f6ff;
+    }
+    .widgets {
+      display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px;
+      margin-top: 8px;
+    }
+    .widget {
+      position: relative;
+      background: linear-gradient(180deg, rgba(45, 46, 83, 0.7), rgba(18, 25, 42, 0.9));
+      border: 1px solid rgba(162, 150, 255, 0.16);
+      border-radius: 18px;
+      padding: 16px 14px 12px;
+      min-height: 126px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .widget::before {
+      content: "";
+      display: block;
+      width: 42px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #9f7aea, #4cc9f0);
+      margin-bottom: 12px;
+    }
+    .widget strong { color: #ecddff; font-size: 16px; }
+    .widget .muted { margin-top: 8px; display: block; }
+    .empty-hint {
+      color: #a9b9e6;
+      font-size: 14px;
+      padding: 30px 16px;
+      text-align: center;
+      border: 1px dashed rgba(164, 175, 255, 0.2);
+      border-radius: 16px;
+      background: rgba(16, 22, 35, 0.7);
+    }
 
-    /* --- Advanced (collapsed) --- */
-    details.advanced { margin-top: 6px; }
-    details.advanced summary { cursor: pointer; color: #93a3d8; font-size: 13px; padding: 6px 0; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    .professional-lock { display: flex; justify-content: flex-end; margin-top: 12px; }
+    .professional-btn {
+      background: linear-gradient(135deg, rgba(50, 38, 102, 0.96), rgba(92, 52, 163, 0.96));
+      color: white;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      font-size: 12px;
+      box-shadow: 0 10px 22px rgba(109, 40, 217, 0.28);
+      transition: filter 0.2s ease;
+    }
+    .professional-btn:hover { filter: brightness(1.08); }
+    details.advanced {
+      display: none;
+      margin-top: 10px;
+    }
+    details.advanced.visible { display: block; }
+    details.advanced summary { cursor: pointer; color: #9db0de; font-size: 13px; padding: 6px 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
     label { display: block; font-size: 12px; color: #9fb0e6; margin-bottom: 4px; }
     input, textarea, select { width: 100%; background: #0d1430; color: #e8ecff; border: 1px solid #2b3b77; border-radius: 8px; padding: 10px; font-size: 14px; }
     button.secondary { border: 1px solid #2b3b77; border-radius: 10px; padding: 8px 14px; background: transparent; color: #cdd7ff; cursor: pointer; font-size: 13px; }
@@ -47,35 +337,69 @@
     .label-inline { margin: 0; }
     .result { white-space: pre-wrap; background: #0a122a; border: 1px solid #253569; border-radius: 10px; padding: 12px; max-height: 260px; overflow: auto; font-size: 12px; }
     .top-gap-sm { margin-top: 10px; }
+
+    @media (max-width: 900px) {
+      .workspace-grid { grid-template-columns: 1fr; }
+      .wrap { padding-top: 20px; }
+      .card { border-radius: 22px; }
+      .chat-shell { border-radius: 22px; }
+      .msg { max-width: 88%; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>🧠 Build Your Panel</h1>
-    <p class="muted">Just tell me what you'd like to see — no coding knowledge needed. Be creative, I'll handle the technical part.</p>
+  <div class="topbar">
+    <div class="brand">Neurosonic</div>
+  </div>
 
-    <div class="card">
+  <div class="card hero">
+    <h1>What would you like to do today?</h1>
+    <div class="chip-row">
+      <button class="chip" type="button">Organize my day</button>
+      <button class="chip" type="button">Create something</button>
+      <button class="chip" type="button">Track my work</button>
+      <button class="chip" type="button">Plan my week</button>
+    </div>
+  </div>
+
+  <div class="workspace-grid">
+    <div class="chat-shell">
+      <div class="chat-toolbar">
+        <div class="tool-group">
+          <button class="mini-btn" title="Microphone" type="button">🎙️</button>
+          <button class="mini-btn" title="Attach" type="button">📎</button>
+          <button class="mini-btn" title="Source" type="button">🔗</button>
+        </div>
+        <div class="muted">Conversation</div>
+      </div>
+
       <div id="chatLog" class="chat-log">
         <div class="msg assistant">
-          Hi there! 👋 I'm your assistant for building your personal panel.
-          Tell me what you'd like to see — e.g. "I want a panel with the weather, a to-do list,
-          and a map of my activity" — and I'll build it right away.
+          Hi, Ledjan 👋 What would you like to do today?
         </div>
       </div>
       <div class="chat-input-row">
-        <textarea id="chatInput" placeholder="Type what you'd like here... (Enter to send, Shift+Enter for a new line)"></textarea>
+        <textarea id="chatInput" placeholder="Talk to your AI... (Enter to send, Shift+Enter for a new line)"></textarea>
         <button id="sendBtn" class="send-btn" onclick="sendChatMessage()">Send</button>
       </div>
     </div>
 
-    <div class="card">
-      <h3>👀 Your Panel Preview</h3>
+    <div class="card space-card">
+      <div class="preview-head">
+        <h3>Your Space</h3>
+      </div>
       <div id="widgets" class="widgets">
-        <div class="empty-hint">Once you chat with the assistant above, your panel will appear here.</div>
+        <div class="empty-hint">Everything AI creates for you appears here.</div>
       </div>
     </div>
+  </div>
 
-    <details class="advanced">
+    <div class="professional-lock">
+      <button class="professional-btn" id="toggleAdvanced" type="button" aria-expanded="false">Details</button>
+    </div>
+
+    <details class="advanced" id="advancedPanel">
       <summary>⚙️ Advanced options (for technical users)</summary>
 
       <div class="card top-gap-sm">
@@ -94,6 +418,33 @@
           <span class="muted" id="status">Ready</span>
         </div>
         <div id="profiles" class="result top-gap-sm">No profiles loaded.</div>
+      </div>
+
+      <div class="card">
+        <h3>Mock Magic Lab</h3>
+        <p class="muted">Create visual or interaction concepts in a protected sandbox before they become part of the main runtime.</p>
+        <div class="grid">
+          <div>
+            <label for="mockPrompt">Concept Prompt</label>
+            <textarea id="mockPrompt" title="Sandbox prompt" placeholder="A playful cat and mouse duo with a bright animated room">A playful cat and mouse duo with a bright animated room</textarea>
+          </div>
+          <div>
+            <label for="mockStyle">Style</label>
+            <select id="mockStyle" title="Mock Magic style">
+              <option value="playful-cartoon" selected>Playful cartoon</option>
+              <option value="storybook">Storybook</option>
+              <option value="minimal-ui">Minimal UI</option>
+              <option value="retro">Retro animation</option>
+            </select>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="secondary" onclick="previewMockMagic()">Generate sandbox concept</button>
+          <button class="secondary" onclick="applyMockMagicToSpace()" id="approveMockBtn" disabled>Approve for Your Space</button>
+          <button class="secondary" onclick="clearMockMagicApproval()">Discard</button>
+        </div>
+        <div id="mockMagicResult" class="result top-gap-sm">No mock concept generated yet.</div>
+        <div id="mockMagicApproval" class="result top-gap-sm" style="display:none;">No approval pending.</div>
       </div>
 
       <div class="card">
@@ -235,24 +586,91 @@
       return el;
     }
 
-    function renderWidgets(schema) {
+    function buildDynamicWorkspace(message, fallbackSchema) {
+      const lower = (message || "").toLowerCase();
+      const isDayPlan = /organiz|agenda|day|schedule|meeting|email|project/.test(lower);
+      const isDocument = /write|draft|doc|memo|brief|report|proposal/.test(lower);
+      const isMonitoring = /monitor|track|status|dashboard|health|progress/.test(lower);
+      const isControl = /control|device|automation|smart|room|camera|light/.test(lower);
+
+      if (isDayPlan) {
+        return [
+          { title: "09:30", type: "Meeting", content: "Team meeting" },
+          { title: "11:00", type: "Priority", content: "Important email" },
+          { title: "14:00", type: "Focus", content: "Project work" },
+          { title: "Top priority", type: "Action", content: "Complete the investor presentation." }
+        ];
+      }
+      if (isDocument) {
+        return [
+          { title: "Draft", type: "Document", content: "Create a structured brief with goals, outline and follow-ups." },
+          { title: "Checklist", type: "Plan", content: "Tasks, owners, and review points." }
+        ];
+      }
+      if (isMonitoring) {
+        return [
+          { title: "Status", type: "Panel", content: "Track key work, timeline, and blockers." },
+          { title: "Signals", type: "Overview", content: "Usage, progress, and risk indicators." }
+        ];
+      }
+      if (isControl) {
+        return [
+          { title: "Controls", type: "Device", content: "Manage smart actions and automation rules." },
+          { title: "Environment", type: "Settings", content: "Adjust flows based on your routine." }
+        ];
+      }
+
+      const widgets = (fallbackSchema && fallbackSchema.widgets) || [];
+      return widgets.length ? widgets : [
+        { title: "Your plan", type: "Overview", content: "The assistant is preparing the right space for your next task." }
+      ];
+    }
+
+    function renderWidgets(schema, message) {
       const container = document.getElementById("widgets");
       container.innerHTML = "";
-      const widgets = (schema && schema.widgets) || [];
-      if (widgets.length === 0) {
-        container.innerHTML = '<div class="empty-hint">Once you chat with the assistant above, your panel will appear here.</div>';
+      const widgets = schema && schema.widgets && schema.widgets.length
+        ? schema.widgets
+        : buildDynamicWorkspace(message, schema);
+
+      if (!widgets || widgets.length === 0) {
+        container.innerHTML = '<div class="empty-hint">Everything AI creates for you appears here.</div>';
         return;
       }
+
       for (const widget of widgets) {
         const el = document.createElement("div");
         el.className = "widget";
         const contentLine = widget.content
-          ? `<div class="muted top-gap-sm">${String(widget.content).slice(0, 140)}</div>`
+          ? `<div class="muted top-gap-sm">${String(widget.content).slice(0, 180)}</div>`
           : "";
         el.innerHTML = `<strong>${widget.title || widget.type}</strong><div class="muted">${widget.type}</div>${contentLine}`;
         container.appendChild(el);
       }
     }
+
+    function toggleAdvancedPanel() {
+      const panel = document.getElementById("advancedPanel");
+      const toggle = document.getElementById("toggleAdvanced");
+      const visible = panel.classList.toggle("visible");
+      toggle.setAttribute("aria-expanded", String(visible));
+      toggle.textContent = visible ? "Hide details" : "Details";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const toggle = document.getElementById("toggleAdvanced");
+      if (toggle) {
+        toggle.addEventListener("click", toggleAdvancedPanel);
+      }
+
+      document.querySelectorAll(".chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const input = document.getElementById("chatInput");
+          input.value = chip.textContent.trim();
+          sendChatMessage();
+        });
+      });
+    });
 
     async function sendChatMessage() {
       const input = document.getElementById("chatInput");
@@ -286,7 +704,9 @@
         chatHistory.push({ role: "assistant", content: reply });
 
         if (data.schema) {
-          renderWidgets(data.schema);
+          renderWidgets(data.schema, message);
+        } else {
+          renderWidgets(null, message);
         }
       } catch (err) {
         typingEl.remove();
@@ -304,6 +724,78 @@
         sendChatMessage();
       }
     });
+
+    let lastMockPackage = null;
+
+    function previewMockMagic() {
+      const prompt = document.getElementById("mockPrompt").value || "A playful cat and mouse duo with a bright animated room";
+      const style = document.getElementById("mockStyle").value || "playful-cartoon";
+      const lowerPrompt = prompt.toLowerCase();
+      const isChild = /(child|kid|student|homework|school|friend|pet|game)/.test(lowerPrompt);
+      const themeMap = {
+        "playful-cartoon": "playful-cat-and-mouse",
+        "storybook": "storybook-friends",
+        "minimal-ui": "friendly-mini-space",
+        "retro": "retro-play-room"
+      };
+
+      lastMockPackage = {
+        theme: themeMap[style] || "playful-cat-and-mouse",
+        audience: isChild ? "child" : "general",
+        characters: ["original_cat", "original_mouse"],
+        widgets: ["homework", "weather", "drawing", "music"],
+        animations: ["chase", "wave", "celebrate"],
+        permissions: [],
+        external_actions: false
+      };
+
+      const safetyNote = "This sandbox output is declarative only. No arbitrary code execution, network access, credentials, or external actions are allowed.";
+      document.getElementById("mockMagicResult").textContent = `${safetyNote}\n\n${JSON.stringify(lastMockPackage, null, 2)}`;
+
+      const approvalText = lastMockPackage.audience === "child"
+        ? "Parent approval required before this concept can be published to Your Space."
+        : "This concept is ready to approve for Your Space.";
+      const approvalBox = document.getElementById("mockMagicApproval");
+      approvalBox.style.display = "block";
+      approvalBox.textContent = approvalText;
+      document.getElementById("approveMockBtn").disabled = false;
+    }
+
+    function applyMockMagicToSpace() {
+      if (!lastMockPackage) {
+        document.getElementById("mockMagicApproval").textContent = "Generate a sandbox concept first.";
+        return;
+      }
+
+      const approvalBox = document.getElementById("mockMagicApproval");
+      const packageData = { ...lastMockPackage, approved: true };
+
+      if (packageData.audience === "child") {
+        approvalBox.textContent = "Concept sent for parent approval. It remains in the sandbox until a parent confirms it for Your Space.";
+        appendMessage("assistant", "I created a playful new companion concept in the sandbox. A parent can approve it before it becomes active in Your Space.");
+        return;
+      }
+
+      renderWidgets({
+        widgets: [
+          { title: "Companion", type: "Character", content: packageData.characters.join(" + ") },
+          { title: "Theme", type: "Design", content: packageData.theme },
+          { title: "Activities", type: "Plan", content: packageData.widgets.join(" • ") },
+          { title: "Motion", type: "Animation", content: packageData.animations.join(" • ") }
+        ]
+      }, "Create a playful child-friendly space with an original cat and mouse companion.");
+
+      approvalBox.textContent = "Concept approved and applied to Your Space.";
+      appendMessage("assistant", "I created the concept and applied it to Your Space.");
+    }
+
+    function clearMockMagicApproval() {
+      document.getElementById("mockMagicApproval").style.display = "none";
+      document.getElementById("mockMagicApproval").textContent = "No approval pending.";
+      document.getElementById("approveMockBtn").disabled = true;
+      lastMockPackage = null;
+      document.getElementById("mockMagicResult").textContent = "No mock concept generated yet.";
+    }
 
     // --- Advanced panel (unchanged technical controls) ---
     async function listProfiles() {

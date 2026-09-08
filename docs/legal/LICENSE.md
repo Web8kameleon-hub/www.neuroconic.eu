@@ -71,3 +71,4 @@ This license complies with:
 **Neurosonic / Clisonix Trinity+ASI v1.0**
 **ABA GmbH - HRB 21069 Bochum**
 **clisonix@pm.me**
+Full legal notice: [Impressum](IMPRESSUM.md)

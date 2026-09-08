@@ -5,6 +5,7 @@
 fastapi==0.139.2
 uvicorn==0.51.0
 pydantic==2.13.4
+stripe==11.4.1
 
 # NOTE: You can run Neurosonic without backend:
 #   python neurosonic.py

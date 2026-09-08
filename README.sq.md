@@ -39,8 +39,8 @@ Neurosonic është një **platformë AI e pavarur, 1000% sovrane**, e ndërtuar 
 ## 🚀 Ekzekutimi i Menjëhershëm
 
 ```bash
-git clone https://github.com/LedjanAhmati/www.neurosonic.eu
-cd www.neurosonic.eu
+git clone https://github.com/LedjanAhmati/www.neuroconic.eu
+cd www.neuroconic.eu
 python neurosonic.py
 ```
 
@@ -122,7 +122,8 @@ python neurosonic_no_fake_police.py --cd  # CD kontroll (bllokon deploy)
 ## 🌍 Lidhjet
 
 - 🌐 [neurosonic.eu](https://www.neurosonic.eu)
-- 🐙 [GitHub](https://github.com/LedjanAhmati/www.neurosonic.eu)
+- 🐙 [GitHub (qendror)](https://github.com/LedjanAhmati/www.neuroconic.eu)
+- 🍴 [GitHub (fork, releases/deploy)](https://github.com/Web8kameleon-hub/www.neuroconic.eu)
 - 📖 [Dokumentacioni](docs/Architecture.md)
 - 🗺️ [Wiki Home](docs/wiki/Home.md)
 - 🧭 [Stepstones](docs/STEPSTONES.md)

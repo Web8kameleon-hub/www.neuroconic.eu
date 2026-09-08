@@ -36,6 +36,20 @@ def test_personal_node_store_save_and_load(tmp_path) -> None:
     assert any(p["profile_id"] == "demo_profile" for p in listed)
 
 
+def test_personal_node_store_keeps_schema_when_saving_experience_film(tmp_path) -> None:
+    store = PersonalNodeStore(root_dir=str(tmp_path / "profiles"))
+    schema = {"schema_version": "1.0", "widgets": [{"id": "w1", "type": "status"}]}
+    store.save_profile("demo_profile", schema)
+
+    film = {"film_version": "1.0", "profile_id": "demo_profile", "intent": "daily overview"}
+    saved = store.save_experience_film("demo_profile", film)
+    loaded = store.load_profile("demo_profile")
+
+    assert saved["profile_id"] == "demo_profile"
+    assert loaded["schema"]["schema_version"] == "1.0"
+    assert loaded["experience_film"]["intent"] == "daily overview"
+
+
 def test_plugin_address_auto_classification() -> None:
     engine = UIDesignEngine()
 

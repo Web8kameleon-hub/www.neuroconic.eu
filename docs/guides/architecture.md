@@ -47,8 +47,8 @@ preserve privacy by design, and guarantee **Human Override (SR007)** plus
 
 ```bash
 # Clone the repository
-git clone https://github.com/LedjanAhmati/www.neurosonic.eu
-cd www.neurosonic.eu
+git clone https://github.com/LedjanAhmati/www.neuroconic.eu
+cd www.neuroconic.eu
 
 # Run - zero installs required
 python neurosonic.py

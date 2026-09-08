@@ -4,3 +4,4 @@ lightning-spp
 backend
 backend_b
 web
+pingpong-warmup

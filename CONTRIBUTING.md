@@ -30,8 +30,8 @@ R&D zhvillim lejohet vetëm për koncepte/drafte/protokolle/formula të reja në
 
 ```bash
 # Clone the repo
-git clone https://github.com/LedjanAhmati/www.neurosonic.eu
-cd www.neurosonic.eu
+git clone https://github.com/LedjanAhmati/www.neuroconic.eu
+cd www.neuroconic.eu
 
 # No pip install needed! Zero dependencies.
 python neurosonic.py
@@ -89,7 +89,7 @@ neurosonic.eu/
 
 ## ❓ Questions?
 
-Open a [GitHub Discussion](https://github.com/LedjanAhmati/www.neurosonic.eu/discussions)
+Open a [GitHub Discussion](https://github.com/LedjanAhmati/www.neuroconic.eu/discussions)
 
 ---
 

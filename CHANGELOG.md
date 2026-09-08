@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.26 - 2026-09-08
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.25`. See
+`docs/releases/v1.0.26.md` for full detail.
+
+### Commits included (v1.0.26)
+
+- `ef3eeb8 test: enforce >=64 inventory and expand factual scorecard contracts`
+
+### Validation (v1.0.26)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.26)
+
+- Git tag: `v1.0.26`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
 ## v1.0.25 - 2026-09-08
 
 Automated patch release cut by `scripts/release/auto_release.py` from

@@ -719,7 +719,7 @@ dependencies = [
 
 [[package]]
 name = "neurosonic-shell"
-version = "1.0.25"
+version = "1.0.26"
 dependencies = [
  "anyhow",
  "clap",

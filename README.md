@@ -57,6 +57,7 @@ Pretendimet në këtë README janë të lidhura me artefakte testimi, benchmark 
   - [📡 Full Observability Pack](#-full-observability-pack)
   - [📊 Comparative Benchmark Evidence](#-comparative-benchmark-evidence)
   - [🧯 Formal Threat Modeling (STRIDE)](#-formal-threat-modeling-stride)
+  - [🧪 Independent Assessment Pack (30 Days)](#-independent-assessment-pack-30-days)
   - [🌍 External Benchmark Evidence](#-external-benchmark-evidence)
   - [🧱 Structure Consolidation Plan](#-structure-consolidation-plan)
   - [🔬 Testet](#-testet)
@@ -401,6 +402,28 @@ Artefaktet ruhen te:
 Threat model formal me assets, trust boundaries, STRIDE register dhe risk scoring:
 
 - `docs/production/security/THREAT_MODEL_STRIDE.md`
+
+## 🧪 Independent Assessment Pack (30 Days)
+
+Paketë praktike për vlerësim të pavarur me vendim `Go/Conditional/No-Go`:
+
+- Scorecard metodologjia: `docs/production/assessment/SCORECARD_30_DAYS.md`
+- Checklist Zero Fake/Hallucination: `docs/production/assessment/ZERO_FAKE_HALLUCINATION_CHECKLIST.md`
+- Checklist i auditimit të pavarur: `docs/production/assessment/INDEPENDENT_EVALUATION_CHECKLIST.md`
+- Template metrikash: `docs/production/assessment/METRICS_SCORECARD_TEMPLATE.csv`
+- Input template: `docs/production/assessment/scorecard_input_template.json`
+- Plan eksperimentesh 30-ditor: `docs/production/assessment/EXPERIMENT_PLAN_30_DAYS.md`
+
+Ekzekutim automatik i scorecard:
+
+```bash
+python scripts/assessment_scorecard.py --input docs/production/assessment/scorecard_input_template.json
+```
+
+Output-et krijohen te:
+
+- `docs/production/assessment/scorecard_result.json`
+- `docs/production/assessment/scorecard_result.md`
 
 ## 🌍 External Benchmark Evidence
 

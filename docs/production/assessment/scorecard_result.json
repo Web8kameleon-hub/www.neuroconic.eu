@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "project": "Neurosonic Trinity+ASI",
+    "date_utc": "2026-09-08T00:00:00Z",
+    "assessor": "team"
+  },
+  "total_score": 50.7,
+  "decision": "No-Go",
+  "hard_gates": {
+    "security_independent_audit_passed": false,
+    "gdpr_dpa_in_place": false,
+    "production_release_reproducible": true,
+    "critical_incident_response_tested": false
+  },
+  "failed_hard_gates": [
+    "security_independent_audit_passed",
+    "gdpr_dpa_in_place",
+    "critical_incident_response_tested"
+  ],
+  "categories": {
+    "security": {
+      "weight": 30.0,
+      "average": 2.2,
+      "weighted_score": 13.2,
+      "items": {
+        "independent_audit": 1.0,
+        "secret_management": 3.0,
+        "access_control": 3.0,
+        "tenant_isolation": 2.0,
+        "incident_response": 2.0
+      }
+    },
+    "privacy_sovereignty": {
+      "weight": 20.0,
+      "average": 2.25,
+      "weighted_score": 9.0,
+      "items": {
+        "data_mapping": 2.0,
+        "gdpr_controls": 2.0,
+        "self_hosting_readiness": 4.0,
+        "legal_contracts": 1.0
+      }
+    },
+    "reasoning_quality": {
+      "weight": 20.0,
+      "average": 2.5,
+      "weighted_score": 10.0,
+      "items": {
+        "task_accuracy": 3.0,
+        "consistency": 3.0,
+        "benchmark_reproducibility": 2.0,
+        "alternative_comparison": 2.0
+      }
+    },
+    "operations_reliability": {
+      "weight": 20.0,
+      "average": 3.0,
+      "weighted_score": 12.0,
+      "items": {
+        "ci_cd_integrity": 3.0,
+        "rollback_drill": 2.0,
+        "observability": 4.0,
+        "slo_tracking": 3.0
+      }
+    },
+    "documentation_community": {
+      "weight": 10.0,
+      "average": 3.25,
+      "weighted_score": 6.5,
+      "items": {
+        "architecture_docs": 4.0,
+        "runbook_quality": 4.0,
+        "roadmap_clarity": 3.0,
+        "community_signal": 2.0
+      }
+    }
+  }
+}

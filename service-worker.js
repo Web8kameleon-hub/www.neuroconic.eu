@@ -1,10 +1,5 @@
-const CACHE_NAME = 'neurosonic-pwa-v2';
+const CACHE_NAME = 'neurosonic-pwa-v3';
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/dashboard',
-  '/ui-composer',
-  '/dna-ui',
   '/manifest.webmanifest',
   '/og-neurosonic.svg',
   '/icons/icon-192.png',
@@ -37,6 +32,13 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (url.pathname.startsWith('/api/')) return;
+
+  // HTML routes are live application state. Never serve a cached dashboard
+  // or composer in place of the current production route.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

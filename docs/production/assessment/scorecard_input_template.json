@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "project": "Neurosonic Trinity+ASI",
+    "date_utc": "2026-09-08T00:00:00Z",
+    "assessor": "team"
+  },
+  "hard_gates": {
+    "security_independent_audit_passed": false,
+    "gdpr_dpa_in_place": false,
+    "production_release_reproducible": true,
+    "critical_incident_response_tested": false
+  },
+  "categories": {
+    "security": {
+      "weight": 30,
+      "items": {
+        "independent_audit": 1,
+        "secret_management": 3,
+        "access_control": 3,
+        "tenant_isolation": 2,
+        "incident_response": 2
+      }
+    },
+    "privacy_sovereignty": {
+      "weight": 20,
+      "items": {
+        "data_mapping": 2,
+        "gdpr_controls": 2,
+        "self_hosting_readiness": 4,
+        "legal_contracts": 1
+      }
+    },
+    "reasoning_quality": {
+      "weight": 20,
+      "items": {
+        "task_accuracy": 3,
+        "consistency": 3,
+        "benchmark_reproducibility": 2,
+        "alternative_comparison": 2
+      }
+    },
+    "operations_reliability": {
+      "weight": 20,
+      "items": {
+        "ci_cd_integrity": 3,
+        "rollback_drill": 2,
+        "observability": 4,
+        "slo_tracking": 3
+      }
+    },
+    "documentation_community": {
+      "weight": 10,
+      "items": {
+        "architecture_docs": 4,
+        "runbook_quality": 4,
+        "roadmap_clarity": 3,
+        "community_signal": 2
+      }
+    }
+  }
+}

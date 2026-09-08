@@ -1,0 +1,11 @@
+date_utc,release_tag,test_suite,category,metric_name,target_value,observed_value,unit,pass_fail,severity,evidence_path,notes
+2026-09-08T00:00:00Z,v1.0.23,zero_fake_suite,security,integrity_verified_rate,100,0,percent,FAIL,critical,docs/production/evidence/trace_uniform_check_latest.json,
+2026-09-08T00:00:00Z,v1.0.23,zero_fake_suite,quality,source_verified_rate,95,0,percent,FAIL,critical,docs/production/evidence/trace_uniform_check_latest.json,
+2026-09-08T00:00:00Z,v1.0.23,reasoning_suite,quality,reasoning_validated_rate,90,0,percent,FAIL,major,docs/production/evidence/slo_snapshot_latest.json,
+2026-09-08T00:00:00Z,v1.0.23,latency_suite,operations,p95_latency,450,0,ms,FAIL,major,docs/production/evidence/latency_trend.json,
+2026-09-08T00:00:00Z,v1.0.23,availability_suite,operations,scenario_contract_pass_percent,99.5,0,percent,FAIL,major,docs/production/evidence/availability_trend.json,
+2026-09-08T00:00:00Z,v1.0.23,memory_suite,memory,long_context_retention,85,0,percent,FAIL,major,docs/production/assessment/context_memory_results.csv,
+2026-09-08T00:00:00Z,v1.0.23,privacy_suite,privacy,gdpr_delete_request_sla,72,0,hours,FAIL,critical,docs/production/assessment/privacy_controls_report.md,
+2026-09-08T00:00:00Z,v1.0.23,cost_suite,economy,cost_per_1000_tasks,0,0,eur,TBD,minor,docs/production/assessment/cost_observations.md,set target according to budget
+2026-09-08T00:00:00Z,v1.0.23,deploy_suite,operations,rollback_drill_rto,15,0,minutes,FAIL,major,docs/production/evidence/rollback_drills.md,
+2026-09-08T00:00:00Z,v1.0.23,compliance_suite,security,independent_audit_status,1,0,binary,FAIL,critical,docs/production/security/THREAT_MODEL_STRIDE.md,1=passed 0=not passed

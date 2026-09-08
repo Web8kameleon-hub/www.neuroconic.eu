@@ -2,7 +2,7 @@
   "name": "Neurosonic Trinity+ASI",
   "short_name": "Neurosonic",
   "description": "Sovereign, modular AI operating system with an immutable constitution, HVO memory, and Zero Fake engine.",
-  "start_url": "/",
+  "start_url": "/dna-ui",
   "scope": "/",
   "display": "standalone",
   "background_color": "#060b14",

@@ -53,14 +53,15 @@ jobs:
       - name: Check deploy secrets
         id: check
         env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          if [ -n "$DEPLOY_HOST" ] && [ -n "$DEPLOY_SSH_KEY" ]; then
+          if [ -n "$DEPLOY_HOST" ] && [ -n "$DEPLOY_USER" ] && [ -n "$DEPLOY_SSH_KEY" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::DEPLOY_HOST or DEPLOY_SSH_KEY secret is not set; skipping deploy step."
+            echo "::warning::DEPLOY_HOST, DEPLOY_USER, or DEPLOY_SSH_KEY secret is not set; skipping deploy step."
           fi
 
       - name: Checkout
@@ -81,8 +82,8 @@ jobs:
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/www.neuroconic.eu' }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || 22 }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: "22"
           REPO: ${{ github.repository }}
           GIT_REF: ${{ github.ref_name }}
           SECRET_NEUROSONIC_AUTH_SECRET: ${{ secrets.NEUROSONIC_AUTH_SECRET }}
@@ -137,8 +138,11 @@ jobs:
           sync_env_var "STRIPE_WEBHOOK_SECRET" "$SEC_STRIPE_WEBHOOK"
           sync_env_var "STRIPE_PRICE_ID" "$SEC_STRIPE_PRICE"
 
+          docker compose -f docker-compose.yml config -q
           chmod +x ./scripts/rolling_update_backends.sh
           ./scripts/rolling_update_backends.sh
+          docker compose -f docker-compose.yml exec -T backend \
+            python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=15).read()"
           EOS
 
       - name: Deployment summary
@@ -149,5 +153,5 @@ jobs:
             echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "## Auto-deploy skipped" >> "$GITHUB_STEP_SUMMARY"
-            echo "- Reason: DEPLOY_HOST/DEPLOY_SSH_KEY secrets not configured." >> "$GITHUB_STEP_SUMMARY"
+            echo "- Reason: DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY secrets not configured." >> "$GITHUB_STEP_SUMMARY"
           fi

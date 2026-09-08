@@ -50,7 +50,7 @@ from neurosonic_ui_designer import PersonalNodeStore, UIDesignEngine
 app = FastAPI(
     title="Neurosonic Trinity+ASI API",
     description="Backend API per Neurosonic - DNA, Genome, Compatibility, Evolution, Lightning SPP",
-    version="1.0.17",
+    version="1.0.18",
 )
 
 _cors_origins = [
@@ -373,7 +373,7 @@ def _generation_params_for_engine(engine: ProcessingEngine) -> dict[str, float |
 async def root():
     return {
         "name": "Neurosonic Trinity+ASI",
-        "version": "1.0.17",
+        "version": "1.0.18",
         "status": "online",
         "modules": [
             "dna",
@@ -461,7 +461,7 @@ async def health():
         "lightning_service": lightning_service,
         "llm_service": llm_service,
         "llm_model": llm_bridge.model,
-        "api_version": "1.0.17",
+        "api_version": "1.0.18",
     }
 
 

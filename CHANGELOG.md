@@ -2,6 +2,42 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.18 - 2026-09-08
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.17`. See
+`docs/releases/v1.0.18.md` for full detail.
+
+### Commits included (v1.0.18)
+
+- `23f5da0 feat: make chat/reasoning smarter+more creative, keep XCL (code) fully deterministic`
+- `cc4b9c5 fix: duplicate if/env/run block from previous edit broke workflow YAML`
+- `270afe2 feat: add expand-api-rule action to fix root cause of chat 403s`
+- `32a2422 fix: broken GitHub repo links (www.neurosonic.eu -> www.neuroconic.eu) + central-repo attribution`
+- `145a070 debug: print raw /zones response body before jq parsing`
+- `a224114 fix: actionable error message for Cloudflare WAF diagnose zone-lookup failure`
+- `c814f94 debug: add token-verify + full-zone-list step to Cloudflare WAF diagnose workflow`
+- `3540240 docs: mark RELEASE_PAT as configured in Release-Workflow.md`
+- `478aed4 fix: auto-release cannot push past new main branch protection without RELEASE_PAT`
+- `48a78ae docs(legal): add Impressum (DDG/TMG statutory notice) for ABA GmbH`
+
+### Validation (v1.0.18)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.18)
+
+- Git tag: `v1.0.18`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
 ## v1.0.17 - 2026-09-06
 
 Automated patch release cut by `scripts/release/auto_release.py` from

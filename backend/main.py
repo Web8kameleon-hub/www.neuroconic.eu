@@ -28,6 +28,7 @@ sys.path.insert(0, _project_root)
 os.chdir(_project_root)
 
 from neurosonic_auth import AuthError, NeurosonicAuth
+from neurosonic_clisonix_bridge import ClisonixAuthBillingBridge, ClisonixBridgeError
 from neurosonic_payments import NeurosonicPayments, PaymentsError, is_entitlement_active
 from neurosonic_compatibility import NeurosonicCompatibilityMatrix
 from neurosonic_data_intelligence import (
@@ -82,6 +83,7 @@ personal_node_store = PersonalNodeStore(root_dir=os.path.join(_project_root, "pe
 auth = NeurosonicAuth(root_dir=os.path.join(_project_root, "personal_node", "auth"))
 payments = NeurosonicPayments(auth=auth)
 gram_adapter = CanonicalGramAdapter()
+cloud_bridge = ClisonixAuthBillingBridge()
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
@@ -525,6 +527,11 @@ async def health():
 
 @app.post("/api/auth/register")
 async def auth_register(payload: RegisterRequest):
+    if cloud_bridge.configured:
+        try:
+            return cloud_bridge.register(payload.email, payload.password)
+        except ClisonixBridgeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     try:
         result = auth.register(payload.email, payload.password)
     except AuthError as exc:
@@ -534,6 +541,11 @@ async def auth_register(payload: RegisterRequest):
 
 @app.post("/api/auth/login")
 async def auth_login(payload: LoginRequest):
+    if cloud_bridge.configured:
+        try:
+            return cloud_bridge.login(payload.email, payload.password)
+        except ClisonixBridgeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     try:
         result = auth.login(payload.email, payload.password)
     except AuthError as exc:
@@ -546,6 +558,11 @@ async def auth_me(request: Request):
     authorization = request.headers.get("authorization", "")
     if not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Mungon Bearer token")
+    if cloud_bridge.configured:
+        try:
+            return cloud_bridge.me(authorization)
+        except ClisonixBridgeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     token = authorization[7:].strip()
     try:
         claims = auth.verify_token(token)
@@ -578,6 +595,14 @@ def _require_user(request: Request) -> dict[str, Any]:
 @app.post("/api/billing/checkout")
 async def billing_checkout(request: Request):
     """Krijon një Stripe Checkout Session (1 EUR, one-time) për përdoruesin e loguar."""
+    authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Mungon token i autorizimit")
+    if cloud_bridge.configured:
+        try:
+            return cloud_bridge.billing_checkout(authorization)
+        except ClisonixBridgeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     user = _require_user(request)
     try:
         result = payments.create_checkout_session(email=user["email"])
@@ -589,6 +614,14 @@ async def billing_checkout(request: Request):
 @app.get("/api/billing/status")
 async def billing_status(request: Request):
     """Kthen nëse përdoruesi i loguar ka akses aktiv (entitlement jo i skaduar)."""
+    authorization = request.headers.get("authorization", "")
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Mungon token i autorizimit")
+    if cloud_bridge.configured:
+        try:
+            return cloud_bridge.billing_status(authorization)
+        except ClisonixBridgeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     user = _require_user(request)
     entitlement = user.get("entitlement")
     return {
@@ -602,6 +635,11 @@ async def billing_webhook(request: Request):
     """Endpoint-i Stripe webhook. Verifikon nënshkrimin dhe aktivizon entitlement."""
     payload = await request.body()
     signature = request.headers.get("stripe-signature", "")
+    if cloud_bridge.configured:
+        try:
+            return cloud_bridge.billing_webhook(payload, signature)
+        except ClisonixBridgeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     try:
         result = payments.handle_webhook(payload, signature)
     except PaymentsError as exc:
@@ -687,7 +725,14 @@ async def ui_runtime():
         "lightning": bridge.get_statistics(),
         "genome": _genome_runtime_payload(),
         "gram": gram_adapter.status(),
+        "cloud": cloud_bridge.status(),
     }
+
+
+@app.get("/api/cloud/bridge")
+async def cloud_bridge_status():
+    """Expose clisonix/kloud bridge status for runtime diagnostics."""
+    return cloud_bridge.status()
 
 
 @app.get("/api/gram/health")

@@ -27,6 +27,28 @@ curl --fail http://127.0.0.1/api/shell/health
 Dashboard-i gjendet te `/neurosonic_dashboard.html` dhe përdor API-n në të
 njëjtin origin përmes Nginx.
 
+## Bridge me clisonix.com / kloud (Auth + Billing)
+
+Nëse do të përdorësh funksionet reale kanonike të auth/billing nga
+`web8kameleon-hub/clisonix.com` (ose shërbim kloud kompatibil), vendos:
+
+- `NEUROSONIC_CLOUD_BASE_URL=https://<upstream-domain>`
+- `NEUROSONIC_CLOUD_TOKEN=<bridge-token>` (opsionale, por rekomandohet)
+
+Kur `NEUROSONIC_CLOUD_BASE_URL` është aktiv, këto endpoint-e proxohen te cloud:
+
+- `/api/auth/register`
+- `/api/auth/login`
+- `/api/auth/me`
+- `/api/billing/checkout`
+- `/api/billing/status`
+- `/api/billing/webhook`
+
+Diagnostikim runtime:
+
+- `/api/cloud/bridge` tregon gjendjen e lidhjes me cloud bridge.
+- `/api/ui/runtime` përfshin edhe fushën `cloud`.
+
 ## Domain dhe HTTPS
 
 Compose ekspozon `${HTTP_PORT:-80}` dhe `${HTTPS_PORT:-443}`. Nginx brenda

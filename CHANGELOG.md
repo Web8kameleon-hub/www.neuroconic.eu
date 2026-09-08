@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.19 - 2026-09-08
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.18`. See
+`docs/releases/v1.0.19.md` for full detail.
+
+### Commits included (v1.0.19)
+
+- `a85851c fix: validate health benchmark contract`
+- `96c443e ci: align canonical compose services`
+- `3d1c084 release: v1.0.14`
+- `4b609fd test: remove in-process doubles from runtime contract checks`
+- `52d53ac ci: add verified release readiness and guarded autodeploy`
+
+### Validation (v1.0.19)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.19)
+
+- Git tag: `v1.0.19`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
 ## v1.0.14 - 2026-09-04
 
 ### Changed

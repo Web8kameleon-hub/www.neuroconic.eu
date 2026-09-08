@@ -38,6 +38,7 @@ from neurosonic_data_intelligence import (
 from neurosonic_dna import NeurosonicDNA
 from neurosonic_evolution import NeurosonicEvolutionEngine
 from neurosonic_genome import NeurosonicGenome
+from neurosonic_gram_adapter import CanonicalGramAdapter, GramAdapterError
 from neurosonic_lightning_bridge import (
     LightningMode,
     NeurosonicLightningBridge,
@@ -80,6 +81,7 @@ ui_designer = UIDesignEngine()
 personal_node_store = PersonalNodeStore(root_dir=os.path.join(_project_root, "personal_node", "profiles"))
 auth = NeurosonicAuth(root_dir=os.path.join(_project_root, "personal_node", "auth"))
 payments = NeurosonicPayments(auth=auth)
+gram_adapter = CanonicalGramAdapter()
 
 print("=" * 60)
 print("  NEUROSONIC BACKEND API GATI!")
@@ -128,6 +130,13 @@ class PipelineRequest(BaseModel):
 
 class BatchRequest(BaseModel):
     sources: list[str]
+
+
+class GramGraphRequest(BaseModel):
+    nodes: list[Any]
+    edges: list[list[Any]]
+    node_scores: dict[str, float] | None = None
+    edge_scores: dict[str, float] | None = None
 
 
 class RegisterRequest(BaseModel):
@@ -677,7 +686,24 @@ async def ui_runtime():
         "health": await health(),
         "lightning": bridge.get_statistics(),
         "genome": _genome_runtime_payload(),
+        "gram": gram_adapter.status(),
     }
+
+
+@app.get("/api/gram/health")
+async def gram_health():
+    """Expose the canonical GRAM connection state without inventing a fallback."""
+    return gram_adapter.status()
+
+
+@app.post("/api/gram/json")
+async def gram_json(req: GramGraphRequest):
+    """Forward a validated graph to the configured canonical GRAM service."""
+    payload = req.model_dump() if hasattr(req, "model_dump") else req.dict()
+    try:
+        return gram_adapter.process_graph(payload)
+    except (GramAdapterError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.post("/api/compatibility/verify")

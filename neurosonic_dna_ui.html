@@ -842,6 +842,7 @@
                     <div class="section">Labs</div>
                         <div class="item" data-plugin="labs"><span class="icon">🧪</span> Labs <span class="badge" id="badgeLabs">—</span>
                     </div>
+                        <div class="item" data-plugin="gram"><span class="icon">🌿</span> GRAM <span class="badge" id="badgeGram">—</span></div>
                         <div class="item" data-plugin="marketplace"><span class="icon">🛒</span> Marketplace <span
                             class="badge" id="badgeMarketplace">—</span></div>
 
@@ -1163,9 +1164,16 @@
             }
         });
 
+        NeuroPluginRegistry.register('gram', {
+            title: '🌿 GRAM Mesh',
+            render: function () {
+                return renderGramRuntime();
+            }
+        });
+
         // Runtime panels use only data returned by the public Neurosonic API.
         // An unavailable endpoint remains visible as unavailable; it is never replaced by demo content.
-        let runtimeSnapshot = { health: null, stats: null, genome: null };
+        let runtimeSnapshot = { health: null, stats: null, genome: null, gram: null };
 
         function escapeRuntimeText(value) {
             const element = document.createElement('span');
@@ -1216,6 +1224,25 @@
                     <span style="color:var(--text-muted);">Language</span><span>${escapeRuntimeText(language)}</span>
                     <span style="color:var(--text-muted);">Version</span><span id="settingsVersion">${escapeRuntimeText(version)}</span>
                 </div></div>`;
+        }
+
+        function renderGramRuntime() {
+            const gram = runtimeSnapshot.gram;
+            if (!gram) {
+                return '<div class="card"><div class="title">🌿 GRAM Mesh</div><div style="color:var(--text-muted);font-size:11px;">GRAM status unavailable.</div></div>';
+            }
+            const status = gram.available ? 'available' : 'unavailable';
+            const endpoint = gram.endpoint || '—';
+            const reason = gram.reason || '—';
+            return `<div class="card"><div class="title">🌿 GRAM Mesh</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+                    <span style="color:var(--text-muted);">Status</span><span>${escapeRuntimeText(status)}</span>
+                    <span style="color:var(--text-muted);">Service</span><span>${escapeRuntimeText(gram.service)}</span>
+                    <span style="color:var(--text-muted);">Endpoint</span><span>${escapeRuntimeText(endpoint)}</span>
+                    <span style="color:var(--text-muted);">Detail</span><span>${escapeRuntimeText(reason)}</span>
+                </div>
+                <div style="margin-top:8px;font-size:10px;color:var(--text-muted);">Graph API: POST /api/gram/json</div>
+            </div>`;
         }
 
         const LIVE_RUNTIME_PLUGINS = {
@@ -1422,11 +1449,13 @@
                 let health;
                 let stats;
                 let genome;
+                let gram;
                 try {
                     const runtime = await apiGet('/api/ui/runtime');
                     health = runtime.health;
                     stats = runtime.lightning;
                     genome = runtime.genome;
+                    gram = runtime.gram;
                     if (!health || !stats || !genome) throw new Error('Incomplete runtime snapshot');
                 } catch (error) {
                     setStatusText('statusHeartbeat', '⚡ offline');
@@ -1486,9 +1515,10 @@
                 }
 
                 setStatusText('badgeProfile', localStorage.getItem('profile_name') || '—');
-                runtimeSnapshot = { health, stats, genome };
+                setStatusText('badgeGram', gram?.configured ? (gram.available ? 'online' : 'offline') : '—');
+                runtimeSnapshot = { health, stats, genome, gram };
                 const activePlugin = NeuroPluginRegistry.activePlugin;
-                if (Object.hasOwn(LIVE_RUNTIME_PLUGINS, activePlugin) || activePlugin === 'settings') {
+                if (Object.hasOwn(LIVE_RUNTIME_PLUGINS, activePlugin) || activePlugin === 'settings' || activePlugin === 'gram') {
                     refreshPlugin();
                 }
             }

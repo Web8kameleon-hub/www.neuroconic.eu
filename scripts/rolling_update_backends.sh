@@ -7,7 +7,10 @@ HEALTH_URL="${HEALTH_URL:-https://127.0.0.1/api/health}"
 THINK_URL="${THINK_URL:-https://127.0.0.1/api/shell/think}"
 HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-90}"
 POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-2}"
-BUILD_FIRST="${BUILD_FIRST:-0}"
+# A deployment must build from the checked-out revision. Recreating a
+# container without rebuilding keeps the previous image and can report a
+# successful rollout while still serving old backend and dashboard code.
+BUILD_FIRST="${BUILD_FIRST:-1}"
 SKIP_THINK_SMOKE="${SKIP_THINK_SMOKE:-0}"
 
 if [[ "$COMPOSE_FILE" != /* ]]; then
@@ -89,8 +92,8 @@ printf '\n'
 cd "$PROJECT_ROOT"
 
 if [[ "$BUILD_FIRST" == "1" ]]; then
-  echo "[0/4] Building backend images..."
-  docker compose -f "$COMPOSE_FILE" build backend backend_b
+  echo "[0/4] Building application images..."
+  docker compose -f "$COMPOSE_FILE" build backend backend_b web
 fi
 
 echo "[1/4] Ensuring service topology is up..."

@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.28 - 2026-09-09
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.27`. See
+`docs/releases/v1.0.28.md` for full detail.
+
+### Commits included (v1.0.28)
+
+- `ec073ca feat(ui-composer): add real drag-and-resize board for Your Space widgets`
+
+### Validation (v1.0.28)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.28)
+
+- Git tag: `v1.0.28`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
 ## v1.0.27 - 2026-09-09
 
 Automated patch release cut by `scripts/release/auto_release.py` from

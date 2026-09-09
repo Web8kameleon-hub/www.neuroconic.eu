@@ -277,6 +277,11 @@
       display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px;
       margin-top: 8px;
     }
+    .widgets.board-mode {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-auto-rows: 88px;
+      position: relative;
+    }
     .widget {
       position: relative;
       background: linear-gradient(180deg, rgba(45, 46, 83, 0.7), rgba(18, 25, 42, 0.9));
@@ -285,6 +290,12 @@
       padding: 16px 14px 12px;
       min-height: 126px;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    .widgets.board-mode .widget {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
     .widget::before {
       content: "";
@@ -297,6 +308,65 @@
     }
     .widget strong { color: #ecddff; font-size: 16px; }
     .widget .muted { margin-top: 8px; display: block; }
+    .widget-body { flex: 1; overflow: auto; }
+    .board-toggle-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .board-toggle-btn {
+      border: 1px solid rgba(171, 188, 255, 0.24);
+      background: rgba(255,255,255,0.03);
+      color: #dfe8ff;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .board-toggle-btn.active {
+      background: linear-gradient(135deg, rgba(139,92,246,0.28), rgba(76,201,240,0.24));
+      border-color: rgba(180, 196, 255, 0.5);
+    }
+    .board-status { font-size: 11px; color: var(--text-muted); }
+    .board-only { display: none; }
+    .widgets.board-mode .board-only { display: block; }
+    .widget-drag-handle {
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+    .widgets.board-mode .widget-drag-handle { cursor: grab; }
+    .widget-drag-handle:active { cursor: grabbing; }
+    .widget-resize-handle {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      width: 16px;
+      height: 16px;
+      cursor: se-resize;
+      touch-action: none;
+      border-right: 2px solid rgba(200, 210, 255, 0.4);
+      border-bottom: 2px solid rgba(200, 210, 255, 0.4);
+      border-radius: 0 0 6px 0;
+    }
+    .widget-delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: #ffb4c6;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .widget-delete-btn:hover { background: rgba(255, 100, 130, 0.22); }
+    .widget.is-dragging, .widget.is-resizing {
+      opacity: 0.85;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      z-index: 5;
+    }
     .empty-hint {
       color: #a9b9e6;
       font-size: 14px;
@@ -390,6 +460,10 @@
     <div class="card space-card">
       <div class="preview-head">
         <h3>Your Space</h3>
+        <div class="board-toggle-row">
+          <span class="board-status" id="boardStatus"></span>
+          <button class="board-toggle-btn" id="boardToggleBtn" type="button" onclick="toggleBoardMode()">🔲 Arrange</button>
+        </div>
       </div>
       <div id="widgets" class="widgets">
         <div class="empty-hint">Everything AI creates for you appears here.</div>
@@ -629,25 +703,268 @@
     }
 
     function renderWidgets(schema, message) {
+      if (isRealSchema(schema)) {
+        currentSchema = schema;
+      }
       const container = document.getElementById("widgets");
       container.innerHTML = "";
+      container.classList.toggle("board-mode", boardMode);
+
       const widgets = schema && schema.widgets && schema.widgets.length
         ? schema.widgets
         : buildDynamicWorkspace(message, schema);
 
       if (!widgets || widgets.length === 0) {
-        container.innerHTML = '<div class="empty-hint">Everything AI creates for you appears here.</div>';
+        const empty = document.createElement("div");
+        empty.className = "empty-hint";
+        empty.textContent = "Everything AI creates for you appears here.";
+        container.appendChild(empty);
         return;
       }
 
-      for (const widget of widgets) {
+      if (isRealSchema(schema)) {
+        ensureLayouts(widgets);
+      }
+
+      widgets.forEach((widget, index) => {
         const el = document.createElement("div");
         el.className = "widget";
-        const contentLine = widget.content
-          ? `<div class="muted top-gap-sm">${String(widget.content).slice(0, 180)}</div>`
-          : "";
-        el.innerHTML = `<strong>${widget.title || widget.type}</strong><div class="muted">${widget.type}</div>${contentLine}`;
+        el.dataset.index = String(index);
+
+        if (boardMode && widget.layout) {
+          applyLayoutStyle(el, widget.layout);
+        }
+
+        const dragHandle = document.createElement("div");
+        dragHandle.className = "widget-drag-handle";
+        const titleEl = document.createElement("strong");
+        titleEl.textContent = widget.title || widget.type || "Widget";
+        const typeEl = document.createElement("div");
+        typeEl.className = "muted";
+        typeEl.textContent = widget.type || "";
+        dragHandle.appendChild(titleEl);
+        dragHandle.appendChild(typeEl);
+        el.appendChild(dragHandle);
+
+        if (widget.content) {
+          const bodyEl = document.createElement("div");
+          bodyEl.className = "muted top-gap-sm widget-body";
+          bodyEl.textContent = String(widget.content).slice(0, 400);
+          el.appendChild(bodyEl);
+        }
+
+        if (isRealSchema(schema)) {
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "widget-delete-btn board-only";
+          deleteBtn.type = "button";
+          deleteBtn.title = "Remove from Your Space";
+          deleteBtn.textContent = "\u2715";
+          deleteBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            deleteWidgetAt(index);
+          });
+          el.appendChild(deleteBtn);
+
+          const resizeHandle = document.createElement("div");
+          resizeHandle.className = "widget-resize-handle board-only";
+          el.appendChild(resizeHandle);
+
+          if (boardMode) {
+            attachDragHandlers(dragHandle, el, index);
+            attachResizeHandlers(resizeHandle, el, index);
+          }
+        }
+
         container.appendChild(el);
+      });
+    }
+
+    // --- Board layout: real drag & resize, persisted via the existing
+    // /api/ui/panels/{profile_id} endpoint. No fake verification, no
+    // external network calls (keeps the deployed Content-Security-Policy's
+    // connect-src 'self' intact), no eval(). ---
+
+    let currentSchema = null;
+    let boardMode = false;
+    const BOARD_COLUMNS = 12;
+    const BOARD_ROW_PX = 88;
+    const BOARD_GAP_PX = 12;
+    const BOARD_ROW_UNIT = BOARD_ROW_PX + BOARD_GAP_PX;
+
+    function isRealSchema(schema) {
+      return !!(schema && typeof schema === "object" && schema.schema_version);
+    }
+
+    function ensureLayouts(widgets) {
+      widgets.forEach((widget, index) => {
+        if (widget.layout && Number.isFinite(widget.layout.x) && Number.isFinite(widget.layout.y)) {
+          return;
+        }
+        widget.layout = {
+          x: (index % 3) * 4,
+          y: Math.floor(index / 3) * 3,
+          w: 4,
+          h: 3
+        };
+      });
+    }
+
+    function applyLayoutStyle(el, layout) {
+      const x = Math.max(0, Math.min(BOARD_COLUMNS - 1, layout.x || 0));
+      const w = Math.max(2, Math.min(BOARD_COLUMNS - x, layout.w || 4));
+      const y = Math.max(0, layout.y || 0);
+      const h = Math.max(2, layout.h || 3);
+      el.style.gridColumn = (x + 1) + " / span " + w;
+      el.style.gridRow = (y + 1) + " / span " + h;
+    }
+
+    function getProfileId() {
+      const field = document.getElementById("profile");
+      return (field && field.value) || "default";
+    }
+
+    function updateBoardStatus(text) {
+      const el = document.getElementById("boardStatus");
+      if (el) el.textContent = text;
+    }
+
+    function toggleBoardMode() {
+      boardMode = !boardMode;
+      const btn = document.getElementById("boardToggleBtn");
+      if (btn) btn.classList.toggle("active", boardMode);
+      updateBoardStatus(
+        boardMode
+          ? (isRealSchema(currentSchema) ? "Drag widgets by their title, resize from the bottom-right corner." : "Send a message first so I can build your panel.")
+          : ""
+      );
+      renderWidgets(currentSchema, "");
+    }
+
+    let persistTimer = null;
+    function schedulePersist() {
+      updateBoardStatus("Saving\u2026");
+      if (persistTimer) clearTimeout(persistTimer);
+      persistTimer = setTimeout(persistCurrentSchema, 400);
+    }
+
+    async function persistCurrentSchema() {
+      if (!isRealSchema(currentSchema)) return;
+      try {
+        await postJson(`/api/ui/panels/${encodeURIComponent(getProfileId())}`, { panel: currentSchema });
+        updateBoardStatus("Saved");
+      } catch (err) {
+        updateBoardStatus("Save failed: " + err.message);
+      }
+    }
+
+    function deleteWidgetAt(index) {
+      if (!isRealSchema(currentSchema)) return;
+      currentSchema.widgets.splice(index, 1);
+      renderWidgets(currentSchema, "");
+      schedulePersist();
+    }
+
+    let activePointerAction = null;
+
+    function attachDragHandlers(handleEl, cardEl, index) {
+      handleEl.addEventListener("pointerdown", (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        const board = document.getElementById("widgets");
+        const rect = board.getBoundingClientRect();
+        const colWidth = rect.width / BOARD_COLUMNS;
+        const layout = currentSchema.widgets[index].layout;
+        activePointerAction = {
+          type: "drag",
+          index,
+          startX: event.clientX,
+          startY: event.clientY,
+          origX: layout.x,
+          origY: layout.y,
+          colWidth
+        };
+        cardEl.classList.add("is-dragging");
+        handleEl.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+    }
+
+    function attachResizeHandlers(handleEl, cardEl, index) {
+      handleEl.addEventListener("pointerdown", (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        const board = document.getElementById("widgets");
+        const rect = board.getBoundingClientRect();
+        const colWidth = rect.width / BOARD_COLUMNS;
+        const layout = currentSchema.widgets[index].layout;
+        activePointerAction = {
+          type: "resize",
+          index,
+          startX: event.clientX,
+          startY: event.clientY,
+          origW: layout.w,
+          origH: layout.h,
+          colWidth
+        };
+        cardEl.classList.add("is-resizing");
+        handleEl.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+    }
+
+    document.addEventListener("pointermove", (event) => {
+      if (!activePointerAction || !isRealSchema(currentSchema)) return;
+      const action = activePointerAction;
+      const widget = currentSchema.widgets[action.index];
+      if (!widget) return;
+      const dx = event.clientX - action.startX;
+      const dy = event.clientY - action.startY;
+      const dCol = Math.round(dx / action.colWidth);
+      const dRow = Math.round(dy / BOARD_ROW_UNIT);
+      const cardEl = document.querySelector('.widget[data-index="' + action.index + '"]');
+
+      if (action.type === "drag") {
+        const newX = Math.max(0, Math.min(BOARD_COLUMNS - widget.layout.w, action.origX + dCol));
+        const newY = Math.max(0, action.origY + dRow);
+        if (cardEl) applyLayoutStyle(cardEl, { x: newX, y: newY, w: widget.layout.w, h: widget.layout.h });
+        action.pendingX = newX;
+        action.pendingY = newY;
+      } else if (action.type === "resize") {
+        const newW = Math.max(2, Math.min(BOARD_COLUMNS - widget.layout.x, action.origW + dCol));
+        const newH = Math.max(2, action.origH + dRow);
+        if (cardEl) applyLayoutStyle(cardEl, { x: widget.layout.x, y: widget.layout.y, w: newW, h: newH });
+        action.pendingW = newW;
+        action.pendingH = newH;
+      }
+    });
+
+    document.addEventListener("pointerup", () => {
+      if (!activePointerAction) return;
+      const action = activePointerAction;
+      const widget = currentSchema && currentSchema.widgets && currentSchema.widgets[action.index];
+      if (widget) {
+        if (action.type === "drag" && action.pendingX !== undefined) {
+          widget.layout.x = action.pendingX;
+          widget.layout.y = action.pendingY;
+        } else if (action.type === "resize" && action.pendingW !== undefined) {
+          widget.layout.w = action.pendingW;
+          widget.layout.h = action.pendingH;
+        }
+        schedulePersist();
+      }
+      document.querySelectorAll(".widget.is-dragging, .widget.is-resizing").forEach((el) => {
+        el.classList.remove("is-dragging", "is-resizing");
+      });
+      activePointerAction = null;
+    });
+
+    async function loadSavedPanel() {
+      try {
+        const data = await getJson(`/api/ui/panels/${encodeURIComponent(getProfileId())}`);
+        if (data.success && data.panel && isRealSchema(data.panel.schema)) {
+          currentSchema = data.panel.schema;
+          renderWidgets(currentSchema, "");
+        }
+      } catch {
+        // No saved panel yet - keep the friendly empty-state hint.
       }
     }
 
@@ -672,6 +989,8 @@
           sendChatMessage();
         });
       });
+
+      loadSavedPanel();
     });
 
     async function sendChatMessage() {

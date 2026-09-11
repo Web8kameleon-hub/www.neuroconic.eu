@@ -1,9 +1,6 @@
 name: Deploy Production
 
 on:
-  workflow_run:
-    workflows: ["Neurosonic CI - Zero Fake Enforcement"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       ref:
@@ -20,18 +17,13 @@ concurrency:
 
 jobs:
   deploy:
-    if: >-
-      ((github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main') ||
-       github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-      DEPLOY_REF: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref }}
+      DEPLOY_REF: ${{ inputs.ref }}
     steps:
       - name: Validate deployment configuration
         shell: bash

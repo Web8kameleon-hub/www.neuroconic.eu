@@ -77,6 +77,22 @@ print(f"Think smoke OK (status={data.get('status')}, engine={data.get('engine', 
 PY
 }
 
+wait_think_smoke() {
+  local url="$1"
+  local timeout="$2"
+  local poll="$3"
+  local deadline=$((SECONDS + timeout))
+
+  while (( SECONDS < deadline )); do
+    if invoke_think_smoke "$url"; then
+      return 0
+    fi
+    sleep "$poll"
+  done
+
+  return 1
+}
+
 if [[ ! -f "$COMPOSE_FILE" ]]; then
   echo "docker-compose.yml not found: $COMPOSE_FILE" >&2
   exit 1
@@ -129,7 +145,10 @@ for service in backend backend_b; do
   fi
 
   if [[ "$SKIP_THINK_SMOKE" != "1" ]]; then
-    invoke_think_smoke "$THINK_URL"
+    if ! wait_think_smoke "$THINK_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then
+      echo "Think smoke failed after recreate of $service" >&2
+      exit 1
+    fi
     echo "  ✅ Think smoke OK on $service"
   else
     echo "  ✅ Health OK on $service (smoke skipped)"

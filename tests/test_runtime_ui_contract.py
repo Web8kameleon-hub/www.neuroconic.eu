@@ -53,3 +53,11 @@ def test_ui_composer_uses_live_panel_services() -> None:
     assert 'getJson("/api/ui/runtime")' in source
     assert "buildDynamicWorkspace" not in source
     assert "Mock Magic" not in source
+
+
+def test_rolling_deploy_retries_the_real_think_smoke() -> None:
+    """A transient proxy response must not abort a healthy rolling update."""
+    source = Path("scripts/rolling_update_backends.sh").read_text(encoding="utf-8")
+
+    assert "wait_think_smoke()" in source
+    assert 'wait_think_smoke "$THINK_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"' in source

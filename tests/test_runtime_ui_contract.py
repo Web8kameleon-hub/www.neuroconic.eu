@@ -42,3 +42,14 @@ def test_pwa_starts_in_live_shell_without_cached_html_routes() -> None:
     assert manifest["start_url"] == "/dna-ui"
     assert "event.request.mode === 'navigate'" in worker
     assert "'/ui-composer'" not in worker
+
+
+def test_ui_composer_uses_live_panel_services() -> None:
+    """Composer requests panels from the backend instead of constructing browser-only data."""
+    source = Path("personal_node/ui_composer_dynamic.html").read_text(encoding="utf-8")
+
+    assert 'postJson("/api/ui/chat"' in source
+    assert 'postJson("/api/ui/design"' in source
+    assert 'getJson("/api/ui/runtime")' in source
+    assert "buildDynamicWorkspace" not in source
+    assert "Mock Magic" not in source

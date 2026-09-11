@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.29 - 2026-09-11
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.28`. See
+`docs/releases/v1.0.29.md` for full detail.
+
+### Commits included (v1.0.29)
+
+- `f7755b2 Make personal panel composer live and data-driven`
+
+### Validation (v1.0.29)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.29)
+
+- Git tag: `v1.0.29`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
 ## v1.0.28 - 2026-09-09
 
 Automated patch release cut by `scripts/release/auto_release.py` from

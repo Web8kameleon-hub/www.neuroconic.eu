@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.30 - 2026-09-11
+
+Automated patch release cut by `scripts/release/auto_release.py` from
+commits merged into `main` since `v1.0.29`. See
+`docs/releases/v1.0.30.md` for full detail.
+
+### Commits included (v1.0.30)
+
+- `a1d6678 Retry transient think smoke during rolling deploy`
+
+### Validation (v1.0.30)
+
+- `NO FAKE Police` -> **PASS**
+- `OS-CLX Policy Guard` -> **PASS**
+- `Repo Integrity Guard` -> **PASS**
+- `Routes History Guard` -> **PASS**
+- `Architecture Tests` -> **PASS**
+- `Pytest` -> **PASS**
+- `Docker Compose Config` -> **PASS**
+- `Py Compile` -> **PASS**
+
+### Release Sync (v1.0.30)
+
+- Git tag: `v1.0.30`
+- Repository: <https://github.com/Web8kameleon-hub/www.neuroconic.eu>
+
+
 ## v1.0.29 - 2026-09-11
 
 Automated patch release cut by `scripts/release/auto_release.py` from

@@ -1,4 +1,4 @@
 """
 Neurosonic Source Modules
 """
-__version__ = "1.0.29"
+__version__ = "1.0.30"

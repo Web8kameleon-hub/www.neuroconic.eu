@@ -157,7 +157,23 @@ for service in backend backend_b; do
   step=$((step + 1))
 done
 
-echo "[3/4] Final service status:"
+# A reload may retain upstream container addresses from before both backend
+# recreations. Recreate the proxy once the pool is complete so Docker DNS is
+# resolved from the current service topology.
+echo "[3/4] Recreating reverse proxy to refresh backend DNS..."
+docker compose -f "$COMPOSE_FILE" up -d --force-recreate --no-deps web
+
+if ! wait_service_healthy "web" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then
+  echo "Reverse proxy did not become healthy." >&2
+  exit 1
+fi
+
+if ! wait_http_200 "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"; then
+  echo "API health failed after reverse proxy recreate" >&2
+  exit 1
+fi
+
+echo "[4/4] Final service status:"
 docker compose -f "$COMPOSE_FILE" ps
 
 echo

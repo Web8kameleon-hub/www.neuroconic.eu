@@ -61,3 +61,11 @@ def test_rolling_deploy_retries_the_real_think_smoke() -> None:
 
     assert "wait_think_smoke()" in source
     assert 'wait_think_smoke "$THINK_URL" "$HEALTH_TIMEOUT_SECONDS" "$POLL_INTERVAL_SECONDS"' in source
+
+
+def test_rolling_deploy_recreates_proxy_after_both_backends() -> None:
+    source = Path("scripts/rolling_update_backends.sh").read_text(encoding="utf-8")
+
+    assert 'up -d --force-recreate --no-deps web' in source
+    assert 'wait_service_healthy "web"' in source
+    assert "API health failed after reverse proxy recreate" in source
